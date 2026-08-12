@@ -8,7 +8,7 @@ import { usePodcastAdmin, type ImportResult } from '@/features/podcast/hooks/use
 import { isBffError } from '@/shared/api/errors';
 import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
-import { Spacing } from '@/shared/constants/theme';
+import { MAX_CONTENT_WIDTH, RADII, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 
 export default function ImportPodcastPostsScreen() {
@@ -41,6 +41,8 @@ export default function ImportPodcastPostsScreen() {
     }
   };
 
+  const failed = result?.failed ?? 0;
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -50,22 +52,29 @@ export default function ImportPodcastPostsScreen() {
           onChangeText={setJson}
           multiline
           placeholder='[{"title": "...", "coverUrl": "...", "status": "published"}]'
-          placeholderTextColor={theme.textSecondary}
-          style={[styles.textArea, { color: theme.text, borderColor: theme.backgroundSelected }]}
+          placeholderTextColor={theme.textFaint}
+          style={[styles.textArea, { color: theme.text, borderColor: theme.border }]}
         />
         <Pressable disabled={submitting || json.trim().length === 0} onPress={handleImport}>
-          <ThemedView type="backgroundSelected" style={styles.button}>
-            <ThemedText type="smallBold">{submitting ? 'Importing…' : 'Import'}</ThemedText>
+          <ThemedView type="accent" style={styles.button}>
+            <ThemedText type="smallBold" themeColor="onAccent">
+              {submitting ? 'Importing…' : 'Import'}
+            </ThemedText>
           </ThemedView>
         </Pressable>
 
         {result && (
-          <ThemedView type="backgroundElement" style={styles.resultBox}>
+          <ThemedView type="surface" style={styles.resultBox}>
             <ThemedText type="small">
-              Imported {result.imported ?? 0}, failed {result.failed ?? 0}
+              Imported <ThemedText type="smallBold" themeColor="success">{result.imported ?? 0}</ThemedText>
+              {failed > 0 && (
+                <>
+                  , failed <ThemedText type="smallBold" themeColor="danger">{failed}</ThemedText>
+                </>
+              )}
             </ThemedText>
             {(result.errors ?? []).map((message, index) => (
-              <ThemedText key={index} type="small" themeColor="textSecondary">
+              <ThemedText key={index} type="small" themeColor="danger">
                 {message}
               </ThemedText>
             ))}
@@ -78,10 +87,17 @@ export default function ImportPodcastPostsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  safeArea: { flex: 1, gap: Spacing.two, padding: Spacing.three },
+  safeArea: {
+    flex: 1,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: MAX_CONTENT_WIDTH,
+    gap: Spacing.two,
+    padding: Spacing.three,
+  },
   textArea: {
     borderWidth: 1,
-    borderRadius: Spacing.two,
+    borderRadius: RADII.control,
     padding: Spacing.three,
     minHeight: 160,
     fontFamily: 'monospace',
@@ -89,11 +105,11 @@ const styles = StyleSheet.create({
   },
   button: {
     paddingVertical: Spacing.three,
-    borderRadius: Spacing.two,
+    borderRadius: RADII.control,
     alignItems: 'center',
   },
   resultBox: {
-    borderRadius: Spacing.three,
+    borderRadius: RADII.card,
     padding: Spacing.three,
     gap: Spacing.one,
   },

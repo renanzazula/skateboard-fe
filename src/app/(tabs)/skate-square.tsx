@@ -12,7 +12,7 @@ export default function SkateSquareScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ThemedText type="subtitle">Skate Square</ThemedText>
-        <ThemedText type="default" themeColor="textSecondary" style={styles.text}>
+        <ThemedText type="default" themeColor="textDim" style={styles.text}>
           Coming soon.
         </ThemedText>
       </SafeAreaView>

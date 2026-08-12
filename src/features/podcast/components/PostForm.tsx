@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, TextInput } from 'react-native';
 
 import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
-import { Spacing } from '@/shared/constants/theme';
+import { MAX_FORM_WIDTH, RADII, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 
 export interface PostFormValues {
@@ -40,8 +40,8 @@ export function PostForm({ initialValues, submitLabel, submitting, onSubmit }: P
         value={title}
         onChangeText={setTitle}
         placeholder="Post title"
-        placeholderTextColor={theme.textSecondary}
-        style={[styles.input, { color: theme.text, borderColor: theme.backgroundSelected }]}
+        placeholderTextColor={theme.textFaint}
+        style={[styles.input, { color: theme.text, borderColor: theme.border }]}
       />
 
       <ThemedText type="small">Cover image URL</ThemedText>
@@ -49,29 +49,34 @@ export function PostForm({ initialValues, submitLabel, submitting, onSubmit }: P
         value={coverUrl}
         onChangeText={setCoverUrl}
         placeholder="https://…"
-        placeholderTextColor={theme.textSecondary}
+        placeholderTextColor={theme.textFaint}
         autoCapitalize="none"
-        style={[styles.input, { color: theme.text, borderColor: theme.backgroundSelected }]}
+        style={[styles.input, { color: theme.text, borderColor: theme.border }]}
       />
 
       <ThemedText type="small">Status</ThemedText>
       <ThemedView style={styles.statusRow}>
-        {STATUSES.map((value) => (
-          <Pressable key={value} onPress={() => setStatus(value)}>
-            <ThemedView
-              type={value === status ? 'backgroundSelected' : 'backgroundElement'}
-              style={styles.statusChip}>
-              <ThemedText type="small">{value}</ThemedText>
-            </ThemedView>
-          </Pressable>
-        ))}
+        {STATUSES.map((value) => {
+          const selected = value === status;
+          return (
+            <Pressable key={value} onPress={() => setStatus(value)}>
+              <ThemedView type={selected ? 'accentSoft' : 'surface'} style={styles.statusChip}>
+                <ThemedText type="small" themeColor={selected ? 'accent' : 'textDim'}>
+                  {value}
+                </ThemedText>
+              </ThemedView>
+            </Pressable>
+          );
+        })}
       </ThemedView>
 
       <Pressable
         disabled={!canSubmit}
         onPress={() => onSubmit({ title: title.trim(), coverUrl: coverUrl.trim(), status })}>
-        <ThemedView type={canSubmit ? 'backgroundSelected' : 'backgroundElement'} style={styles.submitButton}>
-          <ThemedText type="smallBold">{submitting ? 'Saving…' : submitLabel}</ThemedText>
+        <ThemedView type={canSubmit ? 'accent' : 'surface'} style={styles.submitButton}>
+          <ThemedText type="smallBold" themeColor={canSubmit ? 'onAccent' : 'textFaint'}>
+            {submitting ? 'Saving…' : submitLabel}
+          </ThemedText>
         </ThemedView>
       </Pressable>
     </ThemedView>
@@ -82,10 +87,13 @@ const styles = StyleSheet.create({
   container: {
     gap: Spacing.two,
     padding: Spacing.three,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: MAX_FORM_WIDTH,
   },
   input: {
     borderWidth: 1,
-    borderRadius: Spacing.two,
+    borderRadius: RADII.control,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     fontSize: 16,
@@ -97,12 +105,12 @@ const styles = StyleSheet.create({
   statusChip: {
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.one,
-    borderRadius: Spacing.five,
+    borderRadius: RADII.pill,
   },
   submitButton: {
     marginTop: Spacing.three,
     paddingVertical: Spacing.three,
-    borderRadius: Spacing.two,
+    borderRadius: RADII.control,
     alignItems: 'center',
   },
 });

@@ -140,7 +140,9 @@ const styles = StyleSheet.create({
   },
   splashOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#208AEF',
+    // Matches Colors.dark.background in shared/constants/theme.ts — kept as
+    // a literal here since this renders before the theme provider mounts.
+    backgroundColor: '#0B0B0C',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,

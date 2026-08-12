@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/core/auth';
 import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
-import { Spacing } from '@/shared/constants/theme';
+import { MAX_FORM_WIDTH, RADII, Spacing } from '@/shared/constants/theme';
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -33,18 +33,20 @@ export default function LoginScreen() {
         <ThemedText type="title" style={styles.title}>
           Skateboard
         </ThemedText>
-        <ThemedText type="default" themeColor="textSecondary" style={styles.subtitle}>
+        <ThemedText type="default" themeColor="textDim" style={styles.subtitle}>
           Sign in to continue
         </ThemedText>
 
         <Pressable disabled={signingIn} onPress={handleLogin}>
-          <ThemedView type="backgroundSelected" style={styles.button}>
-            <ThemedText type="smallBold">{signingIn ? 'Signing in…' : 'Log in'}</ThemedText>
+          <ThemedView type="accent" style={styles.button}>
+            <ThemedText type="smallBold" themeColor="onAccent">
+              {signingIn ? 'Signing in…' : 'Log in'}
+            </ThemedText>
           </ThemedView>
         </Pressable>
 
         {error && (
-          <ThemedText type="small" themeColor="textSecondary" style={styles.error}>
+          <ThemedText type="small" themeColor="danger" style={styles.error}>
             {error}
           </ThemedText>
         )}
@@ -61,6 +63,9 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: MAX_FORM_WIDTH,
     gap: Spacing.three,
     paddingHorizontal: Spacing.four,
   },
@@ -74,7 +79,7 @@ const styles = StyleSheet.create({
   button: {
     paddingHorizontal: Spacing.five,
     paddingVertical: Spacing.three,
-    borderRadius: Spacing.two,
+    borderRadius: RADII.control,
     alignItems: 'center',
   },
   error: {

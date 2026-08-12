@@ -15,7 +15,7 @@ export default function FeedScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ThemedText type="subtitle">Feed</ThemedText>
-        <ThemedText type="default" themeColor="textSecondary" style={styles.text}>
+        <ThemedText type="default" themeColor="textDim" style={styles.text}>
           Coming soon.
         </ThemedText>
       </SafeAreaView>

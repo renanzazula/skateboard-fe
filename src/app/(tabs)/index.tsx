@@ -15,7 +15,7 @@ export default function HomeScreen() {
         <ThemedText type="title" style={styles.title}>
           Skateboard
         </ThemedText>
-        <ThemedText type="default" themeColor="textSecondary" style={styles.subtitle}>
+        <ThemedText type="default" themeColor="textDim" style={styles.subtitle}>
           {authorities.includes('FUNC_TAB_PODCAST')
             ? 'Check the Podcast tab for the latest episodes.'
             : "You're signed in."}

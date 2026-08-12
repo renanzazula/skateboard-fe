@@ -10,7 +10,7 @@ import { isBffError } from '@/shared/api/errors';
 import { ErrorBanner } from '@/shared/components/ErrorBanner';
 import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
-import { BottomTabInset, Spacing } from '@/shared/constants/theme';
+import { BottomTabInset, MAX_CONTENT_WIDTH, RADII, Spacing } from '@/shared/constants/theme';
 
 const PAGE_SIZE = 10;
 
@@ -39,8 +39,10 @@ export default function PodcastListScreen() {
             {canCreate && (
               <Link href="/podcast/admin/new" asChild>
                 <Pressable>
-                  <ThemedView type="backgroundSelected" style={styles.adminButton}>
-                    <ThemedText type="smallBold">New post</ThemedText>
+                  <ThemedView type="accent" style={styles.adminButton}>
+                    <ThemedText type="smallBold" themeColor="onAccent">
+                      New post
+                    </ThemedText>
                   </ThemedView>
                 </Pressable>
               </Link>
@@ -48,7 +50,7 @@ export default function PodcastListScreen() {
             {canImport && (
               <Link href="/podcast/admin/import" asChild>
                 <Pressable>
-                  <ThemedView type="backgroundElement" style={styles.adminButton}>
+                  <ThemedView type="surface" style={styles.adminButton}>
                     <ThemedText type="smallBold">Import</ThemedText>
                   </ThemedView>
                 </Pressable>
@@ -73,7 +75,7 @@ export default function PodcastListScreen() {
             onRefresh={refetch}
             ListEmptyComponent={
               !error ? (
-                <ThemedText type="small" themeColor="textSecondary" style={styles.empty}>
+                <ThemedText type="small" themeColor="textDim" style={styles.empty}>
                   No podcast posts yet.
                 </ThemedText>
               ) : null
@@ -82,12 +84,12 @@ export default function PodcastListScreen() {
               posts.length > 0 ? (
                 <ThemedView style={styles.pagination}>
                   <Pressable disabled={page === 0} onPress={() => setPage((p) => Math.max(0, p - 1))}>
-                    <ThemedText type="link" themeColor={page === 0 ? 'textSecondary' : 'text'}>
+                    <ThemedText type="link" themeColor={page === 0 ? 'textFaint' : 'text'}>
                       Previous
                     </ThemedText>
                   </Pressable>
                   <Pressable disabled={!hasNextPage} onPress={() => setPage((p) => p + 1)}>
-                    <ThemedText type="link" themeColor={hasNextPage ? 'text' : 'textSecondary'}>
+                    <ThemedText type="link" themeColor={hasNextPage ? 'text' : 'textFaint'}>
                       Next
                     </ThemedText>
                   </Pressable>
@@ -107,6 +109,9 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: MAX_CONTENT_WIDTH,
     paddingBottom: BottomTabInset,
   },
   adminRow: {
@@ -118,7 +123,7 @@ const styles = StyleSheet.create({
   adminButton: {
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
-    borderRadius: Spacing.two,
+    borderRadius: RADII.control,
   },
   list: {
     paddingVertical: Spacing.two,

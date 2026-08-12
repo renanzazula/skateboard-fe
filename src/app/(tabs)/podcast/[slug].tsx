@@ -9,7 +9,7 @@ import { isBffError } from '@/shared/api/errors';
 import { ErrorBanner } from '@/shared/components/ErrorBanner';
 import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
-import { Spacing } from '@/shared/constants/theme';
+import { MAX_CONTENT_WIDTH, RADII, Spacing } from '@/shared/constants/theme';
 
 export default function PodcastDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -59,7 +59,7 @@ export default function PodcastDetailScreen() {
         {post.title}
       </ThemedText>
       {post.status !== 'published' && (
-        <ThemedText type="small" themeColor="textSecondary">
+        <ThemedText type="small" themeColor="textDim">
           {post.status}
           {post.publishAt ? ` · ${new Date(post.publishAt).toLocaleString()}` : ''}
         </ThemedText>
@@ -81,7 +81,7 @@ export default function PodcastDetailScreen() {
               }}
               asChild>
               <Pressable>
-                <ThemedView type="backgroundElement" style={styles.adminButton}>
+                <ThemedView type="surface" style={styles.adminButton}>
                   <ThemedText type="smallBold">Edit</ThemedText>
                 </ThemedView>
               </Pressable>
@@ -89,8 +89,10 @@ export default function PodcastDetailScreen() {
           )}
           {canDelete && (
             <Pressable disabled={submitting} onPress={handleDelete}>
-              <ThemedView type="backgroundElement" style={styles.adminButton}>
-                <ThemedText type="smallBold">Delete</ThemedText>
+              <ThemedView type="surface" style={styles.adminButton}>
+                <ThemedText type="smallBold" themeColor="danger">
+                  Delete
+                </ThemedText>
               </ThemedView>
             </Pressable>
           )}
@@ -107,11 +109,14 @@ const styles = StyleSheet.create({
   container: {
     padding: Spacing.three,
     gap: Spacing.two,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: MAX_CONTENT_WIDTH,
   },
   cover: {
     width: '100%',
     aspectRatio: 16 / 9,
-    borderRadius: Spacing.three,
+    borderRadius: RADII.card,
   },
   title: {
     fontSize: 28,
@@ -125,6 +130,6 @@ const styles = StyleSheet.create({
   adminButton: {
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
-    borderRadius: Spacing.two,
+    borderRadius: RADII.control,
   },
 });
