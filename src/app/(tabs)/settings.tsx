@@ -1,0 +1,56 @@
+import { Pressable, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { useAuth } from '@/core/auth';
+import { ThemedText } from '@/shared/components/themed-text';
+import { ThemedView } from '@/shared/components/themed-view';
+import { Spacing } from '@/shared/constants/theme';
+
+export default function SettingsScreen() {
+  const { logout, authorities } = useAuth();
+
+  return (
+    <ThemedView style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        <ThemedText type="subtitle">Settings</ThemedText>
+
+        <ThemedView type="backgroundElement" style={styles.section}>
+          <ThemedText type="smallBold">Permissions</ThemedText>
+          {authorities.map((authority) => (
+            <ThemedText key={authority} type="small" themeColor="textSecondary">
+              {authority}
+            </ThemedText>
+          ))}
+        </ThemedView>
+
+        <Pressable onPress={() => logout()}>
+          <ThemedView type="backgroundElement" style={styles.button}>
+            <ThemedText type="smallBold">Log out</ThemedText>
+          </ThemedView>
+        </Pressable>
+      </SafeAreaView>
+    </ThemedView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+    gap: Spacing.three,
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.four,
+  },
+  section: {
+    borderRadius: Spacing.three,
+    padding: Spacing.three,
+    gap: Spacing.one,
+  },
+  button: {
+    paddingVertical: Spacing.three,
+    borderRadius: Spacing.two,
+    alignItems: 'center',
+  },
+});
