@@ -6,10 +6,11 @@ import { ThemedView } from '@/shared/components/themed-view';
 import { Spacing } from '@/shared/constants/theme';
 
 // No events/spots-style backend exists for the social feed yet — this tab
-// is visible to whoever holds FUNC_TAB_FEED (today, ADMIN) but stays a
-// placeholder rather than building speculative screens against a service
-// that doesn't exist (same discipline skateboard-ui-backend's CLAUDE.md
-// documents for events-be/spots-be).
+// stays a placeholder rather than building speculative screens against a
+// service that doesn't exist (same discipline skateboard-ui-backend's
+// CLAUDE.md documents for events-be/spots-be). FUNC_TAB_FEED was removed
+// from the realm as unused (nothing grants it), so this tab is currently
+// hidden for everyone via _layout.tsx's gate('FUNC_TAB_FEED').
 export default function FeedScreen() {
   return (
     <ThemedView style={styles.container}>

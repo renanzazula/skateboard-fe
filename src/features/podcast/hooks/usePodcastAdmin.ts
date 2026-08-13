@@ -17,7 +17,7 @@ export function usePodcastAdmin() {
   const createPost = useCallback(async (input: CreatePostInput): Promise<Post> => {
     setSubmitting(true);
     try {
-      const { data, error, response } = await bffClient.POST('/api/admin/podcast', { body: input });
+      const { data, error, response } = await bffClient.POST('/api/podcast', { body: input });
       if (error) throw toBffError(error, response.status);
       return data;
     } finally {
@@ -28,7 +28,7 @@ export function usePodcastAdmin() {
   const updatePost = useCallback(async (id: string, input: UpdatePostInput): Promise<Post> => {
     setSubmitting(true);
     try {
-      const { data, error, response } = await bffClient.PUT('/api/admin/podcast/{id}', {
+      const { data, error, response } = await bffClient.PUT('/api/podcast/{id}', {
         params: { path: { id } },
         body: input,
       });
@@ -42,7 +42,7 @@ export function usePodcastAdmin() {
   const deletePost = useCallback(async (id: string): Promise<void> => {
     setSubmitting(true);
     try {
-      const { error, response } = await bffClient.DELETE('/api/admin/podcast/{id}', {
+      const { error, response } = await bffClient.DELETE('/api/podcast/{id}', {
         params: { path: { id } },
       });
       if (error) throw toBffError(error, response.status);
@@ -54,7 +54,7 @@ export function usePodcastAdmin() {
   const importPosts = useCallback(async (input: ImportPostsInput): Promise<ImportResult> => {
     setSubmitting(true);
     try {
-      const { data, error, response } = await bffClient.POST('/api/admin/podcast/import', { body: input });
+      const { data, error, response } = await bffClient.POST('/api/podcast/import', { body: input });
       if (error) throw toBffError(error, response.status);
       return data;
     } finally {

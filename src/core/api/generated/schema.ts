@@ -14,7 +14,8 @@ export interface paths {
         /** Get published podcast posts (paginated) */
         get: operations["getPodcastFeed"];
         put?: never;
-        post?: never;
+        /** Create a new podcast post (admin only) */
+        post: operations["createPodcastPost"];
         delete?: never;
         options?: never;
         head?: never;
@@ -38,24 +39,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/podcast": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create a new podcast post (admin only) */
-        post: operations["createPodcastPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/podcast/{id}": {
+    "/api/podcast/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -73,7 +57,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/podcast/import": {
+    "/api/podcast/import": {
         parameters: {
             query?: never;
             header?: never;
@@ -225,46 +209,6 @@ export interface operations {
             };
         };
     };
-    getPodcastPostBySlug: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                slug: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Podcast post detail */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PostResponse"];
-                };
-            };
-            /** @description Not authenticated */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Post not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
     createPodcastPost: {
         parameters: {
             query?: never;
@@ -307,6 +251,46 @@ export interface operations {
             };
             /** @description Forbidden – admin role required */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getPodcastPostBySlug: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Podcast post detail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PostResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Post not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
