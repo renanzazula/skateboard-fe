@@ -157,19 +157,23 @@ export async function loginWithPassword(username: string, password: string): Pro
   applyTokenResponse(tokenResponse);
 }
 
+/**
+ * Back-channel logout — a plain POST to Keycloak's end-session endpoint with
+ * the refresh token, same as `loginWithPassword` avoids the browser for
+ * sign-in. No browser/webview pop-up: there's no SSO cookie session left to
+ * clear now that login is Direct Access Grant rather than a browser redirect.
+ */
 export async function logout(): Promise<void> {
+  const refreshToken = await secureStorage.getItem(REFRESH_TOKEN_KEY);
   const discovery = await getDiscovery().catch(() => null);
   await signOutLocal();
 
-  if (discovery?.endSessionEndpoint) {
-    const redirectUri = AuthSession.makeRedirectUri({ scheme: 'skateboardfe' });
-    const params = new URLSearchParams({
-      client_id: env.keycloakClientId,
-      post_logout_redirect_uri: redirectUri,
-    });
-    await WebBrowser.openAuthSessionAsync(`${discovery.endSessionEndpoint}?${params}`, redirectUri).catch(
-      () => {}
-    );
+  if (discovery?.endSessionEndpoint && refreshToken) {
+    await fetch(discovery.endSessionEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ client_id: env.keycloakClientId, refresh_token: refreshToken }),
+    }).catch(() => {});
   }
 }
 
