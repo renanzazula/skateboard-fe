@@ -1,10 +1,11 @@
 import { Stack, useRouter } from 'expo-router';
-import { ArrowLeft, AtSign, Calendar, Clock, Mic, Pencil, Play, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, Calendar, Clock, Mic, Pencil, Play, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
 import { Image, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BlockRenderer } from '@/features/podcast/components/blocks/BlockRenderer';
+import { InstagramIcon } from '@/features/podcast/components/icons/InstagramIcon';
 import {
   getDescription,
   getDuration,
@@ -174,7 +175,7 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
             ) : null}
             {instagramUrl ? (
               <Pressable onPress={() => Linking.openURL(instagramUrl)} hitSlop={8}>
-                <AtSign size={16} color={colors.accent} />
+                <InstagramIcon size={16} color={colors.accent} />
               </Pressable>
             ) : null}
           </View>
