@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { bffClient } from '@/core/api/client';
-import type { components } from '@/core/api/generated/schema';
+import { toPost } from '@/features/podcast/hooks/toPost';
 import { toBffError } from '@/shared/api/errors';
-
-export type Post = components['schemas']['PostResponse'];
+import type { Post } from '@/shared/types/posts';
 
 interface PostState {
   post: Post | null;
@@ -24,7 +23,7 @@ export function usePodcastPost(slug: string) {
       setState({ post: null, loading: false, error: toBffError(error, response.status) });
       return;
     }
-    setState({ post: data, loading: false, error: null });
+    setState({ post: toPost(data), loading: false, error: null });
   }, [slug]);
 
   useEffect(() => {

@@ -1,116 +1,204 @@
 import { Redirect } from 'expo-router';
-import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, TextInput } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { FileJson, Upload } from 'lucide-react-native';
+import { useRef } from 'react';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '@/core/auth';
-import { usePodcastAdmin, type ImportResult } from '@/features/podcast/hooks/usePodcastAdmin';
+import { usePodcastImport } from '@/features/podcast/hooks/usePodcastImport';
 import { isBffError } from '@/shared/api/errors';
-import { ThemedText } from '@/shared/components/themed-text';
-import { ThemedView } from '@/shared/components/themed-view';
-import { MAX_CONTENT_WIDTH, RADII, Spacing } from '@/shared/constants/theme';
+import { MAX_CONTENT_WIDTH } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
+import { showAlert } from '@/shared/utils/alert';
+
+// Ported from rork-standard-app/expo's modules/feed/screens/PodcastImportScreen.tsx
+// (via migrate/podcast/screens/PodcastImportScreen.tsx) — replaces the
+// previous paste-JSON-textarea UI with a real file picker.
 
 export default function ImportPodcastPostsScreen() {
   const { hasAuthority } = useAuth();
-  const { importPosts, submitting } = usePodcastAdmin();
-  const theme = useTheme();
-  const [json, setJson] = useState('');
-  const [result, setResult] = useState<ImportResult | null>(null);
+  const colors = useTheme();
+  const { t } = useTranslation();
+  const { episodes, fileName, submitting, pickNativeFile, handleWebFile, submitEpisodes } = usePodcastImport();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   if (!hasAuthority('FUNC_PODCAST_IMPORT_JSON')) {
     return <Redirect href="/podcast" />;
   }
 
-  const handleImport = async () => {
-    setResult(null);
-    let posts: unknown;
-    try {
-      const parsed = JSON.parse(json);
-      posts = Array.isArray(parsed) ? parsed : parsed.posts;
-      if (!Array.isArray(posts)) throw new Error('not an array');
-    } catch {
-      Alert.alert('Invalid JSON', 'Paste either an array of posts or {"posts": [...]}.');
+  const handleSelectFile = async () => {
+    if (Platform.OS === 'web') {
+      fileInputRef.current?.click();
       return;
     }
     try {
-      const importResult = await importPosts({ posts } as Parameters<typeof importPosts>[0]);
-      setResult(importResult);
-    } catch (importError) {
-      Alert.alert('Import failed', isBffError(importError) ? importError.message : 'Try again.');
+      await pickNativeFile();
+    } catch {
+      showAlert(t('common.error'), t('podcast.importInvalidJson'));
     }
   };
 
-  const failed = result?.failed ?? 0;
+  const handleWebFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      await handleWebFile(file);
+    } catch {
+      showAlert(t('common.error'), t('podcast.importInvalidJson'));
+    }
+  };
+
+  const handleImport = async () => {
+    if (episodes.length === 0) return;
+    const count = episodes.length;
+    try {
+      const result = await submitEpisodes();
+      const imported = result.imported ?? 0;
+      if (imported === count) {
+        showAlert(t('common.success'), t('podcast.importSuccess').replace('{imported}', String(imported)));
+      } else {
+        showAlert(
+          t('common.success'),
+          t('podcast.importPartial').replace('{imported}', String(imported)).replace('{failed}', String(count - imported))
+        );
+      }
+    } catch (importError) {
+      showAlert(t('common.error'), isBffError(importError) ? importError.message : t('podcast.importFailed'));
+    }
+  };
+
+  const preview = episodes.slice(0, 3);
+  const hasFile = episodes.length > 0;
 
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedText type="small">{'Paste post JSON — either an array or {"posts": [...]}'}</ThemedText>
-        <TextInput
-          value={json}
-          onChangeText={setJson}
-          multiline
-          placeholder='[{"title": "...", "coverUrl": "...", "status": "published"}]'
-          placeholderTextColor={theme.textFaint}
-          style={[styles.textArea, { color: theme.text, borderColor: theme.border }]}
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
+      {Platform.OS === 'web' && (
+        // @ts-ignore web-only element
+        <input
+          ref={fileInputRef as any}
+          type="file"
+          accept=".json,application/json"
+          style={{ display: 'none' }}
+          onChange={handleWebFileChange as any}
         />
-        <Pressable disabled={submitting || json.trim().length === 0} onPress={handleImport}>
-          <ThemedView type="accent" style={styles.button}>
-            <ThemedText type="smallBold" themeColor="onAccent">
-              {submitting ? 'Importing…' : 'Import'}
-            </ThemedText>
-          </ThemedView>
-        </Pressable>
+      )}
 
-        {result && (
-          <ThemedView type="surface" style={styles.resultBox}>
-            <ThemedText type="small">
-              Imported <ThemedText type="smallBold" themeColor="success">{result.imported ?? 0}</ThemedText>
-              {failed > 0 && (
-                <>
-                  , failed <ThemedText type="smallBold" themeColor="danger">{failed}</ThemedText>
-                </>
-              )}
-            </ThemedText>
-            {(result.errors ?? []).map((message, index) => (
-              <ThemedText key={index} type="small" themeColor="danger">
-                {message}
-              </ThemedText>
+      <Text style={[styles.sectionTitle, { color: colors.textDim }]}>{t('podcast.importJsonSection')}</Text>
+
+      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.row, { borderBottomColor: colors.border, borderBottomWidth: hasFile ? 1 : 0 }]}>
+          <View style={styles.rowIcon}>
+            <FileJson size={22} color={colors.accent} />
+          </View>
+          <View style={styles.rowInfo}>
+            <Text style={[styles.rowLabel, { color: colors.text }]}>{t('podcast.importJson')}</Text>
+            <Text style={[styles.rowDescription, { color: colors.textDim }]}>
+              {fileName
+                ? t('podcast.fileSelected').replace('{count}', String(episodes.length)).replace('{name}', fileName)
+                : t('podcast.importJsonDescription')}
+            </Text>
+          </View>
+        </View>
+
+        {hasFile && (
+          <View style={styles.previewContainer}>
+            <Text style={[styles.previewTitle, { color: colors.textDim }]}>Preview</Text>
+            {preview.map((ep, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.previewItem,
+                  { borderBottomColor: colors.border, borderBottomWidth: i < preview.length - 1 ? 1 : 0 },
+                ]}>
+                <Text style={[styles.previewItemText, { color: colors.text }]} numberOfLines={1}>
+                  {ep.title}
+                </Text>
+                {ep.publishAt ? (
+                  <Text style={[styles.previewItemMeta, { color: colors.textDim }]}>{ep.publishAt.slice(0, 10)}</Text>
+                ) : null}
+              </View>
             ))}
-          </ThemedView>
+            {episodes.length > 3 && (
+              <Text style={[styles.previewMore, { color: colors.textDim }]}>+{episodes.length - 3} more</Text>
+            )}
+          </View>
         )}
-      </SafeAreaView>
-    </ThemedView>
+      </View>
+
+      <Pressable style={[styles.selectButton, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={handleSelectFile}>
+        <Upload size={18} color={colors.text} />
+        <Text style={[styles.selectButtonText, { color: colors.text }]}>{t('podcast.selectJsonFile')}</Text>
+      </Pressable>
+
+      <Pressable
+        style={[styles.importButton, { backgroundColor: !hasFile || submitting ? colors.border : colors.accent }]}
+        onPress={handleImport}
+        disabled={!hasFile || submitting}>
+        <Text style={[styles.importButtonText, { color: colors.onAccent }]}>
+          {submitting ? t('podcast.importing') : t('podcast.importPosts').replace('{count}', String(episodes.length))}
+        </Text>
+      </Pressable>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  safeArea: {
-    flex: 1,
-    alignSelf: 'center',
-    width: '100%',
-    maxWidth: MAX_CONTENT_WIDTH,
-    gap: Spacing.two,
-    padding: Spacing.three,
+  content: { padding: 20, paddingBottom: 60, width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center' },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 12,
   },
-  textArea: {
+  card: {
+    borderRadius: 16,
     borderWidth: 1,
-    borderRadius: RADII.control,
-    padding: Spacing.three,
-    minHeight: 160,
-    fontFamily: 'monospace',
-    textAlignVertical: 'top',
+    overflow: 'hidden',
+    marginBottom: 16,
   },
-  button: {
-    paddingVertical: Spacing.three,
-    borderRadius: RADII.control,
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+  },
+  rowIcon: {
+    width: 40,
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  rowInfo: { flex: 1 },
+  rowLabel: { fontSize: 15, fontWeight: '600', marginBottom: 2 },
+  rowDescription: { fontSize: 13 },
+  previewContainer: { padding: 16, paddingTop: 8 },
+  previewTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  previewItem: { paddingVertical: 8 },
+  previewItemText: { fontSize: 13, fontWeight: '600' },
+  previewItemMeta: { fontSize: 12, marginTop: 2 },
+  previewMore: { fontSize: 12, marginTop: 8, fontStyle: 'italic' },
+  selectButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  selectButtonText: { fontSize: 16, fontWeight: '600' },
+  importButton: {
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
   },
-  resultBox: {
-    borderRadius: RADII.card,
-    padding: Spacing.three,
-    gap: Spacing.one,
-  },
+  importButtonText: { fontSize: 16, fontWeight: '700' },
 });

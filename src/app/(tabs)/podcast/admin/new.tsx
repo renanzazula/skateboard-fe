@@ -16,7 +16,7 @@ export default function NewPodcastPostScreen() {
 
   const handleSubmit = async (values: PostFormValues) => {
     try {
-      const created = await createPost({ ...values, blocks: [] });
+      const created = await createPost({ ...values });
       router.replace(`/podcast/${created.slug}`);
     } catch (submitError) {
       Alert.alert('Could not create post', isBffError(submitError) ? submitError.message : 'Try again.');
