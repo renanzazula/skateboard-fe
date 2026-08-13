@@ -136,6 +136,27 @@ export async function login(): Promise<boolean> {
   return true;
 }
 
+/**
+ * Direct Access Grant (Resource Owner Password Credentials) via the embedded
+ * username/password form. Requires directAccessGrantsEnabled on the
+ * skateboard-podcast-fe client. expo-auth-session's GrantType enum has no
+ * "password" member, so the request is built on the generic TokenRequest
+ * base class (same performAsync/TokenResponse machinery `login`/
+ * `refreshAccessToken` use) with an explicit grant type cast.
+ */
+export async function loginWithPassword(username: string, password: string): Promise<void> {
+  const discovery = await getDiscovery();
+  const request = new AuthSession.TokenRequest(
+    {
+      clientId: env.keycloakClientId,
+      extraParams: { username, password },
+    },
+    'password' as AuthSession.GrantType
+  );
+  const tokenResponse = await request.performAsync(discovery);
+  applyTokenResponse(tokenResponse);
+}
+
 export async function logout(): Promise<void> {
   const discovery = await getDiscovery().catch(() => null);
   await signOutLocal();

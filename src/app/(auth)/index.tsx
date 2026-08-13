@@ -1,27 +1,35 @@
+import * as AuthSession from 'expo-auth-session';
 import { useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/core/auth';
 import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
 import { MAX_FORM_WIDTH, RADII, Spacing } from '@/shared/constants/theme';
+import { useTheme } from '@/shared/hooks/use-theme';
 
 export default function LoginScreen() {
-  const { login } = useAuth();
+  const { loginWithPassword } = useAuth();
+  const theme = useTheme();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [signingIn, setSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const canSubmit = username.trim().length > 0 && password.length > 0 && !signingIn;
 
   const handleLogin = async () => {
     setSigningIn(true);
     setError(null);
     try {
-      const success = await login();
-      if (!success) {
-        setError('Login was cancelled.');
+      await loginWithPassword(username.trim(), password);
+    } catch (err) {
+      if (err instanceof AuthSession.TokenError && err.code === 'invalid_grant') {
+        setError('Invalid username or password.');
+      } else {
+        setError('Could not reach Keycloak. Check your connection and try again.');
       }
-    } catch {
-      setError('Could not reach Keycloak. Check your connection and try again.');
     } finally {
       setSigningIn(false);
     }
@@ -37,9 +45,30 @@ export default function LoginScreen() {
           Sign in to continue
         </ThemedText>
 
-        <Pressable disabled={signingIn} onPress={handleLogin}>
-          <ThemedView type="accent" style={styles.button}>
-            <ThemedText type="smallBold" themeColor="onAccent">
+        <TextInput
+          value={username}
+          onChangeText={setUsername}
+          placeholder="Username or email"
+          placeholderTextColor={theme.textFaint}
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="email-address"
+          style={[styles.input, { color: theme.text, borderColor: theme.border }]}
+        />
+        <TextInput
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Password"
+          placeholderTextColor={theme.textFaint}
+          autoCapitalize="none"
+          autoCorrect={false}
+          secureTextEntry
+          style={[styles.input, { color: theme.text, borderColor: theme.border }]}
+        />
+
+        <Pressable disabled={!canSubmit} onPress={handleLogin}>
+          <ThemedView type={canSubmit ? 'accent' : 'surface'} style={styles.button}>
+            <ThemedText type="smallBold" themeColor={canSubmit ? 'onAccent' : 'textFaint'}>
               {signingIn ? 'Signing in…' : 'Log in'}
             </ThemedText>
           </ThemedView>
@@ -75,6 +104,14 @@ const styles = StyleSheet.create({
   subtitle: {
     textAlign: 'center',
     marginBottom: Spacing.three,
+  },
+  input: {
+    width: '100%',
+    borderWidth: 1,
+    borderRadius: RADII.control,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    fontSize: 16,
   },
   button: {
     paddingHorizontal: Spacing.five,
