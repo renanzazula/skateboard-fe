@@ -22,11 +22,11 @@ export default function RootLayout() {
 
 function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
   const { status } = useAuth();
-  const { mode, isLoaded: themeLoaded } = useThemeMode();
+  const { resolvedMode, isLoaded: themeLoaded } = useThemeMode();
   const ready = status !== 'loading' && themeLoaded && fontsLoaded;
 
   return (
-    <NavigationThemeProvider value={mode === 'dark' ? DarkTheme : DefaultTheme}>
+    <NavigationThemeProvider value={resolvedMode === 'dark' ? DarkTheme : DefaultTheme}>
       {/* Only mounted once auth, theme, and fonts are all ready, so the
           native splash (see SplashScreen.preventAutoHideAsync above) stays
           up through silent sign-in instead of flashing the wrong

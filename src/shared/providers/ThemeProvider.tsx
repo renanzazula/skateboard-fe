@@ -12,45 +12,49 @@ import { secureStorage } from '@/core/storage/secureStorage';
 import { Colors, type ThemeColor } from '@/shared/constants/theme';
 import { useColorScheme } from '@/shared/hooks/use-color-scheme';
 
-export type ThemeMode = 'dark' | 'light';
+export type ThemeMode = 'system' | 'light' | 'dark';
+export type ResolvedThemeMode = 'light' | 'dark';
 
 const THEME_STORAGE_KEY = 'skateboard.themeMode';
+const THEME_MODES: ThemeMode[] = ['system', 'light', 'dark'];
 
 interface ThemeContextValue {
   mode: ThemeMode;
+  resolvedMode: ResolvedThemeMode;
   isLoaded: boolean;
   setMode: (mode: ThemeMode) => void;
+  cycleMode: () => void;
   toggleMode: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
+function isThemeMode(value: string | null): value is ThemeMode {
+  return value === 'system' || value === 'light' || value === 'dark';
+}
+
 /**
- * Owns the resolved theme mode so every consumer shares one value instead
- * of independently re-deriving it — needed once the mode can be a
- * user-persisted override, not just the OS color scheme. Defaults to the
- * OS scheme on first launch, then to whatever was last persisted via
- * core/storage/secureStorage.
+ * Owns the user's theme preference separately from the resolved light/dark
+ * palette. `system` follows the OS color scheme; `light` and `dark` are
+ * persisted overrides via core/storage/secureStorage.
  */
 export function AppThemeProvider({ children }: PropsWithChildren) {
   const systemScheme = useColorScheme();
-  const [mode, setModeState] = useState<ThemeMode>(systemScheme === 'light' ? 'light' : 'dark');
+  const [mode, setModeState] = useState<ThemeMode>('system');
   const [isLoaded, setIsLoaded] = useState(false);
+  const resolvedMode: ResolvedThemeMode = mode === 'system' ? (systemScheme === 'light' ? 'light' : 'dark') : mode;
 
   useEffect(() => {
     (async () => {
       try {
         const stored = await secureStorage.getItem(THEME_STORAGE_KEY);
-        if (stored === 'dark' || stored === 'light') {
+        if (isThemeMode(stored)) {
           setModeState(stored);
         }
       } finally {
         setIsLoaded(true);
       }
     })();
-    // Intentionally read the persisted override once at startup only — an
-    // explicit user choice should stick even if the OS scheme changes later.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const setMode = useCallback((next: ThemeMode) => {
@@ -58,13 +62,18 @@ export function AppThemeProvider({ children }: PropsWithChildren) {
     secureStorage.setItem(THEME_STORAGE_KEY, next).catch(() => {});
   }, []);
 
-  const toggleMode = useCallback(() => {
-    setMode(mode === 'dark' ? 'light' : 'dark');
+  const cycleMode = useCallback(() => {
+    const nextIndex = (THEME_MODES.indexOf(mode) + 1) % THEME_MODES.length;
+    setMode(THEME_MODES[nextIndex]);
   }, [mode, setMode]);
 
+  const toggleMode = useCallback(() => {
+    setMode(resolvedMode === 'dark' ? 'light' : 'dark');
+  }, [resolvedMode, setMode]);
+
   const value = useMemo<ThemeContextValue>(
-    () => ({ mode, isLoaded, setMode, toggleMode }),
-    [mode, isLoaded, setMode, toggleMode]
+    () => ({ mode, resolvedMode, isLoaded, setMode, cycleMode, toggleMode }),
+    [mode, resolvedMode, isLoaded, setMode, cycleMode, toggleMode]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
@@ -80,11 +89,11 @@ function useThemeContext(): ThemeContextValue {
 
 /** Resolved color tokens for the current mode — same shape every screen already reads (`theme.text`, etc.). */
 export function useTheme(): Record<ThemeColor, string> {
-  const { mode } = useThemeContext();
-  return Colors[mode];
+  const { resolvedMode } = useThemeContext();
+  return Colors[resolvedMode];
 }
 
-/** Mode + control, for the one place that needs it (the Settings appearance toggle). */
+/** Mode + control, for Settings and navigation theme wiring. */
 export function useThemeMode() {
   return useThemeContext();
 }
