@@ -48,22 +48,6 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="feed"
-        options={{
-          title: 'Feed',
-          href: gate('FUNC_TAB_FEED'),
-          tabBarIcon: tabIcon({ ios: 'newspaper.fill', android: 'article', web: 'article' }),
-        }}
-      />
-      <Tabs.Screen
-        name="skate-square"
-        options={{
-          title: 'Skate Square',
-          href: gate('FUNC_TAB_SKATE_SQUARE'),
-          tabBarIcon: tabIcon({ ios: 'person.3.fill', android: 'groups', web: 'groups' }),
-        }}
-      />
-      <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',
