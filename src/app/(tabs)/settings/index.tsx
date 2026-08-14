@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system/legacy';
 import {
@@ -27,10 +28,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/core/auth';
 import { secureStorage } from '@/core/storage/secureStorage';
+import { useAccountActions } from '@/features/account/hooks/useAccountActions';
+import { useNotificationPreferences } from '@/features/account/hooks/useNotificationPreferences';
+import { isBffError } from '@/shared/api/errors';
 import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
 import { RADII, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
+import { showAlert } from '@/shared/utils/alert';
 import { type ThemeMode, useThemeMode } from '@/shared/providers/ThemeProvider';
 
 type SettingsItem = {
@@ -365,6 +370,8 @@ export default function SettingsScreen() {
   const { logout } = useAuth();
   const { mode, setMode } = useThemeMode();
   const { language, downloadWifiOnly, storageUsage, selectLanguage, toggleDownloadWifiOnly, clearCache } = useLocalSettings();
+  const { deactivateAccount, deleteAccount } = useAccountActions();
+  const { preferences: notificationPreferences, setPushEnabled, setNewPodcastEnabled } = useNotificationPreferences();
   const [aboutTopic, setAboutTopic] = useState<AboutTopic | null>(null);
   const [selectorTopic, setSelectorTopic] = useState<SelectorTopic | null>(null);
 
@@ -387,28 +394,74 @@ export default function SettingsScreen() {
   const showNotificationSetupInfo = useCallback(() => {
     Alert.alert(
       'Push notifications',
-      'Push permission and device token setup will be enabled after expo-notifications is added. App notification preferences still  need the BFF settings API.'
+      'Push permission and device token setup will be enabled after expo-notifications is added. App notification preferences already save to your account.'
     );
   }, []);
 
-  const confirmPendingAccountAction = useCallback((action: 'deactivate' | 'delete') => {
-    Alert.alert(
-      action === 'delete' ? 'Delete account' : 'Deactivate account',
-      action === 'delete'
-        ? 'Deleting your account is permanent. This action will be available after the BFF account API is connected.'
-        : 'Deactivation will temporarily disable your account. This action will be available after the BFF account API is connected.',
-      [{ text: 'OK' }]
+  const handleDeactivate = useCallback(() => {
+    showAlert(
+      'Deactivate account',
+      'Deactivation will temporarily disable your account and sign you out. You can contact support to reactivate it.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Deactivate',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deactivateAccount();
+              await logout();
+            } catch (deactivateError) {
+              showAlert('Could not deactivate account', isBffError(deactivateError) ? deactivateError.message : 'Try again.');
+            }
+          },
+        },
+      ]
     );
-  }, []);
+  }, [deactivateAccount, logout]);
+
+  const handleDelete = useCallback(() => {
+    showAlert(
+      'Delete account',
+      'Deleting your account is permanent and cannot be undone. All your profile data will be removed.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete my account',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteAccount();
+              await logout();
+            } catch (deleteError) {
+              showAlert('Could not delete account', isBffError(deleteError) ? deleteError.message : 'Try again.');
+            }
+          },
+        },
+      ]
+    );
+  }, [deleteAccount, logout]);
 
   const sections: SettingsSection[] = [
     {
       title: 'Account',
       items: [
-        { title: 'Profile', icon: User, description: 'Personal details', accessory: 'chevron' },
-        { title: 'Username', icon: AtSign, description: 'Change your username', accessory: 'chevron' },
-        { title: 'Profile picture', icon: Image, description: 'Change your avatar', accessory: 'chevron' },
-        { title: 'Change password', icon: KeyRound, description: 'Manage your account password', accessory: 'chevron' },
+        { title: 'Profile', icon: User, description: 'Personal details', onPress: () => router.push('/settings/profile'), accessory: 'chevron' },
+        { title: 'Username', icon: AtSign, description: 'Change your username', onPress: () => router.push('/settings/username'), accessory: 'chevron' },
+        {
+          title: 'Profile picture',
+          icon: Image,
+          description: 'Change your avatar',
+          onPress: () => router.push('/settings/profile-picture'),
+          accessory: 'chevron',
+        },
+        {
+          title: 'Change password',
+          icon: KeyRound,
+          description: 'Manage your account password',
+          onPress: () => router.push('/settings/change-password'),
+          accessory: 'chevron',
+        },
         { title: 'Log out', icon: LogOut, onPress: logout, accessory: 'none' },
       ],
     },
@@ -427,8 +480,8 @@ export default function SettingsScreen() {
           icon: Bell,
           description: 'Receive notifications',
           accessory: 'switch',
-          checked: false,
-          disabled: true,
+          checked: notificationPreferences?.pushEnabled ?? false,
+          onToggle: setPushEnabled,
           onPress: showNotificationSetupInfo,
         },
         {
@@ -436,8 +489,8 @@ export default function SettingsScreen() {
           icon: Mic,
           description: 'Notify me when a new podcast is published',
           accessory: 'switch',
-          checked: false,
-          disabled: true,
+          checked: notificationPreferences?.newPodcastEnabled ?? false,
+          onToggle: setNewPodcastEnabled,
         },
       ],
     },
@@ -473,7 +526,7 @@ export default function SettingsScreen() {
           title: 'Deactivate account',
           icon: AlertCircle,
           description: 'Temporarily disable your account',
-          onPress: () => confirmPendingAccountAction('deactivate'),
+          onPress: handleDeactivate,
           danger: true,
           accessory: 'none',
         },
@@ -481,7 +534,7 @@ export default function SettingsScreen() {
           title: 'Delete account',
           icon: Trash2,
           description: 'Permanently delete your account',
-          onPress: () => confirmPendingAccountAction('delete'),
+          onPress: handleDelete,
           danger: true,
           strongDanger: true,
           accessory: 'none',
