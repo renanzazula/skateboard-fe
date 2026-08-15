@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/core/auth';
 import { useProfile } from '@/features/account/hooks/useProfile';
 import { EpisodeCard } from '@/features/podcast/components/EpisodeCard';
+import { useCategories } from '@/features/podcast/hooks/useCategories';
 import { usePodcastFeed } from '@/features/podcast/hooks/usePodcastFeed';
 import { getEpisodeNumber } from '@/features/podcast/services/episodeMeta';
 import { EmptyState } from '@/shared/components/EmptyState';
@@ -19,7 +20,8 @@ export default function HomeScreen() {
   const router = useRouter();
 
   const canSeePodcast = authorities.includes('FUNC_TAB_PODCAST');
-  const { posts, total, isLoading } = usePodcastFeed();
+  const { defaultCategory } = useCategories();
+  const { posts, total, isLoading } = usePodcastFeed(defaultCategory?.slug);
   const latestPost = posts[0] ?? null;
 
   return (

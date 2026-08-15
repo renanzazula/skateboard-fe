@@ -11,25 +11,36 @@ import '@/shared/constants/global.css';
 import { Platform } from 'react-native';
 
 export const Colors = {
-  background: '#080808',
+  background: '#0D0D0D',
   backgroundSecondary: '#101010',
-  surface: '#171717',
-  surfaceElevated: '#202020',
-  border: '#292929',
+  surface: '#161615',
+  surfaceElevated: '#1E1E1C',
+  surfacePressed: '#1E1E1C',
+  border: '#262521',
+  borderDivider: '#232320',
 
-  primary: '#FFD400',
-  primarySoft: 'rgba(255,212,0,0.14)',
-  onPrimary: '#080808',
+  chipBg: '#232320',
 
-  textPrimary: '#F5F5F4',
-  textSecondary: '#A0A0A0',
-  textMuted: '#707070',
-  textDisabled: '#505050',
+  primary: '#F5C518',
+  primaryPressed: '#D9AE12',
+  primarySoft: 'rgba(245,197,24,0.14)',
+  onPrimary: '#0D0D0D',
 
-  destructive: '#FF5A52',
+  textPrimary: '#F5F5F2',
+  textSecondary: '#8A8A86',
+  textMuted: '#5F5F5B',
+  textDisabled: '#5F5F5B',
+
+  destructive: '#E24B4A',
+  destructiveBg: '#2A1A1A',
+  destructiveBorder: '#3A2020',
   success: '#32D74B',
-  warning: '#FFD400',
+  warning: '#F5C518',
   shadow: 'rgba(0, 0, 0, 0.3)',
+
+  toggleTrackOff: '#3A3A36',
+  toggleThumbOff: '#8A8A86',
+  toggleThumbOn: '#1A1A1A',
 
   // Not consumed by any screen yet (no social-link UI built), carried over
   // for when one exists.

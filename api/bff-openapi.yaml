@@ -1,12 +1,16 @@
-# Vendored copy of skateboard-ui-backend/api/bff-openapi.yaml — this is the
-# BFF's own exposed contract (confirmed against its PodcastController/
-# UserController: paths, DTOs, and @PreAuthorize authorities here match
-# exactly), not a spec this repo owns. There is no shared contract registry
-# between the two repos yet, so when skateboard-ui-backend's contract
-# changes, re-copy it here by hand and re-run `npm run generate:api`.
+# This is skateboard-ui-backend's OWN exposed contract — what the frontend
+# actually calls, as implemented by the hand-written controllers
+# (PodcastController, UserController). It is NOT wired into any
+# openapi-generator-maven-plugin execution in pom.xml — those read
+# api/openapi.yaml and api/user-openapi.yaml instead, which are vendored
+# copies of skateboard-podcast-be's/skateboard-user-be's own specs, used only
+# to generate this service's *outbound* WebClient clients. This file exists
+# purely so external consumers (skateboard-fe's `api/bff-openapi.yaml`, see
+# its DEVELOPMENT.md "Regenerating the API client" section) have an accurate
+# spec to vendor and generate a typed client from.
 #
-# `npm run generate:api` runs openapi-typescript against this file into
-# src/core/api/generated/schema.ts — do not hand-edit that output.
+# Keep this in sync by hand whenever a controller's routes/DTOs/
+# @PreAuthorize authorities change — there is no codegen enforcing it.
 
 openapi: "3.0.3"
 info:
@@ -240,6 +244,100 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden – admin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/podcast/sync:
+    post:
+      tags: [podcast]
+      operationId: syncPodcastFromYoutube
+      summary: Trigger the same YouTube sync the scheduler runs, on demand (admin only)
+      security:
+        - bearerAuth: []
+      x-required-permissions:
+        - FUNC_PODCAST_IMPORT_JSON
+      responses:
+        '200':
+          description: Sync result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResultResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden – admin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/categories:
+    get:
+      tags: [podcast]
+      operationId: getCategories
+      summary: List enabled categories (mirrors the channel's YouTube playlists)
+      security:
+        - bearerAuth: []
+      x-required-permissions:
+        - FUNC_TAB_PODCAST
+      responses:
+        '200':
+          description: Enabled categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategoryResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/categories/{slug}/posts:
+    get:
+      tags: [podcast]
+      operationId: getCategoryPosts
+      summary: Get published posts for a category (paginated)
+      security:
+        - bearerAuth: []
+      x-required-permissions:
+        - FUNC_TAB_PODCAST
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, default: 0 }
+        - name: size
+          in: query
+          schema: { type: integer, default: 10 }
+      responses:
+        '200':
+          description: Category feed page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedPageResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Category not found
           content:
             application/json:
               schema:
@@ -721,6 +819,39 @@ components:
           type: array
           items:
             type: string
+
+    CategoryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        name:
+          type: string
+        coverUrl:
+          type: string
+          nullable: true
+        default:
+          type: boolean
+        postCount:
+          type: integer
+          format: int64
+
+    SyncResultResponse:
+      type: object
+      properties:
+        received:
+          type: integer
+        created:
+          type: integer
+        existing:
+          type: integer
+        categoryChanges:
+          type: integer
+        success:
+          type: boolean
 
     AccountStatus:
       type: string

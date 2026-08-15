@@ -1,11 +1,14 @@
 import { useRouter } from 'expo-router';
 import { Mic, Plus } from 'lucide-react-native';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/core/auth';
+import { CategorySelector } from '@/features/podcast/components/CategorySelector';
 import { EpisodeCard } from '@/features/podcast/components/EpisodeCard';
+import { useCategories } from '@/features/podcast/hooks/useCategories';
+import { usePodcastAdmin } from '@/features/podcast/hooks/usePodcastAdmin';
 import { usePodcastFeed } from '@/features/podcast/hooks/usePodcastFeed';
 import { getEpisodeNumber } from '@/features/podcast/services/episodeMeta';
 import { EmptyState } from '@/shared/components/EmptyState';
@@ -14,10 +17,13 @@ import { isBffError } from '@/shared/api/errors';
 import { BottomTabInset, DisplayFontFamily, MAX_CONTENT_WIDTH } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
+import type { Category } from '@/shared/types/category';
 import type { Post } from '@/shared/types/posts';
+import { showAlert } from '@/shared/utils/alert';
 
 // Ported from rork-standard-app/expo's modules/feed/screens/PodcastScreen.tsx
-// (via migrate/podcast/screens/PodcastScreen.tsx).
+// (via migrate/podcast/screens/PodcastScreen.tsx), then reworked for
+// YouTube-playlist categories per .docs/README_YOUTUBE_PLAYLIST_CATEGORIES_MIGRATION.md.
 
 export default function PodcastListScreen() {
   const colors = useTheme();
@@ -26,7 +32,19 @@ export default function PodcastListScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const { posts, total, isLoading, error, hasMore, loadMore, refresh } = usePodcastFeed();
+  const { categories, defaultCategory, isLoading: categoriesLoading, refresh: refreshCategories } = useCategories();
+  const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
+
+  // Only auto-select once, the first time a default becomes available —
+  // afterwards the user's own tap (or a refresh) owns selectedCategory.
+  useEffect(() => {
+    if (!selectedCategory && defaultCategory) setSelectedCategory(defaultCategory);
+  }, [defaultCategory, selectedCategory]);
+
+  const { posts, total, isLoading: postsLoading, error, hasMore, loadMore, refresh: refreshPosts } =
+    usePodcastFeed(selectedCategory?.slug);
+
+  const { triggerSync, submitting: syncing } = usePodcastAdmin();
 
   const canCreate = hasAuthority('FUNC_PODCAST_CREATE_POST');
   const canImport = hasAuthority('FUNC_PODCAST_IMPORT_JSON');
@@ -39,9 +57,9 @@ export default function PodcastListScreen() {
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await refresh();
+    await Promise.all([refreshCategories(), refreshPosts()]);
     setRefreshing(false);
-  }, [refresh]);
+  }, [refreshCategories, refreshPosts]);
 
   const handlePostPress = (post: Post) => {
     router.push(`/podcast/${post.slug}`);
@@ -49,6 +67,23 @@ export default function PodcastListScreen() {
 
   const handleCreatePress = () => {
     router.push('/podcast/admin/new');
+  };
+
+  const handleSelectCategory = (category: Category) => {
+    if (category.slug !== selectedCategory?.slug) setSelectedCategory(category);
+  };
+
+  const handleSync = async () => {
+    try {
+      const result = await triggerSync();
+      showAlert(
+        t('common.success'),
+        t('podcast.syncSuccess').replace('{created}', String(result.created ?? 0))
+      );
+      await Promise.all([refreshCategories(), refreshPosts()]);
+    } catch (syncError) {
+      showAlert(t('common.error'), isBffError(syncError) ? syncError.message : t('podcast.syncFailed'));
+    }
   };
 
   const ListHeader = () => (
@@ -61,25 +96,33 @@ export default function PodcastListScreen() {
           </Text>
         </View>
         {canImport ? (
-          <Pressable onPress={() => router.push('/podcast/admin/import')} hitSlop={8}>
-            <Text style={[styles.importLink, { color: colors.primary }]}>Import</Text>
+          <Pressable onPress={handleSync} disabled={syncing} hitSlop={8}>
+            <Text style={[styles.importLink, { color: colors.primary }]}>
+              {syncing ? t('podcast.syncing') : t('podcast.syncNow')}
+            </Text>
           </Pressable>
         ) : null}
       </View>
+
+      <CategorySelector
+        categories={categories}
+        selectedSlug={selectedCategory?.slug}
+        onSelect={handleSelectCategory}
+      />
     </View>
   );
 
   const ListEmpty = () => (
     <EmptyState
       icon={Mic}
-      title={t('podcast.noPostsYet')}
+      title={t('podcast.noVideosInCategory')}
       actionLabel={canCreate ? t('podcast.writeFirstPost') : undefined}
       onAction={canCreate ? handleCreatePress : undefined}
     />
   );
 
   const ListFooter = () => {
-    if (isLoading) return <ActivityIndicator style={styles.footer} color={colors.primary} />;
+    if (postsLoading) return <ActivityIndicator style={styles.footer} color={colors.primary} />;
     if (total === 0) return null;
     return (
       <View>
@@ -102,7 +145,7 @@ export default function PodcastListScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingBottom: BottomTabInset }]}>
       {error ? (
-        <ErrorBanner message={isBffError(error) ? error.message : 'Something went wrong.'} onRetry={refresh} />
+        <ErrorBanner message={isBffError(error) ? error.message : t('podcast.couldNotLoadVideos')} onRetry={refreshPosts} />
       ) : null}
 
       <FlatList
@@ -116,7 +159,7 @@ export default function PodcastListScreen() {
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.5}
         ListHeaderComponent={<ListHeader />}
-        ListEmptyComponent={!isLoading && !error ? <ListEmpty /> : null}
+        ListEmptyComponent={!postsLoading && !categoriesLoading && !error ? <ListEmpty /> : null}
         ListFooterComponent={<ListFooter />}
         refreshing={refreshing}
         onRefresh={handleRefresh}
@@ -153,6 +196,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    marginBottom: 14,
   },
   screenHeaderTitles: {
     flex: 1,

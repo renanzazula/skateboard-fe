@@ -9,6 +9,7 @@ export type UpdatePostInput = components['schemas']['UpdatePostRequest'];
 export type ImportPostsInput = components['schemas']['ImportPostsRequest'];
 export type ImportResult = components['schemas']['ImportResult'];
 export type Post = components['schemas']['PostResponse'];
+export type SyncResult = components['schemas']['SyncResultResponse'];
 
 /** Admin mutations for the Podcast feature — create/edit/delete/import, each gated by its own FUNC_PODCAST_* authority at the call site. */
 export function usePodcastAdmin() {
@@ -62,5 +63,19 @@ export function usePodcastAdmin() {
     }
   }, []);
 
-  return { submitting, createPost, updatePost, deletePost, importPosts };
+  // Triggers the same SynchronizeYoutubeChannelUseCase the backend scheduler
+  // runs (README_YOUTUBE_PLAYLIST_CATEGORIES_MIGRATION.md §33) — replaces the
+  // old JSON-file-paste import flow as the Podcast screen's "Import" action.
+  const triggerSync = useCallback(async (): Promise<SyncResult> => {
+    setSubmitting(true);
+    try {
+      const { data, error, response } = await bffClient.POST('/api/podcast/sync');
+      if (error) throw toBffError(error, response.status);
+      return data;
+    } finally {
+      setSubmitting(false);
+    }
+  }, []);
+
+  return { submitting, createPost, updatePost, deletePost, importPosts, triggerSync };
 }

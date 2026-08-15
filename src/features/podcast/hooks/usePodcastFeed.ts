@@ -16,23 +16,23 @@ interface FeedState {
 
 /**
  * Replicates rork-standard-app/expo's PostsContext pagination behavior on
- * top of the existing GET /api/podcast?page=&size= endpoint: page 0
- * replaces the list, page N>0 appends, hasMore = posts.length < total. No
- * Context — same visible behavior (infinite scroll, pull-to-refresh) via a
- * plain hook, matching this app's "start simple" pattern.
+ * top of GET /api/categories/{slug}/posts: page 0 replaces the list, page
+ * N>0 appends, hasMore = posts.length < total. Changing `categorySlug`
+ * resets to page 0 and clears the current list (README §35 — never mixes
+ * posts from two categories in one list).
  */
-export function usePodcastFeed() {
+export function usePodcastFeed(categorySlug: string | undefined) {
   const [state, setState] = useState<FeedState>({ posts: [], total: 0, isLoading: true, error: null });
   const pageRef = useRef(0);
   const loadingRef = useRef(false);
 
-  const loadPage = useCallback(async (page: number) => {
+  const loadPage = useCallback(async (slug: string, page: number) => {
     if (loadingRef.current) return;
     loadingRef.current = true;
     setState((prev) => ({ ...prev, isLoading: true, error: page === 0 ? null : prev.error }));
 
-    const { data, error, response } = await bffClient.GET('/api/podcast', {
-      params: { query: { page, size: PAGE_SIZE } },
+    const { data, error, response } = await bffClient.GET('/api/categories/{slug}/posts', {
+      params: { path: { slug }, query: { page, size: PAGE_SIZE } },
     });
 
     if (error) {
@@ -54,20 +54,26 @@ export function usePodcastFeed() {
   }, []);
 
   useEffect(() => {
-    loadPage(0);
-    // Fetch page 0 exactly once on mount — loadMore/refresh drive everything after.
+    if (!categorySlug) return;
+    pageRef.current = 0;
+    setState({ posts: [], total: 0, isLoading: true, error: null });
+    loadPage(categorySlug, 0);
+    // Intentionally re-runs only when the selected category changes —
+    // loadMore/refresh below drive everything else.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [categorySlug]);
 
   const hasMore = state.posts.length < state.total;
 
   const loadMore = useCallback(() => {
-    if (!loadingRef.current && state.posts.length < state.total) {
-      loadPage(pageRef.current + 1);
+    if (categorySlug && !loadingRef.current && state.posts.length < state.total) {
+      loadPage(categorySlug, pageRef.current + 1);
     }
-  }, [loadPage, state.posts.length, state.total]);
+  }, [categorySlug, loadPage, state.posts.length, state.total]);
 
-  const refresh = useCallback(() => loadPage(0), [loadPage]);
+  const refresh = useCallback(() => {
+    if (categorySlug) loadPage(categorySlug, 0);
+  }, [categorySlug, loadPage]);
 
   return {
     posts: state.posts,

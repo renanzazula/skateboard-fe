@@ -5,10 +5,10 @@ import {
   AlertCircle,
   AtSign,
   Bell,
-  ChevronRight,
   Code,
   Database,
   FileText,
+  Flag,
   Globe,
   HelpCircle,
   Image,
@@ -17,41 +17,42 @@ import {
   Mic,
   Shield,
   Trash2,
-  User,
   Wifi,
   type LucideIcon,
 } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/core/auth';
 import { secureStorage } from '@/core/storage/secureStorage';
 import { useAccountActions } from '@/features/account/hooks/useAccountActions';
 import { useNotificationPreferences } from '@/features/account/hooks/useNotificationPreferences';
+import { useProfile } from '@/features/account/hooks/useProfile';
+import { DeleteAccountDialog } from '@/features/settings/components/DeleteAccountDialog';
+import { ProfileHero } from '@/features/settings/components/ProfileHero';
+import { SettingsRow, type SettingsRowTrailing } from '@/features/settings/components/SettingsRow';
+import { SettingsSection } from '@/features/settings/components/SettingsSection';
 import { isBffError } from '@/shared/api/errors';
 import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
 import { RADII, Spacing } from '@/shared/constants/theme';
-import { useTheme } from '@/shared/hooks/use-theme';
 import { showAlert } from '@/shared/utils/alert';
 
 type SettingsItem = {
-  title: string;
+  key: string;
   icon: LucideIcon;
-  description?: string;
-  value?: string;
-  onPress?: () => void | Promise<void>;
-  accessory?: 'chevron' | 'switch' | 'none';
-  checked?: boolean;
-  onToggle?: (checked: boolean) => void;
+  title: string;
+  subtitle?: string;
+  trailing?: SettingsRowTrailing;
+  onPress?: () => void;
+  variant?: 'default' | 'destructive';
   disabled?: boolean;
-  danger?: boolean;
-  strongDanger?: boolean;
 };
 
-type SettingsSection = {
-  title: string;
+type SettingsSectionData = {
+  title?: string;
+  tone?: 'default' | 'danger';
   items: SettingsItem[];
 };
 
@@ -131,12 +132,15 @@ async function directorySize(uri: string): Promise<number> {
 function useLocalSettings() {
   const [language, setLanguage] = useState<LanguageCode>('en');
   const [downloadWifiOnly, setDownloadWifiOnly] = useState(false);
-  const [storageUsage, setStorageUsage] = useState('Calculating...');
+  const [storageUsage, setStorageUsage] = useState('0 B');
+  const [isCalculatingStorage, setIsCalculatingStorage] = useState(true);
 
   const refreshStorageUsage = useCallback(async () => {
+    setIsCalculatingStorage(true);
     const roots = [FileSystem.cacheDirectory, FileSystem.documentDirectory].filter(Boolean) as string[];
     const sizes = await Promise.all(roots.map((root) => directorySize(root).catch(() => 0)));
     setStorageUsage(formatBytes(sizes.reduce((total, size) => total + size, 0)));
+    setIsCalculatingStorage(false);
   }, []);
 
   useEffect(() => {
@@ -192,96 +196,29 @@ function useLocalSettings() {
     language,
     downloadWifiOnly,
     storageUsage,
+    isCalculatingStorage,
     selectLanguage,
     toggleDownloadWifiOnly,
     clearCache,
   };
 }
 
-function SettingsRow({ item, isLast }: { item: SettingsItem; isLast: boolean }) {
-  const theme = useTheme();
-  const Icon = item.icon;
-  const isPressable = Boolean(item.onPress || item.onToggle);
-
-  const handlePress = () => {
-    if (item.accessory === 'switch' && item.onToggle && !item.disabled) {
-      item.onToggle(!item.checked);
-      return;
-    }
-    item.onPress?.();
-  };
-
+function SettingsSectionView({ section }: { section: SettingsSectionData }) {
   return (
-    <View>
-      <Pressable
-        disabled={!isPressable}
-        onPress={handlePress}
-        style={({ pressed }) => [styles.row, item.disabled && styles.disabledRow, pressed && styles.pressed]}>
-        <View style={styles.iconSlot}>
-          <Icon color={item.danger ? theme.destructive : theme.textSecondary} size={22} strokeWidth={2} />
-        </View>
-        <View style={styles.rowText}>
-          <ThemedText type={item.strongDanger ? 'default' : 'smallBold'} themeColor={item.danger ? 'destructive' : 'textPrimary'}>
-            {item.title}
-          </ThemedText>
-          {item.description ? (
-            <ThemedText type="small" themeColor="textSecondary">
-              {item.description}
-            </ThemedText>
-          ) : null}
-        </View>
-        <SettingsRowAccessory item={item} />
-      </Pressable>
-      {!isLast ? <View style={[styles.separator, { borderTopColor: theme.border }]} /> : null}
-    </View>
-  );
-}
-
-function SettingsRowAccessory({ item }: { item: SettingsItem }) {
-  const theme = useTheme();
-
-  if (item.accessory === 'switch') {
-    return (
-      <Switch
-        disabled={item.disabled}
-        value={Boolean(item.checked)}
-        onValueChange={item.onToggle}
-        trackColor={{ false: theme.surfaceElevated, true: theme.primarySoft }}
-        thumbColor={item.checked ? theme.primary : theme.textMuted}
-      />
-    );
-  }
-
-  if (item.value) {
-    return (
-      <View style={styles.valueAccessory}>
-        <ThemedText type="small" themeColor="textSecondary">
-          {item.value}
-        </ThemedText>
-        {item.accessory === 'chevron' ? <ChevronRight color={theme.textMuted} size={18} /> : null}
-      </View>
-    );
-  }
-
-  if (item.accessory === 'chevron') {
-    return <ChevronRight color={theme.textMuted} size={18} />;
-  }
-
-  return null;
-}
-
-function SettingsSectionView({ section }: { section: SettingsSection }) {
-  return (
-    <View style={styles.sectionBlock}>
-      <ThemedText type="smallBold" themeColor="textSecondary">
-        {section.title}
-      </ThemedText>
-      <ThemedView type="surface" style={styles.sectionCard}>
-        {section.items.map((item, index) => (
-          <SettingsRow key={item.title} item={item} isLast={index === section.items.length - 1} />
-        ))}
-      </ThemedView>
-    </View>
+    <SettingsSection label={section.title} tone={section.tone}>
+      {section.items.map((item) => (
+        <SettingsRow
+          key={item.key}
+          icon={item.icon}
+          title={item.title}
+          subtitle={item.subtitle}
+          trailing={item.trailing}
+          onPress={item.onPress}
+          variant={item.variant}
+          disabled={item.disabled}
+        />
+      ))}
+    </SettingsSection>
   );
 }
 
@@ -348,11 +285,21 @@ function ModalCloseButton({ onPress }: { onPress: () => void }) {
 
 export default function SettingsScreen() {
   const { logout } = useAuth();
-  const { language, downloadWifiOnly, storageUsage, selectLanguage, toggleDownloadWifiOnly, clearCache } = useLocalSettings();
-  const { deactivateAccount, deleteAccount } = useAccountActions();
+  const { profile } = useProfile();
+  const {
+    language,
+    downloadWifiOnly,
+    storageUsage,
+    isCalculatingStorage,
+    selectLanguage,
+    toggleDownloadWifiOnly,
+    clearCache,
+  } = useLocalSettings();
+  const { deactivateAccount, deleteAccount, submitting: accountActionSubmitting } = useAccountActions();
   const { preferences: notificationPreferences, setPushEnabled, setNewPodcastEnabled } = useNotificationPreferences();
   const [aboutTopic, setAboutTopic] = useState<AboutTopic | null>(null);
   const [selectorTopic, setSelectorTopic] = useState<SelectorTopic | null>(null);
+  const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
 
   const selectLanguageAndClose = useCallback(
     (next: LanguageCode) => {
@@ -362,12 +309,12 @@ export default function SettingsScreen() {
     [selectLanguage]
   );
 
-  const showNotificationSetupInfo = useCallback(() => {
-    Alert.alert(
-      'Push notifications',
-      'Push permission and device token setup will be enabled after expo-notifications is added. App notification preferences already save to your account.'
-    );
-  }, []);
+  const handleLogout = useCallback(() => {
+    showAlert('Log out', 'You can log back in anytime.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Log out', style: 'destructive', onPress: logout },
+    ]);
+  }, [logout]);
 
   const handleDeactivate = useCallback(() => {
     showAlert(
@@ -391,123 +338,134 @@ export default function SettingsScreen() {
     );
   }, [deactivateAccount, logout]);
 
-  const handleDelete = useCallback(() => {
-    showAlert(
-      'Delete account',
-      'Deleting your account is permanent and cannot be undone. All your profile data will be removed.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete my account',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteAccount();
-              await logout();
-            } catch (deleteError) {
-              showAlert('Could not delete account', isBffError(deleteError) ? deleteError.message : 'Try again.');
-            }
-          },
-        },
-      ]
-    );
+  const handleConfirmDelete = useCallback(async () => {
+    try {
+      await deleteAccount();
+      setDeleteDialogVisible(false);
+      await logout();
+    } catch (deleteError) {
+      showAlert('Could not delete account', isBffError(deleteError) ? deleteError.message : 'Try again.');
+    }
   }, [deleteAccount, logout]);
 
-  const sections: SettingsSection[] = [
+  const sections: SettingsSectionData[] = [
     {
       title: 'Account',
       items: [
-        { title: 'Profile', icon: User, description: 'Personal details', onPress: () => router.push('/settings/profile'), accessory: 'chevron' },
-        { title: 'Username', icon: AtSign, description: 'Change your username', onPress: () => router.push('/settings/username'), accessory: 'chevron' },
         {
+          key: 'username',
+          title: 'Username',
+          icon: AtSign,
+          subtitle: 'Change your username',
+          onPress: () => router.push('/settings/username'),
+          trailing: { type: 'chevron' },
+        },
+        {
+          key: 'profile-picture',
           title: 'Profile picture',
           icon: Image,
-          description: 'Change your avatar',
+          subtitle: 'Change your avatar',
           onPress: () => router.push('/settings/profile-picture'),
-          accessory: 'chevron',
+          trailing: { type: 'chevron' },
         },
         {
+          key: 'change-password',
           title: 'Change password',
           icon: KeyRound,
-          description: 'Manage your account password',
+          subtitle: 'Manage your account password',
           onPress: () => router.push('/settings/change-password'),
-          accessory: 'chevron',
+          trailing: { type: 'chevron' },
         },
-        { title: 'Log out', icon: LogOut, onPress: logout, accessory: 'none' },
+        { key: 'log-out', title: 'Log out', icon: LogOut, onPress: handleLogout },
       ],
     },
     {
       title: 'App Preferences',
       items: [
-        { title: 'Language', icon: Globe, value: LANGUAGE_LABELS[language], onPress: () => setSelectorTopic('language'), accessory: 'chevron' },
+        {
+          key: 'language',
+          title: 'Language',
+          icon: Globe,
+          onPress: () => setSelectorTopic('language'),
+          trailing: { type: 'value', text: LANGUAGE_LABELS[language], tone: 'accent', chevron: true },
+        },
       ],
     },
     {
       title: 'Notifications',
       items: [
         {
+          key: 'push-notifications',
           title: 'Push notifications',
           icon: Bell,
-          description: 'Receive notifications',
-          accessory: 'switch',
-          checked: notificationPreferences?.pushEnabled ?? false,
-          onToggle: setPushEnabled,
-          onPress: showNotificationSetupInfo,
+          subtitle: 'Receive notifications',
+          trailing: { type: 'switch', value: notificationPreferences?.pushEnabled ?? false, onChange: setPushEnabled },
         },
         {
+          key: 'new-podcasts',
           title: 'New podcasts',
           icon: Mic,
-          description: 'Notify me when a new podcast is published',
-          accessory: 'switch',
-          checked: notificationPreferences?.newPodcastEnabled ?? false,
-          onToggle: setNewPodcastEnabled,
+          subtitle: 'Notify me when a new podcast is published',
+          trailing: { type: 'switch', value: notificationPreferences?.newPodcastEnabled ?? false, onChange: setNewPodcastEnabled },
         },
       ],
     },
     {
       title: 'Data & Storage',
       items: [
-        { title: 'Clear cache', icon: Trash2, description: `Free ${storageUsage}`, onPress: clearCache, accessory: 'none' },
         {
+          key: 'clear-cache',
+          title: 'Clear cache',
+          icon: Trash2,
+          onPress: clearCache,
+          trailing: { type: 'value', text: `Free ${storageUsage}`, loading: isCalculatingStorage, chevron: true },
+        },
+        {
+          key: 'wifi-only',
           title: 'Download over Wi‑Fi only',
           icon: Wifi,
-          accessory: 'switch',
-          checked: downloadWifiOnly,
-          onToggle: toggleDownloadWifiOnly,
+          trailing: { type: 'switch', value: downloadWifiOnly, onChange: toggleDownloadWifiOnly },
         },
-        { title: 'Storage usage', icon: Database, value: storageUsage, accessory: 'chevron' },
+        {
+          key: 'storage-usage',
+          title: 'Storage usage',
+          icon: Database,
+          trailing: { type: 'value', text: storageUsage, loading: isCalculatingStorage, chevron: true },
+        },
       ],
     },
     {
       title: 'About',
       items: [
-        { title: 'App version', icon: Code, value: appVersion(), accessory: 'none' },
-        { title: 'Terms & Conditions', icon: FileText, onPress: () => setAboutTopic('terms'), accessory: 'chevron' },
-        { title: 'Privacy Policy', icon: Shield, onPress: () => setAboutTopic('privacy'), accessory: 'chevron' },
-        { title: 'Open-source licenses', icon: Code, onPress: () => setAboutTopic('licenses'), accessory: 'chevron' },
-        { title: 'Contact / Support', icon: HelpCircle, onPress: () => setAboutTopic('support'), accessory: 'chevron' },
-        { title: 'Report a problem', icon: AlertCircle, accessory: 'chevron', disabled: true },
+        { key: 'app-version', title: 'App version', icon: Code, trailing: { type: 'value', text: appVersion() } },
+        { key: 'terms', title: 'Terms & Conditions', icon: FileText, onPress: () => setAboutTopic('terms'), trailing: { type: 'chevron' } },
+        { key: 'privacy', title: 'Privacy Policy', icon: Shield, onPress: () => setAboutTopic('privacy'), trailing: { type: 'chevron' } },
+        { key: 'licenses', title: 'Open-source licenses', icon: Code, onPress: () => setAboutTopic('licenses'), trailing: { type: 'chevron' } },
+        { key: 'support', title: 'Contact / Support', icon: HelpCircle, onPress: () => setAboutTopic('support'), trailing: { type: 'chevron' } },
+        { key: 'report', title: 'Report a problem', icon: Flag, disabled: true, trailing: { type: 'chevron' } },
       ],
     },
     {
       title: 'Danger Zone',
+      tone: 'danger',
       items: [
         {
+          key: 'deactivate',
           title: 'Deactivate account',
           icon: AlertCircle,
-          description: 'Temporarily disable your account',
+          subtitle: 'Temporarily disable your account',
           onPress: handleDeactivate,
-          danger: true,
-          accessory: 'none',
+          variant: 'destructive',
+          trailing: { type: 'chevron' },
         },
         {
+          key: 'delete',
           title: 'Delete account',
           icon: Trash2,
-          description: 'Permanently delete your account',
-          onPress: handleDelete,
-          danger: true,
-          strongDanger: true,
-          accessory: 'none',
+          subtitle: 'Permanently delete your account',
+          onPress: () => setDeleteDialogVisible(true),
+          variant: 'destructive',
+          trailing: { type: 'chevron' },
         },
       ],
     },
@@ -517,12 +475,16 @@ export default function SettingsScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <ThemedView style={styles.header}>
-            <ThemedText type="subtitle">Settings</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              Manage your account, preferences and app settings.
+          <View style={styles.header}>
+            <ThemedText type="subtitle" style={styles.title}>
+              Settings
             </ThemedText>
-          </ThemedView>
+            <ThemedText type="small" themeColor="textSecondary">
+              Manage your account and preferences.
+            </ThemedText>
+          </View>
+
+          <ProfileHero />
 
           {sections.map((section) => (
             <SettingsSectionView key={section.title} section={section} />
@@ -537,6 +499,13 @@ export default function SettingsScreen() {
         onSelectLanguage={selectLanguageAndClose}
       />
       <AboutModal topic={aboutTopic} onClose={() => setAboutTopic(null)} />
+      <DeleteAccountDialog
+        visible={deleteDialogVisible}
+        username={profile?.username ?? null}
+        submitting={accountActionSubmitting}
+        onCancel={() => setDeleteDialogVisible(false)}
+        onConfirm={handleConfirmDelete}
+      />
     </ThemedView>
   );
 }
@@ -556,40 +525,9 @@ const styles = StyleSheet.create({
   header: {
     gap: Spacing.one,
   },
-  sectionBlock: {
-    gap: Spacing.two,
-  },
-  sectionCard: {
-    borderRadius: RADII.card,
-    overflow: 'hidden',
-  },
-  row: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: Spacing.three,
-    minHeight: 58,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-  },
-  iconSlot: {
-    alignItems: 'center',
-    width: 24,
-  },
-  rowText: {
-    flex: 1,
-    gap: Spacing.half,
-  },
-  valueAccessory: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: Spacing.one,
-  },
-  separator: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    marginLeft: Spacing.three + 24 + Spacing.three,
-  },
-  disabledRow: {
-    opacity: 0.55,
+  title: {
+    fontSize: 28,
+    lineHeight: 34,
   },
   modalBackdrop: {
     flex: 1,

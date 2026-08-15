@@ -1,4 +1,3 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { Clock, Mic, Play } from 'lucide-react-native';
 import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -9,19 +8,10 @@ import { useTheme } from '@/shared/hooks/use-theme';
 import { RADII } from '@/shared/constants/theme';
 import type { Post } from '@/shared/types/posts';
 
-// Ported out of rork-standard-app/expo's modules/feed/screens/PodcastScreen.tsx
-// (via migrate/podcast/screens/PodcastScreen.tsx) — the gradient-scrim
-// episode card, split into its own component. Replaces PostCard's usage in
-// the podcast list.
-
-// Overlay colors sit on top of episode imagery, so they stay dark/white regardless of theme.
-const OVERLAY = {
-  scrim: ['transparent', 'rgba(0,0,0,0.85)'] as const,
-  title: '#FFFFFF',
-  meta: 'rgba(255,255,255,0.78)',
-  playBg: 'rgba(255,255,255,0.18)',
-  playBorder: 'rgba(255,255,255,0.35)',
-};
+// Stacked thumbnail-then-content card per
+// .docs/README_YOUTUBE_PLAYLIST_CATEGORIES_MIGRATION.md §24-25 — replaces
+// the previous text-over-image gradient-scrim layout. Same data sources
+// (episodeMeta.ts), new layout only.
 
 function formatDate(iso: string): string {
   try {
@@ -47,42 +37,44 @@ export function EpisodeCard({ post, episodeNumber, onPress }: Props) {
     post.coverUrl || (youtubeId ? youtubeThumbnail(youtubeId, thumbFailed ? 'hqdefault' : 'maxresdefault') : null);
 
   return (
-    <Pressable style={[styles.card, { borderColor: colors.border, backgroundColor: colors.surface }]} onPress={onPress}>
-      {imageUri ? (
-        <Image
-          source={{ uri: imageUri }}
-          style={StyleSheet.absoluteFill}
-          resizeMode="cover"
-          onError={() => {
-            if (!post.coverUrl && !thumbFailed) setThumbFailed(true);
-          }}
-        />
-      ) : (
-        <View style={[StyleSheet.absoluteFill, styles.coverPlaceholder, { backgroundColor: colors.surfaceElevated }]}>
-          <Mic size={40} color={colors.textMuted} />
-        </View>
-      )}
-
-      <LinearGradient colors={OVERLAY.scrim} style={styles.scrim} />
-
-      <View style={styles.cardContent}>
-        <View style={styles.cardInfo}>
-          <Badge label={`EP #${episodeNumber}`} style={styles.epBadge} />
-          <Text style={styles.cardTitle} numberOfLines={2}>
-            {post.title}
-          </Text>
-          <View style={styles.metaRow}>
-            <Text style={styles.metaText}>{formatDate(post.publishAt ?? post.createdAt)}</Text>
-            {duration ? (
-              <>
-                <Clock size={13} color={OVERLAY.meta} />
-                <Text style={styles.metaText}>{duration}</Text>
-              </>
-            ) : null}
+    <Pressable
+      style={[styles.card, { borderColor: colors.border, backgroundColor: colors.surfaceElevated }]}
+      onPress={onPress}>
+      <View style={styles.thumbnail}>
+        {imageUri ? (
+          <Image
+            source={{ uri: imageUri }}
+            style={StyleSheet.absoluteFill}
+            resizeMode="cover"
+            onError={() => {
+              if (!post.coverUrl && !thumbFailed) setThumbFailed(true);
+            }}
+          />
+        ) : (
+          <View style={[StyleSheet.absoluteFill, styles.thumbnailPlaceholder, { backgroundColor: colors.surface }]}>
+            <Mic size={40} color={colors.textMuted} />
           </View>
-        </View>
+        )}
         <View style={styles.playButton}>
-          <Play size={20} color={OVERLAY.title} fill={OVERLAY.title} />
+          <Play size={20} color={colors.textPrimary} fill={colors.textPrimary} />
+        </View>
+      </View>
+
+      <View style={styles.content}>
+        <Badge label={`EP #${episodeNumber}`} style={styles.epBadge} />
+        <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={2}>
+          {post.title}
+        </Text>
+        <View style={styles.metaRow}>
+          <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+            {formatDate(post.publishAt ?? post.createdAt)}
+          </Text>
+          {duration ? (
+            <>
+              <Clock size={13} color={colors.textSecondary} />
+              <Text style={[styles.metaText, { color: colors.textSecondary }]}>{duration}</Text>
+            </>
+          ) : null}
         </View>
       </View>
     </Pressable>
@@ -91,40 +83,40 @@ export function EpisodeCard({ post, episodeNumber, onPress }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    height: 240,
     borderRadius: RADII.card,
     borderWidth: 1,
     marginBottom: 14,
     overflow: 'hidden',
   },
-  coverPlaceholder: {
+  thumbnail: {
+    aspectRatio: 16 / 9,
+    width: '100%',
+  },
+  thumbnailPlaceholder: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  scrim: {
+  playButton: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 150,
+    right: 12,
+    bottom: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  cardContent: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    padding: 16,
-  },
-  cardInfo: {
-    flex: 1,
-    marginRight: 12,
+  content: {
+    padding: 14,
   },
   epBadge: {
     marginBottom: 8,
   },
-  cardTitle: {
-    color: OVERLAY.title,
-    fontSize: 18,
+  title: {
+    fontSize: 16,
     fontWeight: '700',
     marginBottom: 6,
   },
@@ -134,17 +126,6 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   metaText: {
-    color: OVERLAY.meta,
     fontSize: 13,
-  },
-  playButton: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: OVERLAY.playBg,
-    borderWidth: 1,
-    borderColor: OVERLAY.playBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });
