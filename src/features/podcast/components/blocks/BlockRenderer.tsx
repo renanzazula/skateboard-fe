@@ -22,14 +22,14 @@ export function BlockRenderer({ block }: Props) {
 
   switch (block.type) {
     case 'text':
-      return <Text style={[styles.text, { color: colors.text }]}>{block.data.html.replace(/<[^>]+>/g, '')}</Text>;
+      return <Text style={[styles.text, { color: colors.textPrimary }]}>{block.data.html.replace(/<[^>]+>/g, '')}</Text>;
 
     case 'image':
       return (
         <View style={styles.imageBlock}>
           <Image source={{ uri: block.data.url }} style={styles.image} resizeMode="cover" />
           {block.data.caption ? (
-            <Text style={[styles.caption, { color: colors.textDim }]}>{block.data.caption}</Text>
+            <Text style={[styles.caption, { color: colors.textSecondary }]}>{block.data.caption}</Text>
           ) : null}
         </View>
       );
@@ -47,11 +47,11 @@ export function BlockRenderer({ block }: Props) {
 
     case 'quote':
       return (
-        <View style={[styles.quoteBlock, { borderLeftColor: colors.accent, backgroundColor: colors.surface }]}>
-          <Quote size={20} color={colors.accent} style={styles.quoteIcon} />
-          <Text style={[styles.quoteText, { color: colors.text }]}>{block.data.text}</Text>
+        <View style={[styles.quoteBlock, { borderLeftColor: colors.primary, backgroundColor: colors.surface }]}>
+          <Quote size={20} color={colors.primary} style={styles.quoteIcon} />
+          <Text style={[styles.quoteText, { color: colors.textPrimary }]}>{block.data.text}</Text>
           {block.data.author ? (
-            <Text style={[styles.quoteAuthor, { color: colors.textDim }]}>— {block.data.author}</Text>
+            <Text style={[styles.quoteAuthor, { color: colors.textSecondary }]}>— {block.data.author}</Text>
           ) : null}
         </View>
       );
@@ -78,9 +78,9 @@ export function BlockRenderer({ block }: Props) {
         <Pressable
           style={[styles.linkCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
           onPress={() => Linking.openURL(watchUrl)}>
-          <Video size={24} color={colors.accent} />
-          <Text style={[styles.linkTitle, { color: colors.text }]}>Watch on {label}</Text>
-          <ExternalLink size={16} color={colors.textDim} />
+          <Video size={24} color={colors.primary} />
+          <Text style={[styles.linkTitle, { color: colors.textPrimary }]}>Watch on {label}</Text>
+          <ExternalLink size={16} color={colors.textSecondary} />
         </Pressable>
       );
     }
@@ -103,11 +103,11 @@ export function BlockRenderer({ block }: Props) {
         <Pressable
           style={[styles.linkCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
           onPress={() => Linking.openURL(block.data.url)}>
-          <Music size={24} color={colors.accent} />
-          <Text style={[styles.linkTitle, { color: colors.text }]}>
+          <Music size={24} color={colors.primary} />
+          <Text style={[styles.linkTitle, { color: colors.textPrimary }]}>
             {block.data.spotifyType.charAt(0).toUpperCase() + block.data.spotifyType.slice(1)} on Spotify
           </Text>
-          <ExternalLink size={16} color={colors.textDim} />
+          <ExternalLink size={16} color={colors.textSecondary} />
         </Pressable>
       );
     }
@@ -126,16 +126,16 @@ export function BlockRenderer({ block }: Props) {
         <Pressable
           style={[styles.linkCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
           onPress={() => block.data.url && Linking.openURL(block.data.url)}>
-          <ExternalLink size={24} color={colors.accent} />
+          <ExternalLink size={24} color={colors.primary} />
           <View style={styles.linkTextContainer}>
             {block.data.title ? (
-              <Text style={[styles.linkTitle, { color: colors.text }]}>{block.data.title}</Text>
+              <Text style={[styles.linkTitle, { color: colors.textPrimary }]}>{block.data.title}</Text>
             ) : null}
-            <Text style={[styles.linkUrl, { color: colors.textDim }]} numberOfLines={1}>
+            <Text style={[styles.linkUrl, { color: colors.textSecondary }]} numberOfLines={1}>
               {block.data.url}
             </Text>
             {block.data.description ? (
-              <Text style={[styles.linkDescription, { color: colors.textDim }]} numberOfLines={2}>
+              <Text style={[styles.linkDescription, { color: colors.textSecondary }]} numberOfLines={2}>
                 {block.data.description}
               </Text>
             ) : null}

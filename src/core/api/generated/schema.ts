@@ -225,6 +225,13 @@ export interface components {
             updatedAt?: string;
             /** Format: uuid */
             createdBy?: string;
+            /** @description Set only for posts ingested from the YouTube sync job. */
+            youtubeVideoId?: string | null;
+            youtubeUrl?: string | null;
+            /** @description Plain-text video description from YouTube; not present on manually-authored posts predating the sync. */
+            description?: string | null;
+            durationSeconds?: number | null;
+            episodeNumber?: number | null;
         };
         FeedPageResponse: {
             posts?: components["schemas"]["PostResponse"][];

@@ -14,6 +14,7 @@ import {
   getYoutubeId,
   youtubeThumbnail,
 } from '@/features/podcast/services/episodeMeta';
+import { Badge } from '@/shared/components/Badge';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import { MAX_CONTENT_WIDTH, RADII } from '@/shared/constants/theme';
@@ -30,11 +31,9 @@ if (Platform.OS !== 'web') {
   RNWebView = require('react-native-webview').WebView;
 }
 
-// Colors overlaid on imagery stay dark/white in both themes.
+// Colors overlaid on imagery stay dark/white regardless of theme.
 const OVERLAY = {
   scrimButton: 'rgba(0,0,0,0.45)',
-  gold: '#F2A900',
-  onGold: '#1A1A1C',
   white: '#FFFFFF',
   youtube: '#FF0000',
 };
@@ -51,9 +50,17 @@ type Props = {
   onDelete: () => void;
 };
 
-function FloatingButton({ onPress, children }: { onPress: () => void; children: React.ReactNode }) {
+function FloatingButton({
+  onPress,
+  label,
+  children,
+}: {
+  onPress: () => void;
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
-    <Pressable style={styles.floatingButton} onPress={onPress} hitSlop={8}>
+    <Pressable style={styles.floatingButton} onPress={onPress} hitSlop={8} accessibilityLabel={label} accessibilityRole="button">
       {children}
     </Pressable>
   );
@@ -129,8 +136,8 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
             }}
           />
         ) : (
-          <View style={[StyleSheet.absoluteFill, styles.heroPlaceholder, { backgroundColor: colors.surfaceHigh }]}>
-            <Mic size={48} color={colors.textFaint} />
+          <View style={[StyleSheet.absoluteFill, styles.heroPlaceholder, { backgroundColor: colors.surfaceElevated }]}>
+            <Mic size={48} color={colors.textMuted} />
           </View>
         )}
         {youtubeId ? (
@@ -156,33 +163,29 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
         <View style={styles.hero}>{renderHero()}</View>
 
         <View style={styles.body}>
-          {episodeNumber ? (
-            <View style={styles.epBadge}>
-              <Text style={styles.epBadgeText}>EP #{episodeNumber}</Text>
-            </View>
-          ) : null}
+          {episodeNumber ? <Badge label={`EP #${episodeNumber}`} style={styles.epBadge} /> : null}
 
-          <Text style={[styles.title, { color: colors.text }]}>{post.title}</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>{post.title}</Text>
 
           <View style={styles.metaRow}>
-            <Calendar size={14} color={colors.textDim} />
-            <Text style={[styles.metaText, { color: colors.textDim }]}>{publishDate}</Text>
+            <Calendar size={14} color={colors.textSecondary} />
+            <Text style={[styles.metaText, { color: colors.textSecondary }]}>{publishDate}</Text>
             {duration ? (
               <>
-                <Clock size={14} color={colors.textDim} />
-                <Text style={[styles.metaText, { color: colors.textDim }]}>{duration}</Text>
+                <Clock size={14} color={colors.textSecondary} />
+                <Text style={[styles.metaText, { color: colors.textSecondary }]}>{duration}</Text>
               </>
             ) : null}
             {instagramUrl ? (
-              <Pressable onPress={() => Linking.openURL(instagramUrl)} hitSlop={8}>
-                <InstagramIcon size={16} color={colors.accent} />
+              <Pressable onPress={() => Linking.openURL(instagramUrl)} hitSlop={8} accessibilityLabel="Open Instagram" accessibilityRole="link">
+                <InstagramIcon size={16} color={colors.primary} />
               </Pressable>
             ) : null}
           </View>
 
           {spotifyEmbedUrl ? (
             <View style={styles.section}>
-              <Text style={[styles.eyebrow, { color: colors.textFaint }]}>
+              <Text style={[styles.eyebrow, { color: colors.textMuted }]}>
                 {t('podcast.listenOnSpotify').toUpperCase()}
               </Text>
               <View style={styles.spotifyEmbed}>
@@ -209,10 +212,10 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
 
           {description ? (
             <View>
-              <Text style={[styles.description, { color: colors.text }]}>{shownDescription}</Text>
+              <Text style={[styles.description, { color: colors.textPrimary }]}>{shownDescription}</Text>
               {collapsible ? (
                 <Pressable onPress={() => setExpanded((v) => !v)} hitSlop={8}>
-                  <Text style={[styles.toggle, { color: colors.accent }]}>
+                  <Text style={[styles.toggle, { color: colors.primary }]}>
                     {expanded ? t('podcast.showLess') : t('podcast.showMore')}
                   </Text>
                 </Pressable>
@@ -228,25 +231,25 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
             </View>
           ) : null}
 
-          <Text style={[styles.footerCaption, { color: colors.textFaint }]}>
+          <Text style={[styles.footerCaption, { color: colors.textMuted }]}>
             {t('podcast.recordedOn').replace('{date}', publishDate)}
           </Text>
         </View>
       </ScrollView>
 
       <View style={[styles.floatingBar, { top: insets.top + 8 }]}>
-        <FloatingButton onPress={() => router.back()}>
+        <FloatingButton onPress={() => router.back()} label="Back">
           <ArrowLeft size={20} color={OVERLAY.white} />
         </FloatingButton>
         <View style={styles.floatingActions}>
           {canEdit ? (
-            <FloatingButton onPress={onEdit}>
+            <FloatingButton onPress={onEdit} label="Edit episode">
               <Pencil size={18} color={OVERLAY.white} />
             </FloatingButton>
           ) : null}
           {canDelete ? (
-            <FloatingButton onPress={onDelete}>
-              <Trash2 size={18} color={colors.danger} />
+            <FloatingButton onPress={onDelete} label="Delete episode">
+              <Trash2 size={18} color={colors.destructive} />
             </FloatingButton>
           ) : null}
         </View>
@@ -329,18 +332,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   epBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: OVERLAY.gold,
-    borderRadius: RADII.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
     marginBottom: 10,
-  },
-  epBadgeText: {
-    color: OVERLAY.onGold,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.5,
   },
   title: {
     fontSize: 24,

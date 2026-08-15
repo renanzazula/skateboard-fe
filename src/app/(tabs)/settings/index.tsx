@@ -15,7 +15,6 @@ import {
   KeyRound,
   LogOut,
   Mic,
-  Moon,
   Shield,
   Trash2,
   User,
@@ -36,7 +35,6 @@ import { ThemedView } from '@/shared/components/themed-view';
 import { RADII, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { showAlert } from '@/shared/utils/alert';
-import { type ThemeMode, useThemeMode } from '@/shared/providers/ThemeProvider';
 
 type SettingsItem = {
   title: string;
@@ -59,7 +57,7 @@ type SettingsSection = {
 
 type LanguageCode = 'en' | 'es' | 'pt';
 type AboutTopic = 'terms' | 'privacy' | 'licenses' | 'support';
-type SelectorTopic = 'language' | 'theme';
+type SelectorTopic = 'language';
 
 const ABOUT_CONTENT: Record<AboutTopic, { title: string; body: string }> = {
   terms: {
@@ -90,11 +88,6 @@ const LANGUAGE_LABELS: Record<LanguageCode, string> = {
   en: 'English',
   es: 'Español',
   pt: 'Português',
-};
-const THEME_LABELS: Record<ThemeMode, string> = {
-  system: 'System',
-  light: 'Light',
-  dark: 'Dark',
 };
 
 function isLanguageCode(value: string | null): value is LanguageCode {
@@ -225,14 +218,14 @@ function SettingsRow({ item, isLast }: { item: SettingsItem; isLast: boolean }) 
         onPress={handlePress}
         style={({ pressed }) => [styles.row, item.disabled && styles.disabledRow, pressed && styles.pressed]}>
         <View style={styles.iconSlot}>
-          <Icon color={item.danger ? theme.danger : theme.textDim} size={22} strokeWidth={2} />
+          <Icon color={item.danger ? theme.destructive : theme.textSecondary} size={22} strokeWidth={2} />
         </View>
         <View style={styles.rowText}>
-          <ThemedText type={item.strongDanger ? 'default' : 'smallBold'} themeColor={item.danger ? 'danger' : 'text'}>
+          <ThemedText type={item.strongDanger ? 'default' : 'smallBold'} themeColor={item.danger ? 'destructive' : 'textPrimary'}>
             {item.title}
           </ThemedText>
           {item.description ? (
-            <ThemedText type="small" themeColor="textDim">
+            <ThemedText type="small" themeColor="textSecondary">
               {item.description}
             </ThemedText>
           ) : null}
@@ -253,8 +246,8 @@ function SettingsRowAccessory({ item }: { item: SettingsItem }) {
         disabled={item.disabled}
         value={Boolean(item.checked)}
         onValueChange={item.onToggle}
-        trackColor={{ false: theme.surfaceHigh, true: theme.accentSoft }}
-        thumbColor={item.checked ? theme.accent : theme.textFaint}
+        trackColor={{ false: theme.surfaceElevated, true: theme.primarySoft }}
+        thumbColor={item.checked ? theme.primary : theme.textMuted}
       />
     );
   }
@@ -262,16 +255,16 @@ function SettingsRowAccessory({ item }: { item: SettingsItem }) {
   if (item.value) {
     return (
       <View style={styles.valueAccessory}>
-        <ThemedText type="small" themeColor="textDim">
+        <ThemedText type="small" themeColor="textSecondary">
           {item.value}
         </ThemedText>
-        {item.accessory === 'chevron' ? <ChevronRight color={theme.textFaint} size={18} /> : null}
+        {item.accessory === 'chevron' ? <ChevronRight color={theme.textMuted} size={18} /> : null}
       </View>
     );
   }
 
   if (item.accessory === 'chevron') {
-    return <ChevronRight color={theme.textFaint} size={18} />;
+    return <ChevronRight color={theme.textMuted} size={18} />;
   }
 
   return null;
@@ -280,7 +273,7 @@ function SettingsRowAccessory({ item }: { item: SettingsItem }) {
 function SettingsSectionView({ section }: { section: SettingsSection }) {
   return (
     <View style={styles.sectionBlock}>
-      <ThemedText type="smallBold" themeColor="textDim">
+      <ThemedText type="smallBold" themeColor="textSecondary">
         {section.title}
       </ThemedText>
       <ThemedView type="surface" style={styles.sectionCard}>
@@ -295,40 +288,27 @@ function SettingsSectionView({ section }: { section: SettingsSection }) {
 function SelectorModal({
   topic,
   language,
-  mode,
   onClose,
   onSelectLanguage,
-  onSelectTheme,
 }: {
   topic: SelectorTopic | null;
   language: LanguageCode;
-  mode: ThemeMode;
   onClose: () => void;
   onSelectLanguage: (language: LanguageCode) => void;
-  onSelectTheme: (mode: ThemeMode) => void;
 }) {
   return (
     <Modal animationType="slide" transparent visible={topic !== null} onRequestClose={onClose}>
       <ThemedView style={styles.modalBackdrop}>
         <ThemedView type="surface" style={styles.modalCard}>
-          <ThemedText type="subtitle">{topic === 'language' ? 'Language' : 'Theme'}</ThemedText>
-          {topic === 'language'
-            ? LANGUAGES.map((option) => (
-                <Pressable key={option} onPress={() => onSelectLanguage(option)} style={styles.optionRow}>
-                  <ThemedText type="smallBold" themeColor={language === option ? 'accent' : 'text'}>
-                    {language === option ? '✓ ' : '   '}
-                    {LANGUAGE_LABELS[option]}
-                  </ThemedText>
-                </Pressable>
-              ))
-            : (Object.keys(THEME_LABELS) as ThemeMode[]).map((option) => (
-                <Pressable key={option} onPress={() => onSelectTheme(option)} style={styles.optionRow}>
-                  <ThemedText type="smallBold" themeColor={mode === option ? 'accent' : 'text'}>
-                    {mode === option ? '✓ ' : '   '}
-                    {THEME_LABELS[option]}
-                  </ThemedText>
-                </Pressable>
-              ))}
+          <ThemedText type="subtitle">Language</ThemedText>
+          {LANGUAGES.map((option) => (
+            <Pressable key={option} onPress={() => onSelectLanguage(option)} style={styles.optionRow}>
+              <ThemedText type="smallBold" themeColor={language === option ? 'primary' : 'textPrimary'}>
+                {language === option ? '✓ ' : '   '}
+                {LANGUAGE_LABELS[option]}
+              </ThemedText>
+            </Pressable>
+          ))}
           <ModalCloseButton onPress={onClose} />
         </ThemedView>
       </ThemedView>
@@ -344,7 +324,7 @@ function AboutModal({ topic, onClose }: { topic: AboutTopic | null; onClose: () 
           {topic ? (
             <>
               <ThemedText type="subtitle">{ABOUT_CONTENT[topic].title}</ThemedText>
-              <ThemedText type="small" themeColor="textDim">
+              <ThemedText type="small" themeColor="textSecondary">
                 {ABOUT_CONTENT[topic].body}
               </ThemedText>
             </>
@@ -359,7 +339,7 @@ function AboutModal({ topic, onClose }: { topic: AboutTopic | null; onClose: () 
 function ModalCloseButton({ onPress }: { onPress: () => void }) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}>
-      <ThemedText type="smallBold" themeColor="accent">
+      <ThemedText type="smallBold" themeColor="primary">
         Close
       </ThemedText>
     </Pressable>
@@ -368,7 +348,6 @@ function ModalCloseButton({ onPress }: { onPress: () => void }) {
 
 export default function SettingsScreen() {
   const { logout } = useAuth();
-  const { mode, setMode } = useThemeMode();
   const { language, downloadWifiOnly, storageUsage, selectLanguage, toggleDownloadWifiOnly, clearCache } = useLocalSettings();
   const { deactivateAccount, deleteAccount } = useAccountActions();
   const { preferences: notificationPreferences, setPushEnabled, setNewPodcastEnabled } = useNotificationPreferences();
@@ -381,14 +360,6 @@ export default function SettingsScreen() {
       setSelectorTopic(null);
     },
     [selectLanguage]
-  );
-
-  const selectThemeAndClose = useCallback(
-    (next: ThemeMode) => {
-      setMode(next);
-      setSelectorTopic(null);
-    },
-    [setMode]
   );
 
   const showNotificationSetupInfo = useCallback(() => {
@@ -469,7 +440,6 @@ export default function SettingsScreen() {
       title: 'App Preferences',
       items: [
         { title: 'Language', icon: Globe, value: LANGUAGE_LABELS[language], onPress: () => setSelectorTopic('language'), accessory: 'chevron' },
-        { title: 'Theme', icon: Moon, value: THEME_LABELS[mode], onPress: () => setSelectorTopic('theme'), accessory: 'chevron' },
       ],
     },
     {
@@ -549,7 +519,7 @@ export default function SettingsScreen() {
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <ThemedView style={styles.header}>
             <ThemedText type="subtitle">Settings</ThemedText>
-            <ThemedText type="small" themeColor="textDim">
+            <ThemedText type="small" themeColor="textSecondary">
               Manage your account, preferences and app settings.
             </ThemedText>
           </ThemedView>
@@ -563,10 +533,8 @@ export default function SettingsScreen() {
       <SelectorModal
         topic={selectorTopic}
         language={language}
-        mode={mode}
         onClose={() => setSelectorTopic(null)}
         onSelectLanguage={selectLanguageAndClose}
-        onSelectTheme={selectThemeAndClose}
       />
       <AboutModal topic={aboutTopic} onClose={() => setAboutTopic(null)} />
     </ThemedView>

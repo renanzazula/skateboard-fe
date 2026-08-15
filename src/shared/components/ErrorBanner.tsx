@@ -13,7 +13,7 @@ interface ErrorBannerProps {
 export function ErrorBanner({ message, onRetry }: ErrorBannerProps) {
   return (
     <ThemedView type="surface" style={styles.container}>
-      <ThemedText type="small" themeColor="danger">
+      <ThemedText type="small" themeColor="destructive">
         {message}
       </ThemedText>
       {onRetry && (

@@ -52,16 +52,16 @@ function BlockEditorRow({
 }) {
   const theme = useTheme();
   const { t } = useTranslation();
-  const inputStyle = [styles.input, { color: theme.text, borderColor: theme.border, backgroundColor: theme.background }];
+  const inputStyle = [styles.input, { color: theme.textPrimary, borderColor: theme.border, backgroundColor: theme.background }];
 
   return (
     <ThemedView type="surface" style={[styles.blockRow, { borderColor: theme.border }]}>
       <ThemedView style={styles.blockRowHeader}>
-        <ThemedText type="smallBold" themeColor="accent">
+        <ThemedText type="smallBold" themeColor="primary">
           {editor.type.charAt(0).toUpperCase() + editor.type.slice(1)}
         </ThemedText>
         <Pressable onPress={onRemove} hitSlop={8}>
-          <ThemedText type="smallBold" themeColor="danger">
+          <ThemedText type="smallBold" themeColor="destructive">
             ✕
           </ThemedText>
         </Pressable>
@@ -75,7 +75,7 @@ function BlockEditorRow({
             value={editor.html}
             onChangeText={(v) => onChange({ ...editor, html: v })}
             multiline
-            placeholderTextColor={theme.textFaint}
+            placeholderTextColor={theme.textMuted}
           />
         </>
       )}
@@ -88,7 +88,7 @@ function BlockEditorRow({
             value={editor.url}
             onChangeText={(v) => onChange({ ...editor, url: v })}
             placeholder={t('feed.imageUrlPlaceholder')}
-            placeholderTextColor={theme.textFaint}
+            placeholderTextColor={theme.textMuted}
             autoCapitalize="none"
           />
           <ThemedText type="small">{t('feed.imageCaption')}</ThemedText>
@@ -96,7 +96,7 @@ function BlockEditorRow({
             style={inputStyle}
             value={editor.caption}
             onChangeText={(v) => onChange({ ...editor, caption: v })}
-            placeholderTextColor={theme.textFaint}
+            placeholderTextColor={theme.textMuted}
           />
         </>
       )}
@@ -109,7 +109,7 @@ function BlockEditorRow({
             value={editor.url}
             onChangeText={(v) => onChange({ ...editor, url: v })}
             placeholder={t('feed.videoUrlPlaceholder')}
-            placeholderTextColor={theme.textFaint}
+            placeholderTextColor={theme.textMuted}
             autoCapitalize="none"
           />
         </>
@@ -123,7 +123,7 @@ function BlockEditorRow({
             value={editor.text}
             onChangeText={(v) => onChange({ ...editor, text: v })}
             placeholder={t('feed.quoteTextPlaceholder')}
-            placeholderTextColor={theme.textFaint}
+            placeholderTextColor={theme.textMuted}
             multiline
           />
           <ThemedText type="small">{t('feed.quoteAuthor')}</ThemedText>
@@ -132,7 +132,7 @@ function BlockEditorRow({
             value={editor.author}
             onChangeText={(v) => onChange({ ...editor, author: v })}
             placeholder={t('feed.quoteAuthorPlaceholder')}
-            placeholderTextColor={theme.textFaint}
+            placeholderTextColor={theme.textMuted}
           />
         </>
       )}
@@ -145,7 +145,7 @@ function BlockEditorRow({
             value={editor.rawUrl}
             onChangeText={(v) => onChange({ ...editor, rawUrl: v })}
             placeholder={t('feed.embedUrlPlaceholder')}
-            placeholderTextColor={theme.textFaint}
+            placeholderTextColor={theme.textMuted}
             autoCapitalize="none"
           />
         </>
@@ -159,7 +159,7 @@ function BlockEditorRow({
             value={editor.urls}
             onChangeText={(v) => onChange({ ...editor, urls: v })}
             placeholder="https://example.com/image1.jpg"
-            placeholderTextColor={theme.textFaint}
+            placeholderTextColor={theme.textMuted}
             multiline
             autoCapitalize="none"
           />
@@ -174,7 +174,7 @@ function BlockEditorRow({
             value={editor.url}
             onChangeText={(v) => onChange({ ...editor, url: v })}
             placeholder={t('feed.linkUrlPlaceholder')}
-            placeholderTextColor={theme.textFaint}
+            placeholderTextColor={theme.textMuted}
             autoCapitalize="none"
           />
           <ThemedText type="small">{t('feed.linkTitle')}</ThemedText>
@@ -183,7 +183,7 @@ function BlockEditorRow({
             value={editor.title}
             onChangeText={(v) => onChange({ ...editor, title: v })}
             placeholder={t('feed.linkTitlePlaceholder')}
-            placeholderTextColor={theme.textFaint}
+            placeholderTextColor={theme.textMuted}
           />
           <ThemedText type="small">{t('feed.linkDescription')}</ThemedText>
           <TextInput
@@ -191,7 +191,7 @@ function BlockEditorRow({
             value={editor.description}
             onChangeText={(v) => onChange({ ...editor, description: v })}
             placeholder={t('feed.linkDescriptionPlaceholder')}
-            placeholderTextColor={theme.textFaint}
+            placeholderTextColor={theme.textMuted}
             multiline
           />
         </>
@@ -205,7 +205,7 @@ function BlockEditorRow({
             value={editor.url}
             onChangeText={(v) => onChange({ ...editor, url: v })}
             placeholder={t('feed.spotifyUrlPlaceholder')}
-            placeholderTextColor={theme.textFaint}
+            placeholderTextColor={theme.textMuted}
             autoCapitalize="none"
           />
         </>
@@ -297,16 +297,16 @@ export function PostForm({ initialValues, submitLabel, submitting, onSubmit }: P
         value={title}
         onChangeText={setTitle}
         placeholder={t('feed.postTitlePlaceholder')}
-        placeholderTextColor={theme.textFaint}
-        style={[styles.input, { color: theme.text, borderColor: theme.border }]}
+        placeholderTextColor={theme.textMuted}
+        style={[styles.input, { color: theme.textPrimary, borderColor: theme.border }]}
       />
 
       <ThemedText type="small">{t('feed.coverImageUrl')}</ThemedText>
       <ThemedView style={styles.coverSourceRow}>
         {(['url', 'upload'] as const).map((source) => (
           <Pressable key={source} onPress={() => setCoverSource(source)}>
-            <ThemedView type={coverSource === source ? 'accentSoft' : 'surface'} style={styles.statusChip}>
-              <ThemedText type="small" themeColor={coverSource === source ? 'accent' : 'textDim'}>
+            <ThemedView type={coverSource === source ? 'primarySoft' : 'surface'} style={styles.statusChip}>
+              <ThemedText type="small" themeColor={coverSource === source ? 'primary' : 'textSecondary'}>
                 {source === 'url' ? 'URL' : t('feed.coverImageUpload')}
               </ThemedText>
             </ThemedView>
@@ -318,9 +318,9 @@ export function PostForm({ initialValues, submitLabel, submitting, onSubmit }: P
           value={coverUrl}
           onChangeText={setCoverUrl}
           placeholder={t('feed.coverImageUrlPlaceholder')}
-          placeholderTextColor={theme.textFaint}
+          placeholderTextColor={theme.textMuted}
           autoCapitalize="none"
-          style={[styles.input, { color: theme.text, borderColor: theme.border }]}
+          style={[styles.input, { color: theme.textPrimary, borderColor: theme.border }]}
         />
       ) : (
         <Pressable onPress={handlePickImage}>
@@ -338,8 +338,8 @@ export function PostForm({ initialValues, submitLabel, submitting, onSubmit }: P
           const selected = value === status;
           return (
             <Pressable key={value} onPress={() => setStatus(value)}>
-              <ThemedView type={selected ? 'accentSoft' : 'surface'} style={styles.statusChip}>
-                <ThemedText type="small" themeColor={selected ? 'accent' : 'textDim'}>
+              <ThemedView type={selected ? 'primarySoft' : 'surface'} style={styles.statusChip}>
+                <ThemedText type="small" themeColor={selected ? 'primary' : 'textSecondary'}>
                   {value}
                 </ThemedText>
               </ThemedView>
@@ -354,29 +354,29 @@ export function PostForm({ initialValues, submitLabel, submitting, onSubmit }: P
       {socialLinks.map((link, i) => (
         <ThemedView key={i} type="surface" style={[styles.blockRow, { borderColor: theme.border }]}>
           <ThemedView style={styles.blockRowHeader}>
-            <ThemedText type="smallBold" themeColor="accent">
+            <ThemedText type="smallBold" themeColor="primary">
               {t('feed.socialUrl')}
             </ThemedText>
             <Pressable onPress={() => setSocialLinks((prev) => prev.filter((_, idx) => idx !== i))} hitSlop={8}>
-              <ThemedText type="smallBold" themeColor="danger">
+              <ThemedText type="smallBold" themeColor="destructive">
                 ✕
               </ThemedText>
             </Pressable>
           </ThemedView>
           <TextInput
-            style={[styles.input, { color: theme.text, borderColor: theme.border, backgroundColor: theme.background }]}
+            style={[styles.input, { color: theme.textPrimary, borderColor: theme.border, backgroundColor: theme.background }]}
             value={link.url}
             onChangeText={(v) => setSocialLinks((prev) => prev.map((l, idx) => (idx === i ? { ...l, url: v } : l)))}
             placeholder={t('feed.socialUrlPlaceholder')}
-            placeholderTextColor={theme.textFaint}
+            placeholderTextColor={theme.textMuted}
             autoCapitalize="none"
             keyboardType="url"
           />
         </ThemedView>
       ))}
       <Pressable onPress={() => setSocialLinks((prev) => [...prev, { url: '' }])}>
-        <ThemedView type="surface" style={[styles.addBlockButton, { borderColor: theme.accent }]}>
-          <ThemedText type="small" themeColor="accent">
+        <ThemedView type="surface" style={[styles.addBlockButton, { borderColor: theme.primary }]}>
+          <ThemedText type="small" themeColor="primary">
             + {t('feed.addSocialLink')}
           </ThemedText>
         </ThemedView>
@@ -397,8 +397,8 @@ export function PostForm({ initialValues, submitLabel, submitting, onSubmit }: P
       <ThemedView style={styles.blockButtons}>
         {BLOCK_TYPES.map(({ type, label }) => (
           <Pressable key={type} onPress={() => handleAddBlock(type)}>
-            <ThemedView type="surface" style={[styles.addBlockButton, { borderColor: theme.accent }]}>
-              <ThemedText type="small" themeColor="accent">
+            <ThemedView type="surface" style={[styles.addBlockButton, { borderColor: theme.primary }]}>
+              <ThemedText type="small" themeColor="primary">
                 + {label}
               </ThemedText>
             </ThemedView>
@@ -407,8 +407,8 @@ export function PostForm({ initialValues, submitLabel, submitting, onSubmit }: P
       </ThemedView>
 
       <Pressable disabled={!canSubmit} onPress={handleSubmit}>
-        <ThemedView type={canSubmit ? 'accent' : 'surface'} style={styles.submitButton}>
-          <ThemedText type="smallBold" themeColor={canSubmit ? 'onAccent' : 'textFaint'}>
+        <ThemedView type={canSubmit ? 'primary' : 'surface'} style={styles.submitButton}>
+          <ThemedText type="smallBold" themeColor={canSubmit ? 'onPrimary' : 'textDisabled'}>
             {submitting ? 'Saving…' : submitLabel}
           </ThemedText>
         </ThemedView>

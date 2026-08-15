@@ -73,4 +73,12 @@ export type Post = {
   createdAt: string;
   updatedAt: string;
   createdBy: string;
+  // Set only for posts ingested by podcast-be's YouTube sync job — null on
+  // manually-authored/imported posts (including ones predating the sync).
+  // See services/episodeMeta.ts, which prefers these over parsing `blocks`.
+  youtubeVideoId?: string | null;
+  youtubeUrl?: string | null;
+  description?: string | null;
+  durationSeconds?: number | null;
+  episodeNumber?: number | null;
 };

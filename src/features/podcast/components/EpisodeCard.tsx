@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { getDuration, getYoutubeId, youtubeThumbnail } from '@/features/podcast/services/episodeMeta';
+import { Badge } from '@/shared/components/Badge';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { RADII } from '@/shared/constants/theme';
 import type { Post } from '@/shared/types/posts';
@@ -13,11 +14,9 @@ import type { Post } from '@/shared/types/posts';
 // episode card, split into its own component. Replaces PostCard's usage in
 // the podcast list.
 
-// Overlay colors sit on top of episode imagery, so they stay dark in both themes.
+// Overlay colors sit on top of episode imagery, so they stay dark/white regardless of theme.
 const OVERLAY = {
   scrim: ['transparent', 'rgba(0,0,0,0.85)'] as const,
-  gold: '#F2A900',
-  onGold: '#1A1A1C',
   title: '#FFFFFF',
   meta: 'rgba(255,255,255,0.78)',
   playBg: 'rgba(255,255,255,0.18)',
@@ -59,8 +58,8 @@ export function EpisodeCard({ post, episodeNumber, onPress }: Props) {
           }}
         />
       ) : (
-        <View style={[StyleSheet.absoluteFill, styles.coverPlaceholder, { backgroundColor: colors.surfaceHigh }]}>
-          <Mic size={40} color={colors.textFaint} />
+        <View style={[StyleSheet.absoluteFill, styles.coverPlaceholder, { backgroundColor: colors.surfaceElevated }]}>
+          <Mic size={40} color={colors.textMuted} />
         </View>
       )}
 
@@ -68,9 +67,7 @@ export function EpisodeCard({ post, episodeNumber, onPress }: Props) {
 
       <View style={styles.cardContent}>
         <View style={styles.cardInfo}>
-          <View style={styles.epBadge}>
-            <Text style={styles.epBadgeText}>EP #{episodeNumber}</Text>
-          </View>
+          <Badge label={`EP #${episodeNumber}`} style={styles.epBadge} />
           <Text style={styles.cardTitle} numberOfLines={2}>
             {post.title}
           </Text>
@@ -123,18 +120,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   epBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: OVERLAY.gold,
-    borderRadius: RADII.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
     marginBottom: 8,
-  },
-  epBadgeText: {
-    color: OVERLAY.onGold,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.5,
   },
   cardTitle: {
     color: OVERLAY.title,

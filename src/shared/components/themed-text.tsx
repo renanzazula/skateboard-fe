@@ -10,7 +10,7 @@ export type ThemedTextProps = TextProps & {
 
 export function ThemedText({ style, type = 'default', themeColor, ...rest }: ThemedTextProps) {
   const theme = useTheme();
-  const resolvedColor = themeColor ?? (type === 'linkPrimary' ? 'accent' : 'text');
+  const resolvedColor = themeColor ?? (type === 'linkPrimary' ? 'primary' : 'textPrimary');
 
   return (
     <Text

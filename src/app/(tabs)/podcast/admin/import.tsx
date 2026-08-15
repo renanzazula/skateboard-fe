@@ -84,16 +84,16 @@ export default function ImportPodcastPostsScreen() {
         />
       )}
 
-      <Text style={[styles.sectionTitle, { color: colors.textDim }]}>{t('podcast.importJsonSection')}</Text>
+      <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t('podcast.importJsonSection')}</Text>
 
       <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={[styles.row, { borderBottomColor: colors.border, borderBottomWidth: hasFile ? 1 : 0 }]}>
           <View style={styles.rowIcon}>
-            <FileJson size={22} color={colors.accent} />
+            <FileJson size={22} color={colors.primary} />
           </View>
           <View style={styles.rowInfo}>
-            <Text style={[styles.rowLabel, { color: colors.text }]}>{t('podcast.importJson')}</Text>
-            <Text style={[styles.rowDescription, { color: colors.textDim }]}>
+            <Text style={[styles.rowLabel, { color: colors.textPrimary }]}>{t('podcast.importJson')}</Text>
+            <Text style={[styles.rowDescription, { color: colors.textSecondary }]}>
               {fileName
                 ? t('podcast.fileSelected').replace('{count}', String(episodes.length)).replace('{name}', fileName)
                 : t('podcast.importJsonDescription')}
@@ -103,7 +103,7 @@ export default function ImportPodcastPostsScreen() {
 
         {hasFile && (
           <View style={styles.previewContainer}>
-            <Text style={[styles.previewTitle, { color: colors.textDim }]}>Preview</Text>
+            <Text style={[styles.previewTitle, { color: colors.textSecondary }]}>Preview</Text>
             {preview.map((ep, i) => (
               <View
                 key={i}
@@ -111,31 +111,31 @@ export default function ImportPodcastPostsScreen() {
                   styles.previewItem,
                   { borderBottomColor: colors.border, borderBottomWidth: i < preview.length - 1 ? 1 : 0 },
                 ]}>
-                <Text style={[styles.previewItemText, { color: colors.text }]} numberOfLines={1}>
+                <Text style={[styles.previewItemText, { color: colors.textPrimary }]} numberOfLines={1}>
                   {ep.title}
                 </Text>
                 {ep.publishAt ? (
-                  <Text style={[styles.previewItemMeta, { color: colors.textDim }]}>{ep.publishAt.slice(0, 10)}</Text>
+                  <Text style={[styles.previewItemMeta, { color: colors.textSecondary }]}>{ep.publishAt.slice(0, 10)}</Text>
                 ) : null}
               </View>
             ))}
             {episodes.length > 3 && (
-              <Text style={[styles.previewMore, { color: colors.textDim }]}>+{episodes.length - 3} more</Text>
+              <Text style={[styles.previewMore, { color: colors.textSecondary }]}>+{episodes.length - 3} more</Text>
             )}
           </View>
         )}
       </View>
 
       <Pressable style={[styles.selectButton, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={handleSelectFile}>
-        <Upload size={18} color={colors.text} />
-        <Text style={[styles.selectButtonText, { color: colors.text }]}>{t('podcast.selectJsonFile')}</Text>
+        <Upload size={18} color={colors.textPrimary} />
+        <Text style={[styles.selectButtonText, { color: colors.textPrimary }]}>{t('podcast.selectJsonFile')}</Text>
       </Pressable>
 
       <Pressable
-        style={[styles.importButton, { backgroundColor: !hasFile || submitting ? colors.border : colors.accent }]}
+        style={[styles.importButton, { backgroundColor: !hasFile || submitting ? colors.border : colors.primary }]}
         onPress={handleImport}
         disabled={!hasFile || submitting}>
-        <Text style={[styles.importButtonText, { color: colors.onAccent }]}>
+        <Text style={[styles.importButtonText, { color: colors.onPrimary }]}>
           {submitting ? t('podcast.importing') : t('podcast.importPosts').replace('{count}', String(episodes.length))}
         </Text>
       </Pressable>

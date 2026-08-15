@@ -1,62 +1,48 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Skateboard's dark brand palette — see .docs/README-skateboard-dark-ux-design.md.
+ * Dark-only by design (black/charcoal + skate yellow + white); there is no
+ * light variant. There are many other ways to style your app. For example,
+ * [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/),
+ * [unistyles](https://reactnativeunistyles.vercel.app), etc.
  */
 
 import '@/shared/constants/global.css';
 
 import { Platform } from 'react-native';
 
-// Brand colors — identical in both modes. Not consumed by any screen yet
-// (no social-link UI built), carried over for when one exists.
-const BRAND = {
+export const Colors = {
+  background: '#080808',
+  backgroundSecondary: '#101010',
+  surface: '#171717',
+  surfaceElevated: '#202020',
+  border: '#292929',
+
+  primary: '#FFD400',
+  primarySoft: 'rgba(255,212,0,0.14)',
+  onPrimary: '#080808',
+
+  textPrimary: '#F5F5F4',
+  textSecondary: '#A0A0A0',
+  textMuted: '#707070',
+  textDisabled: '#505050',
+
+  destructive: '#FF5A52',
+  success: '#32D74B',
+  warning: '#FFD400',
+  shadow: 'rgba(0, 0, 0, 0.3)',
+
+  // Not consumed by any screen yet (no social-link UI built), carried over
+  // for when one exists.
   spotify: '#1DB954',
   youtube: '#FF0000',
 } as const;
 
-export const Colors = {
-  dark: {
-    background: '#0B0B0C',
-    surface: '#151517',
-    surfaceHigh: '#1D1D20',
-    border: 'rgba(255,255,255,0.07)',
-    accent: '#F2A900',
-    accentSoft: 'rgba(242,169,0,0.14)',
-    onAccent: '#1A1A1C',
-    text: '#F5F5F4',
-    textDim: '#9C9C9F',
-    textFaint: '#6B6B6E',
-    danger: '#FF6B6B',
-    success: '#32D74B',
-    warning: '#FFD60A',
-    shadow: 'rgba(0, 0, 0, 0.3)',
-    ...BRAND,
-  },
-  light: {
-    background: '#FAFAF8',
-    surface: '#FFFFFF',
-    surfaceHigh: '#F2F2F0',
-    border: 'rgba(0,0,0,0.08)',
-    accent: '#D99400',
-    accentSoft: 'rgba(217,148,0,0.12)',
-    onAccent: '#1A1A1C',
-    text: '#1A1A1C',
-    textDim: '#6E6E72',
-    textFaint: '#9A9A9E',
-    danger: '#D64545',
-    success: '#34C759',
-    warning: '#FFCC00',
-    shadow: 'rgba(0, 0, 0, 0.06)',
-    ...BRAND,
-  },
-} as const;
-
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+export type ThemeColor = keyof typeof Colors;
 
 // Single source of truth for corner radii.
 export const RADII = {
-  card: 18,
-  control: 14,
+  card: 16,
+  control: 12,
   pill: 999,
 } as const;
 
@@ -85,6 +71,9 @@ export const Fonts = Platform.select({
   },
 });
 
+// `three` (16) and `four` (24) already sit inside the doc's row-padding
+// (14–18px) and section-gap (20–28px) ranges — screen horizontal padding
+// uses `four`, which also covers the doc's 20–24px recommendation.
 export const Spacing = {
   half: 2,
   one: 4,

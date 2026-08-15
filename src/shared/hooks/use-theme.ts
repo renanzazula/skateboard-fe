@@ -1,7 +1,10 @@
+import { Colors, type ThemeColor } from '@/shared/constants/theme';
+
 /**
- * Re-exported from shared/providers/ThemeProvider so every existing
- * `@/shared/hooks/use-theme` import keeps working unchanged now that theme
- * mode is persisted/shared context state instead of a standalone
- * OS-scheme-only hook.
+ * Resolved color tokens — same shape every screen already reads (`theme.textPrimary`, etc.).
+ * The app is dark-only (see .docs/README-skateboard-dark-ux-design.md), so this
+ * is just a passthrough; no light/dark mode resolution needed.
  */
-export { useTheme } from '@/shared/providers/ThemeProvider';
+export function useTheme(): Record<ThemeColor, string> {
+  return Colors;
+}

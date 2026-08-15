@@ -1,13 +1,15 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, TextInput } from 'react-native';
+import { ActivityIndicator, StyleSheet } from 'react-native';
 
 import { useAccountActions } from '@/features/account/hooks/useAccountActions';
 import { useProfile } from '@/features/account/hooks/useProfile';
 import { isBffError } from '@/shared/api/errors';
+import { PrimaryButton } from '@/shared/components/PrimaryButton';
+import { TextField } from '@/shared/components/TextField';
 import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
-import { MAX_FORM_WIDTH, RADII, Spacing } from '@/shared/constants/theme';
+import { MAX_FORM_WIDTH, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { showAlert } from '@/shared/utils/alert';
 
@@ -41,7 +43,7 @@ export default function UsernameScreen() {
   if (isLoading) {
     return (
       <ThemedView style={styles.loading}>
-        <ActivityIndicator color={theme.accent} />
+        <ActivityIndicator color={theme.primary} />
       </ThemedView>
     );
   }
@@ -49,27 +51,19 @@ export default function UsernameScreen() {
   return (
     <ThemedView style={styles.screen}>
       <ThemedView style={styles.container}>
-        <ThemedText type="small">Username</ThemedText>
-        <TextInput
+        <TextField
+          label="Username"
           value={username}
           onChangeText={setUsername}
           placeholder="Your username"
-          placeholderTextColor={theme.textFaint}
           autoCapitalize="none"
           autoCorrect={false}
-          style={[styles.input, { color: theme.text, borderColor: theme.border }]}
         />
-        <ThemedText type="small" themeColor="textDim">
+        <ThemedText type="small" themeColor="textSecondary">
           This is coordinated with your sign-in identity — you may need to log in again after changing it.
         </ThemedText>
 
-        <Pressable disabled={submitting} onPress={handleSave}>
-          <ThemedView type={submitting ? 'surface' : 'accent'} style={styles.submitButton}>
-            <ThemedText type="smallBold" themeColor={submitting ? 'textFaint' : 'onAccent'}>
-              {submitting ? 'Saving…' : 'Save'}
-            </ThemedText>
-          </ThemedView>
-        </Pressable>
+        <PrimaryButton title={submitting ? 'Saving…' : 'Save'} onPress={handleSave} loading={submitting} disabled={submitting} />
       </ThemedView>
     </ThemedView>
   );
@@ -79,23 +73,10 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   container: {
-    gap: Spacing.two,
+    gap: Spacing.three,
     padding: Spacing.three,
     alignSelf: 'center',
     width: '100%',
     maxWidth: MAX_FORM_WIDTH,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: RADII.control,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-    fontSize: 16,
-  },
-  submitButton: {
-    marginTop: Spacing.three,
-    paddingVertical: Spacing.three,
-    borderRadius: RADII.control,
-    alignItems: 'center',
   },
 });

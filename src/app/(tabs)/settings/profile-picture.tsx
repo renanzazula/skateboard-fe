@@ -1,12 +1,13 @@
 import { router } from 'expo-router';
-import { ActivityIndicator, Image, Pressable, StyleSheet } from 'react-native';
+import { ActivityIndicator, Image, StyleSheet } from 'react-native';
 
 import { useAccountActions } from '@/features/account/hooks/useAccountActions';
 import { useProfile } from '@/features/account/hooks/useProfile';
 import { isBffError } from '@/shared/api/errors';
+import { PrimaryButton } from '@/shared/components/PrimaryButton';
 import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
-import { MAX_FORM_WIDTH, RADII, Spacing } from '@/shared/constants/theme';
+import { MAX_FORM_WIDTH, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { showAlert } from '@/shared/utils/alert';
 
@@ -34,23 +35,22 @@ export default function ProfilePictureScreen() {
       <ThemedView style={styles.container}>
         <ThemedView type="surface" style={[styles.avatarWrapper, { borderColor: theme.border }]}>
           {isLoading ? (
-            <ActivityIndicator color={theme.accent} />
+            <ActivityIndicator color={theme.primary} />
           ) : profile?.profilePictureUrl ? (
             <Image source={{ uri: profile.profilePictureUrl }} style={styles.avatar} />
           ) : (
-            <ThemedText type="small" themeColor="textDim">
+            <ThemedText type="small" themeColor="textSecondary">
               No picture yet
             </ThemedText>
           )}
         </ThemedView>
 
-        <Pressable disabled={submitting} onPress={handlePick}>
-          <ThemedView type={submitting ? 'surface' : 'accent'} style={styles.submitButton}>
-            <ThemedText type="smallBold" themeColor={submitting ? 'textFaint' : 'onAccent'}>
-              {submitting ? 'Uploading…' : 'Choose a photo'}
-            </ThemedText>
-          </ThemedView>
-        </Pressable>
+        <PrimaryButton
+          title={submitting ? 'Uploading…' : 'Choose a photo'}
+          onPress={handlePick}
+          loading={submitting}
+          disabled={submitting}
+        />
       </ThemedView>
     </ThemedView>
   );
@@ -78,11 +78,5 @@ const styles = StyleSheet.create({
   avatar: {
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
-  },
-  submitButton: {
-    paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.four,
-    borderRadius: RADII.control,
-    alignItems: 'center',
   },
 });

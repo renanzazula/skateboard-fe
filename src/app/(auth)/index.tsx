@@ -1,17 +1,18 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import * as AuthSession from 'expo-auth-session';
 import { useState } from 'react';
-import { Pressable, StyleSheet, TextInput } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/core/auth';
+import { PrimaryButton } from '@/shared/components/PrimaryButton';
+import { TextField } from '@/shared/components/TextField';
 import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
-import { MAX_FORM_WIDTH, RADII, Spacing } from '@/shared/constants/theme';
-import { useTheme } from '@/shared/hooks/use-theme';
+import { MAX_FORM_WIDTH, Spacing } from '@/shared/constants/theme';
 
 export default function LoginScreen() {
   const { loginWithPassword } = useAuth();
-  const theme = useTheme();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [signingIn, setSigningIn] = useState(false);
@@ -38,47 +39,42 @@ export default function LoginScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ThemedText type="title" style={styles.title}>
-          Skateboard
-        </ThemedText>
-        <ThemedText type="default" themeColor="textDim" style={styles.subtitle}>
-          Sign in to continue
-        </ThemedText>
-
-        <TextInput
-          value={username}
-          onChangeText={setUsername}
-          placeholder="Username or email"
-          placeholderTextColor={theme.textFaint}
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="email-address"
-          style={[styles.input, { color: theme.text, borderColor: theme.border }]}
-        />
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Password"
-          placeholderTextColor={theme.textFaint}
-          autoCapitalize="none"
-          autoCorrect={false}
-          secureTextEntry
-          style={[styles.input, { color: theme.text, borderColor: theme.border }]}
-        />
-
-        <Pressable disabled={!canSubmit} onPress={handleLogin}>
-          <ThemedView type={canSubmit ? 'accent' : 'surface'} style={styles.button}>
-            <ThemedText type="smallBold" themeColor={canSubmit ? 'onAccent' : 'textFaint'}>
-              {signingIn ? 'Signing in…' : 'Log in'}
-            </ThemedText>
-          </ThemedView>
-        </Pressable>
-
-        {error && (
-          <ThemedText type="small" themeColor="danger" style={styles.error}>
-            {error}
+        <View style={styles.brand}>
+          <View style={styles.glow}>
+            <LinearGradient colors={['rgba(255,212,0,0.35)', 'rgba(255,212,0,0)']} style={styles.glowFill} />
+          </View>
+          <ThemedText type="title" style={styles.wordmark}>
+            Skateboard
           </ThemedText>
-        )}
+          <ThemedText type="default" themeColor="textSecondary" style={styles.subtitle}>
+            Sign in to continue
+          </ThemedText>
+        </View>
+
+        <View style={styles.form}>
+          <TextField
+            value={username}
+            onChangeText={setUsername}
+            placeholder="Username or email"
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="email-address"
+          />
+          <TextField value={password} onChangeText={setPassword} placeholder="Password" secureTextEntry />
+
+          <PrimaryButton
+            title={signingIn ? 'Signing in…' : 'Log in'}
+            onPress={handleLogin}
+            disabled={!canSubmit}
+            loading={signingIn}
+          />
+
+          {error && (
+            <ThemedText type="small" themeColor="destructive" style={styles.error}>
+              {error}
+            </ThemedText>
+          )}
+        </View>
       </SafeAreaView>
     </ThemedView>
   );
@@ -95,29 +91,33 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: '100%',
     maxWidth: MAX_FORM_WIDTH,
-    gap: Spacing.three,
     paddingHorizontal: Spacing.four,
   },
-  title: {
+  brand: {
+    alignItems: 'center',
+    marginBottom: Spacing.five,
+  },
+  glow: {
+    position: 'absolute',
+    top: -60,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    overflow: 'hidden',
+  },
+  glowFill: {
+    flex: 1,
+  },
+  wordmark: {
     textAlign: 'center',
   },
   subtitle: {
     textAlign: 'center',
-    marginBottom: Spacing.three,
+    marginTop: Spacing.one,
   },
-  input: {
+  form: {
     width: '100%',
-    borderWidth: 1,
-    borderRadius: RADII.control,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-    fontSize: 16,
-  },
-  button: {
-    paddingHorizontal: Spacing.five,
-    paddingVertical: Spacing.three,
-    borderRadius: RADII.control,
-    alignItems: 'center',
+    gap: Spacing.three,
   },
   error: {
     textAlign: 'center',

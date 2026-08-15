@@ -8,9 +8,10 @@ import { useAuth } from '@/core/auth';
 import { EpisodeCard } from '@/features/podcast/components/EpisodeCard';
 import { usePodcastFeed } from '@/features/podcast/hooks/usePodcastFeed';
 import { getEpisodeNumber } from '@/features/podcast/services/episodeMeta';
+import { EmptyState } from '@/shared/components/EmptyState';
 import { ErrorBanner } from '@/shared/components/ErrorBanner';
 import { isBffError } from '@/shared/api/errors';
-import { BottomTabInset, DisplayFontFamily, MAX_CONTENT_WIDTH, RADII } from '@/shared/constants/theme';
+import { BottomTabInset, DisplayFontFamily, MAX_CONTENT_WIDTH } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import type { Post } from '@/shared/types/posts';
@@ -54,14 +55,14 @@ export default function PodcastListScreen() {
     <View style={styles.screenHeader}>
       <View style={styles.screenHeaderTop}>
         <View style={styles.screenHeaderTitles}>
-          <Text style={[styles.screenTitle, { color: colors.text }]}>Podcast</Text>
-          <Text style={[styles.screenSubtitle, { color: colors.textDim }]}>
+          <Text style={[styles.screenTitle, { color: colors.textPrimary }]}>Podcast</Text>
+          <Text style={[styles.screenSubtitle, { color: colors.textSecondary }]}>
             {t('podcast.episodeCount').replace('{count}', String(total))}
           </Text>
         </View>
         {canImport ? (
           <Pressable onPress={() => router.push('/podcast/admin/import')} hitSlop={8}>
-            <Text style={[styles.importLink, { color: colors.accent }]}>Import</Text>
+            <Text style={[styles.importLink, { color: colors.primary }]}>Import</Text>
           </Pressable>
         ) : null}
       </View>
@@ -69,25 +70,20 @@ export default function PodcastListScreen() {
   );
 
   const ListEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <View style={[styles.emptyIcon, { backgroundColor: colors.accentSoft }]}>
-        <Mic size={40} color={colors.accent} />
-      </View>
-      <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('podcast.noPostsYet')}</Text>
-      {canCreate ? (
-        <Pressable style={[styles.emptyButton, { backgroundColor: colors.accent }]} onPress={handleCreatePress}>
-          <Text style={[styles.emptyButtonText, { color: colors.onAccent }]}>{t('podcast.writeFirstPost')}</Text>
-        </Pressable>
-      ) : null}
-    </View>
+    <EmptyState
+      icon={Mic}
+      title={t('podcast.noPostsYet')}
+      actionLabel={canCreate ? t('podcast.writeFirstPost') : undefined}
+      onAction={canCreate ? handleCreatePress : undefined}
+    />
   );
 
   const ListFooter = () => {
-    if (isLoading) return <ActivityIndicator style={styles.footer} color={colors.accent} />;
+    if (isLoading) return <ActivityIndicator style={styles.footer} color={colors.primary} />;
     if (total === 0) return null;
     return (
       <View>
-        <Text style={[styles.footerText, { color: colors.textDim }]}>
+        <Text style={[styles.footerText, { color: colors.textSecondary }]}>
           {hasMore
             ? t('podcast.showingPosts').replace('{current}', String(posts.length)).replace('{total}', String(total))
             : t('podcast.allPostsLoaded').replace('{total}', String(total))}
@@ -96,7 +92,7 @@ export default function PodcastListScreen() {
           <Pressable
             style={[styles.loadMoreButton, { borderColor: colors.border, backgroundColor: colors.surface }]}
             onPress={loadMore}>
-            <Text style={[styles.loadMoreText, { color: colors.text }]}>{t('podcast.loadMore')}</Text>
+            <Text style={[styles.loadMoreText, { color: colors.textPrimary }]}>{t('podcast.loadMore')}</Text>
           </Pressable>
         ) : null}
       </View>
@@ -127,8 +123,11 @@ export default function PodcastListScreen() {
       />
 
       {canCreate ? (
-        <Pressable style={[styles.fab, { backgroundColor: colors.accent, shadowColor: colors.accent }]} onPress={handleCreatePress}>
-          <Plus size={28} color={colors.onAccent} />
+        <Pressable
+          style={[styles.fab, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
+          onPress={handleCreatePress}
+          accessibilityLabel="Create new episode">
+          <Plus size={28} color={colors.onPrimary} />
         </Pressable>
       ) : null}
     </View>
@@ -172,36 +171,6 @@ const styles = StyleSheet.create({
   screenSubtitle: {
     fontSize: 13,
     marginTop: 4,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-    paddingHorizontal: 32,
-  },
-  emptyIcon: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontFamily: DisplayFontFamily,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  emptyButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: RADII.control,
-  },
-  emptyButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
   },
   footer: {
     paddingVertical: 20,
