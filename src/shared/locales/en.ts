@@ -65,6 +65,7 @@ export const en = {
     loadMore: 'Load more',
     syncNow: 'Sync now',
     syncing: 'Syncing…',
+    manageCategories: 'Manage categories',
     syncSuccess: '{created} new episodes imported from YouTube',
     syncFailed: 'Sync failed',
     noVideosInCategory: 'No videos available in this category yet.',

@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, Alert, StyleSheet } from 'react-native';
+import { ActivityIndicator, StyleSheet } from 'react-native';
 
 import { useAuth } from '@/core/auth';
 import { PodcastEpisodeDetail } from '@/features/podcast/components/PodcastEpisodeDetail';
@@ -9,6 +9,7 @@ import { getEpisodeNumber } from '@/features/podcast/services/episodeMeta';
 import { isBffError } from '@/shared/api/errors';
 import { ErrorBanner } from '@/shared/components/ErrorBanner';
 import { Spacing } from '@/shared/constants/theme';
+import { showAlert } from '@/shared/utils/alert';
 
 export default function PodcastDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -31,7 +32,9 @@ export default function PodcastDetailScreen() {
 
   const handleDelete = () => {
     if (!post || submitting) return;
-    Alert.alert('Delete post', `Delete "${post.title}"? This can't be undone.`, [
+    // showAlert, not Alert.alert — the latter is a silent no-op on web, which
+    // made this button appear dead in the browser build.
+    showAlert('Delete post', `Delete "${post.title}"? This can't be undone.`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
@@ -41,7 +44,7 @@ export default function PodcastDetailScreen() {
             await deletePost(post.id);
             router.back();
           } catch (deleteError) {
-            Alert.alert('Could not delete post', isBffError(deleteError) ? deleteError.message : 'Try again.');
+            showAlert('Could not delete post', isBffError(deleteError) ? deleteError.message : 'Try again.');
           }
         },
       },

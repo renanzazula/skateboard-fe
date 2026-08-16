@@ -8,6 +8,10 @@ import type { Post } from '@/shared/types/posts';
 
 export function getYoutubeId(post: Post): string | null {
   if (post.youtubeVideoId) return post.youtubeVideoId;
+  if (post.youtubeUrl) {
+    const id = extractYoutubeIdFromUrl(post.youtubeUrl);
+    if (id) return id;
+  }
   for (const block of post.blocks) {
     if (block.type === 'embed' && block.data.platform === 'youtube') return block.data.id;
     if (block.type === 'video' && block.data.url) {

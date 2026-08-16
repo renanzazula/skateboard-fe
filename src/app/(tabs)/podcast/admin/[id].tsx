@@ -1,4 +1,4 @@
-import { ActivityIndicator, Alert, StyleSheet } from 'react-native';
+import { ActivityIndicator, StyleSheet } from 'react-native';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 
 import { useAuth } from '@/core/auth';
@@ -8,6 +8,7 @@ import { usePodcastPost } from '@/features/podcast/hooks/usePodcastPost';
 import { isBffError } from '@/shared/api/errors';
 import { ErrorBanner } from '@/shared/components/ErrorBanner';
 import { Spacing } from '@/shared/constants/theme';
+import { showAlert } from '@/shared/utils/alert';
 
 // There is no "get post by id" endpoint on the BFF (only by slug), so this
 // screen fetches the full post — including blocks/socialMediaLinks, needed
@@ -28,7 +29,7 @@ export default function EditPodcastPostScreen() {
       const updated = await updatePost(id, values);
       router.replace(`/podcast/${updated.slug ?? slug}`);
     } catch (submitError) {
-      Alert.alert('Could not save changes', isBffError(submitError) ? submitError.message : 'Try again.');
+      showAlert('Could not save changes', isBffError(submitError) ? submitError.message : 'Try again.');
     }
   };
 
