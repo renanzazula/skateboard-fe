@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/core/auth';
 import { useProfile } from '@/features/account/hooks/useProfile';
+import { BrandedLogo } from '@/features/branding/components/BrandedLogo';
 import { EpisodeCard } from '@/features/podcast/components/EpisodeCard';
 import { useCategories } from '@/features/podcast/hooks/useCategories';
 import { usePodcastFeed } from '@/features/podcast/hooks/usePodcastFeed';
@@ -31,6 +32,7 @@ export default function HomeScreen() {
           contentContainerStyle={[styles.content, { paddingBottom: BottomTabInset + Spacing.four }]}
           showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
+            <BrandedLogo style={styles.logo} />
             <ThemedText type="small" themeColor="textSecondary">
               Welcome back
             </ThemedText>
@@ -94,6 +96,11 @@ const styles = StyleSheet.create({
   },
   header: {
     gap: Spacing.half,
+  },
+  logo: {
+    width: 40,
+    height: 40,
+    marginBottom: Spacing.two,
   },
   wordmark: {
     fontSize: 34,

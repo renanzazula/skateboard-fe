@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/core/auth';
 import { useAppConfig } from '@/core/config';
+import { BrandedLogo } from '@/features/branding/components/BrandedLogo';
 import { PrimaryButton } from '@/shared/components/PrimaryButton';
 import { TextField } from '@/shared/components/TextField';
 import { ThemedText } from '@/shared/components/themed-text';
@@ -45,18 +46,24 @@ export default function LoginScreen() {
           background is configured, so there's no layout flash while
           useAppConfig() is still loading — the image is purely additive. */}
       {loginBackgroundUrl ? (
-        <Image
-          source={{ uri: `${loginBackgroundUrl}?v=${loginBackgroundVersion}` }}
-          style={StyleSheet.absoluteFill}
-          contentFit="cover"
-          cachePolicy="memory-disk"
-        />
+        <>
+          <Image
+            source={{ uri: `${loginBackgroundUrl}?v=${loginBackgroundVersion}` }}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+          />
+          {/* Normalizes contrast against admin-uploaded backgrounds of
+              unpredictable brightness — see .docs/README-branding-login-background.md #6. */}
+          <View style={[StyleSheet.absoluteFill, styles.overlay]} />
+        </>
       ) : null}
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.brand}>
           <View style={styles.glow}>
             <LinearGradient colors={['rgba(255,212,0,0.35)', 'rgba(255,212,0,0)']} style={styles.glowFill} />
           </View>
+          <BrandedLogo style={styles.logo} />
           <ThemedText type="default" themeColor="textSecondary" style={styles.subtitle}>
             Sign in to continue
           </ThemedText>
@@ -95,6 +102,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  overlay: {
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+  },
   safeArea: {
     flex: 1,
     justifyContent: 'center',
@@ -119,8 +129,9 @@ const styles = StyleSheet.create({
   glowFill: {
     flex: 1,
   },
-  wordmark: {
-    textAlign: 'center',
+  logo: {
+    width: 56,
+    height: 56,
   },
   subtitle: {
     textAlign: 'center',
