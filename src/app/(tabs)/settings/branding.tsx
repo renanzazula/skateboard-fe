@@ -7,6 +7,7 @@ import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } fro
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/core/auth';
+import { refreshAppConfig } from '@/core/config';
 import type { BrandingAsset, BrandingConfig } from '@/features/branding/hooks/useBrandingAdmin';
 import { useBrandingAdmin } from '@/features/branding/hooks/useBrandingAdmin';
 import { isBffError } from '@/shared/api/errors';
@@ -73,6 +74,7 @@ export default function BrandingScreen() {
       if (!asset) return;
       const updated = await admin.uploadLoginBackground(asset);
       setConfig(updated);
+      refreshAppConfig();
     } catch (uploadError) {
       showAlert('Could not update login background', isBffError(uploadError) ? uploadError.message : 'Try again.');
     }
@@ -82,6 +84,7 @@ export default function BrandingScreen() {
     try {
       const updated = await admin.removeLoginBackground();
       setConfig(updated);
+      refreshAppConfig();
     } catch (removeError) {
       showAlert('Could not remove login background', isBffError(removeError) ? removeError.message : 'Try again.');
     }
@@ -93,6 +96,7 @@ export default function BrandingScreen() {
       if (!asset) return;
       const updated = await admin.uploadAppLogo(asset);
       setConfig(updated);
+      refreshAppConfig();
     } catch (uploadError) {
       showAlert('Could not update app logo', isBffError(uploadError) ? uploadError.message : 'Try again.');
     }
@@ -102,6 +106,7 @@ export default function BrandingScreen() {
     try {
       const updated = await admin.removeAppLogo();
       setConfig(updated);
+      refreshAppConfig();
     } catch (removeError) {
       showAlert('Could not remove app logo', isBffError(removeError) ? removeError.message : 'Try again.');
     }

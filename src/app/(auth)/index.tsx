@@ -57,9 +57,6 @@ export default function LoginScreen() {
           <View style={styles.glow}>
             <LinearGradient colors={['rgba(255,212,0,0.35)', 'rgba(255,212,0,0)']} style={styles.glowFill} />
           </View>
-          <ThemedText type="title" style={styles.wordmark}>
-            Skateboard
-          </ThemedText>
           <ThemedText type="default" themeColor="textSecondary" style={styles.subtitle}>
             Sign in to continue
           </ThemedText>
