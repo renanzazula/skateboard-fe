@@ -1,4 +1,3 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import * as AuthSession from 'expo-auth-session';
 import { Image } from 'expo-image';
 import { useState } from 'react';
@@ -60,9 +59,6 @@ export default function LoginScreen() {
       ) : null}
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.brand}>
-          <View style={styles.glow}>
-            <LinearGradient colors={['rgba(255,212,0,0.35)', 'rgba(255,212,0,0)']} style={styles.glowFill} />
-          </View>
           <BrandedLogo style={styles.logo} />
           <ThemedText type="default" themeColor="textSecondary" style={styles.subtitle}>
             Sign in to continue
@@ -118,20 +114,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.five,
   },
-  glow: {
-    position: 'absolute',
-    top: -60,
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    overflow: 'hidden',
-  },
-  glowFill: {
-    flex: 1,
-  },
   logo: {
-    width: 56,
-    height: 56,
+    width: 400,
+    height: 400,
   },
   subtitle: {
     textAlign: 'center',
