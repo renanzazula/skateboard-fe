@@ -3,6 +3,7 @@ import { DarkTheme, Stack, ThemeProvider as NavigationThemeProvider } from 'expo
 import * as SplashScreen from 'expo-splash-screen';
 
 import { AuthProvider, useAuth } from '@/core/auth';
+import { AppConfigProvider } from '@/core/config';
 import { AnimatedSplashOverlay } from '@/shared/components/animated-icon';
 
 SplashScreen.preventAutoHideAsync();
@@ -11,9 +12,11 @@ export default function RootLayout() {
   const [fontsLoaded] = useFonts({ Fraunces_700Bold });
 
   return (
-    <AuthProvider>
-      <RootNavigator fontsLoaded={fontsLoaded} />
-    </AuthProvider>
+    <AppConfigProvider>
+      <AuthProvider>
+        <RootNavigator fontsLoaded={fontsLoaded} />
+      </AuthProvider>
+    </AppConfigProvider>
   );
 }
 

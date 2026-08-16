@@ -9,6 +9,7 @@ export default function SettingsLayout() {
       <Stack.Screen name="username" options={{ title: 'Username', presentation: 'modal' }} />
       <Stack.Screen name="profile-picture" options={{ title: 'Profile picture', presentation: 'modal' }} />
       <Stack.Screen name="change-password" options={{ title: 'Change password', presentation: 'modal' }} />
+      <Stack.Screen name="branding" options={{ title: 'Branding', presentation: 'modal' }} />
     </Stack>
   );
 }

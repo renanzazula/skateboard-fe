@@ -1,10 +1,12 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import * as AuthSession from 'expo-auth-session';
+import { Image } from 'expo-image';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/core/auth';
+import { useAppConfig } from '@/core/config';
 import { PrimaryButton } from '@/shared/components/PrimaryButton';
 import { TextField } from '@/shared/components/TextField';
 import { ThemedText } from '@/shared/components/themed-text';
@@ -13,6 +15,7 @@ import { MAX_FORM_WIDTH, Spacing } from '@/shared/constants/theme';
 
 export default function LoginScreen() {
   const { loginWithPassword } = useAuth();
+  const { loginBackgroundUrl, loginBackgroundVersion } = useAppConfig();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [signingIn, setSigningIn] = useState(false);
@@ -38,6 +41,17 @@ export default function LoginScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      {/* Gradient stays as the base layer regardless of whether a tenant
+          background is configured, so there's no layout flash while
+          useAppConfig() is still loading — the image is purely additive. */}
+      {loginBackgroundUrl ? (
+        <Image
+          source={{ uri: `${loginBackgroundUrl}?v=${loginBackgroundVersion}` }}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+        />
+      ) : null}
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.brand}>
           <View style={styles.glow}>
