@@ -43,6 +43,8 @@ export default function BrandingScreen() {
   const [newAssetPromptVisible, setNewAssetPromptVisible] = useState(false);
   const [newAssetName, setNewAssetName] = useState('');
   const [pendingAsset, setPendingAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [loginTitleInput, setLoginTitleInput] = useState('');
+  const [loginMessageInput, setLoginMessageInput] = useState('');
 
   const canManageBranding = hasAuthority('FUNC_TAB_SETTINGS_BRANDING');
 
@@ -51,6 +53,8 @@ export default function BrandingScreen() {
     try {
       const data = await admin.getBrandingConfig();
       setConfig(data);
+      setLoginTitleInput(data.loginTitle ?? '');
+      setLoginMessageInput(data.loginMessage ?? '');
     } catch (loadError) {
       showAlert('Could not load branding', isBffError(loadError) ? loadError.message : 'Try again.');
     } finally {
@@ -67,6 +71,16 @@ export default function BrandingScreen() {
   if (!canManageBranding) {
     return <Redirect href="/settings" />;
   }
+
+  const handleSaveLoginText = async () => {
+    try {
+      const updated = await admin.updateLoginText(loginTitleInput.trim(), loginMessageInput.trim());
+      setConfig(updated);
+      refreshAppConfig();
+    } catch (saveError) {
+      showAlert('Could not save login text', isBffError(saveError) ? saveError.message : 'Try again.');
+    }
+  };
 
   const handleUploadLoginBackground = async () => {
     try {
@@ -181,6 +195,25 @@ export default function BrandingScreen() {
     <ThemedView style={styles.screen}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <Section title="Login text">
+            <TextField
+              value={loginTitleInput}
+              onChangeText={setLoginTitleInput}
+              placeholder="Title (shown above the logo)"
+            />
+            <TextField
+              value={loginMessageInput}
+              onChangeText={setLoginMessageInput}
+              placeholder="Message (defaults to “Sign in to continue”)"
+            />
+            <PrimaryButton
+              title="Save"
+              onPress={handleSaveLoginText}
+              loading={admin.submitting}
+              disabled={admin.submitting}
+            />
+          </Section>
+
           <Section title="Login background">
             <Preview uri={config?.loginBackgroundUrl} />
             <View style={styles.actionRow}>

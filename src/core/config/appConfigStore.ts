@@ -8,6 +8,8 @@ interface AppConfigState {
   loginBackgroundVersion: number;
   appLogoUrl: string | null;
   appLogoVersion: number;
+  loginTitle: string | null;
+  loginMessage: string | null;
 }
 
 let state: AppConfigState = {
@@ -16,6 +18,8 @@ let state: AppConfigState = {
   loginBackgroundVersion: 0,
   appLogoUrl: null,
   appLogoVersion: 0,
+  loginTitle: null,
+  loginMessage: null,
 };
 const listeners = new Set<() => void>();
 
@@ -54,6 +58,8 @@ export async function bootstrap(): Promise<void> {
       loginBackgroundVersion: data.loginBackgroundVersion ?? 0,
       appLogoUrl: data.appLogoUrl ?? null,
       appLogoVersion: data.appLogoVersion ?? 0,
+      loginTitle: data.loginTitle ?? null,
+      loginMessage: data.loginMessage ?? null,
     });
   } catch (err) {
     console.error('[appConfigStore] GET /api/config threw', err);

@@ -64,6 +64,19 @@ export function useBrandingAdmin() {
     }
   }, []);
 
+  const updateLoginText = useCallback(async (title: string, message: string): Promise<BrandingConfig> => {
+    setSubmitting(true);
+    try {
+      const { data, error, response } = await bffClient.PUT('/api/config/branding/login-text', {
+        body: { title: title || null, message: message || null },
+      });
+      if (error) throw toBffError(error, response.status);
+      return data;
+    } finally {
+      setSubmitting(false);
+    }
+  }, []);
+
   const uploadAppLogo = useCallback(async (asset: ImagePicker.ImagePickerAsset): Promise<BrandingConfig> => {
     setSubmitting(true);
     try {
@@ -159,6 +172,7 @@ export function useBrandingAdmin() {
     getBrandingConfig,
     uploadLoginBackground,
     removeLoginBackground,
+    updateLoginText,
     uploadAppLogo,
     removeAppLogo,
     listBrandingAssets,

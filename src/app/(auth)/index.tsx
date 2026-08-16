@@ -15,7 +15,7 @@ import { MAX_FORM_WIDTH, Spacing } from '@/shared/constants/theme';
 
 export default function LoginScreen() {
   const { loginWithPassword } = useAuth();
-  const { loginBackgroundUrl } = useAppConfig();
+  const { loginBackgroundUrl, loginTitle, loginMessage } = useAppConfig();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [signingIn, setSigningIn] = useState(false);
@@ -59,9 +59,14 @@ export default function LoginScreen() {
       ) : null}
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.brand}>
+          {loginTitle ? (
+            <ThemedText type="title" style={styles.title}>
+              {loginTitle}
+            </ThemedText>
+          ) : null}
           <BrandedLogo style={styles.logo} />
           <ThemedText type="default" themeColor="textSecondary" style={styles.subtitle}>
-            Sign in to continue
+            {loginMessage || 'Sign in to continue'}
           </ThemedText>
         </View>
 
@@ -113,6 +118,10 @@ const styles = StyleSheet.create({
   brand: {
     alignItems: 'center',
     marginBottom: Spacing.five,
+  },
+  title: {
+    textAlign: 'center',
+    marginBottom: Spacing.two,
   },
   logo: {
     width: 400,

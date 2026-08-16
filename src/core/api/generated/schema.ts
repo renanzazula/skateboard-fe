@@ -281,6 +281,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/config/branding/login-text": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update the configurable login screen title and message (admin only) */
+        put: operations["updateLoginText"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/config/branding/login-background": {
         parameters: {
             query?: never;
@@ -366,6 +383,8 @@ export interface components {
             appLogoVersion?: number;
             /** Format: date-time */
             appLogoUpdatedAt?: string | null;
+            loginTitle?: string | null;
+            loginMessage?: string | null;
         };
         BrandingConfigResponse: {
             loginBackgroundUrl?: string | null;
@@ -376,7 +395,13 @@ export interface components {
             appLogoVersion?: number;
             /** Format: date-time */
             appLogoUpdatedAt?: string | null;
+            loginTitle?: string | null;
+            loginMessage?: string | null;
             assets?: components["schemas"]["BrandingAssetResponse"][];
+        };
+        UpdateLoginTextRequest: {
+            title?: string | null;
+            message?: string | null;
         };
         BrandingAssetResponse: {
             /** Format: uuid */
@@ -1347,6 +1372,48 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Branding configuration */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BrandingConfigResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_TAB_SETTINGS_BRANDING required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateLoginText: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateLoginTextRequest"];
+            };
+        };
+        responses: {
+            /** @description Login text updated */
             200: {
                 headers: {
                     [name: string]: unknown;
