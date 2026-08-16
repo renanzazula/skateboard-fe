@@ -44,9 +44,11 @@ export async function bootstrap(): Promise<void> {
   try {
     const { data, error } = await bffClient.GET('/api/config');
     if (error || !data) {
+      console.error('[appConfigStore] GET /api/config failed', error);
       setState({ ...state, status: 'error' });
       return;
     }
+    console.log('[appConfigStore] GET /api/config ok', data);
     setState({
       status: 'ready',
       loginBackgroundUrl: data.loginBackgroundUrl ?? null,
@@ -54,7 +56,8 @@ export async function bootstrap(): Promise<void> {
       appLogoUrl: data.appLogoUrl ?? null,
       appLogoVersion: data.appLogoVersion ?? 0,
     });
-  } catch {
+  } catch (err) {
+    console.error('[appConfigStore] GET /api/config threw', err);
     setState({ ...state, status: 'error' });
   }
 }
