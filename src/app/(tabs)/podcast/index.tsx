@@ -47,17 +47,20 @@ export default function PodcastListScreen() {
   const { triggerSync, submitting: syncing } = usePodcastAdmin();
 
   // This screen stays mounted while the user is on a detail/admin screen, so
-  // deletes/edits/creates made there would otherwise keep showing stale rows
-  // here. Refetch page 0 whenever the screen regains focus; usePodcastFeed's
-  // in-flight guard collapses this with the category-change load on mount.
+  // deletes/edits/creates (and category renames/reorders) made there would
+  // otherwise keep showing stale data here. Refetch on every regained focus;
+  // usePodcastFeed's in-flight guard collapses this with the category-change
+  // load on mount.
   useFocusEffect(
     useCallback(() => {
+      refreshCategories();
       refreshPosts();
-    }, [refreshPosts])
+    }, [refreshCategories, refreshPosts])
   );
 
   const canCreate = hasAuthority('FUNC_PODCAST_CREATE_POST');
   const canImport = hasAuthority('FUNC_PODCAST_IMPORT_JSON');
+  const canManageCategories = hasAuthority('FUNC_PODCAST_MANAGE_CATEGORIES');
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -105,13 +108,22 @@ export default function PodcastListScreen() {
             {t('podcast.episodeCount').replace('{count}', String(total))}
           </Text>
         </View>
-        {canImport ? (
-          <Pressable onPress={handleSync} disabled={syncing} hitSlop={8}>
-            <Text style={[styles.importLink, { color: colors.primary }]}>
-              {syncing ? t('podcast.syncing') : t('podcast.syncNow')}
-            </Text>
-          </Pressable>
-        ) : null}
+        <View style={styles.headerActions}>
+          {canImport ? (
+            <Pressable onPress={handleSync} disabled={syncing} hitSlop={8}>
+              <Text style={[styles.importLink, { color: colors.primary }]}>
+                {syncing ? t('podcast.syncing') : t('podcast.syncNow')}
+              </Text>
+            </Pressable>
+          ) : null}
+          {canManageCategories ? (
+            <Pressable onPress={() => router.push('/podcast/admin/categories')} hitSlop={8}>
+              <Text style={[styles.importLink, { color: colors.primary }]}>
+                {t('podcast.manageCategories')}
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
 
       <CategorySelector
@@ -210,6 +222,10 @@ const styles = StyleSheet.create({
   },
   screenHeaderTitles: {
     flex: 1,
+  },
+  headerActions: {
+    alignItems: 'flex-end',
+    gap: 6,
   },
   importLink: {
     fontSize: 14,
