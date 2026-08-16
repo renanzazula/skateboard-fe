@@ -1,33 +1,32 @@
 import { Stack, useRouter } from 'expo-router';
-import { ArrowLeft, Calendar, Clock, Mic, Pencil, Play, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, Calendar, Clock, Mic, Pencil, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
 import { Image, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BlockRenderer } from '@/features/podcast/components/blocks/BlockRenderer';
+import { EpisodeVideoPlayer } from '@/features/podcast/components/EpisodeVideoPlayer';
 import { InstagramIcon } from '@/features/podcast/components/icons/InstagramIcon';
 import {
+  extractYoutubeIdFromUrl,
   getDescription,
   getDuration,
   getInstagramUrl,
   getSpotifyEmbedUrl,
   getYoutubeId,
-  youtubeThumbnail,
 } from '@/features/podcast/services/episodeMeta';
 import { Badge } from '@/shared/components/Badge';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
-import { MAX_CONTENT_WIDTH, RADII } from '@/shared/constants/theme';
-import type { Post } from '@/shared/types/posts';
+import { MAX_CONTENT_WIDTH } from '@/shared/constants/theme';
+import type { Post, VideoBlock } from '@/shared/types/posts';
 
 // Ported from rork-standard-app/expo's modules/feed/screens (via
 // migrate/podcast/components/PodcastEpisodeDetail.tsx).
 
 // Loaded lazily so the web bundle never executes native-only modules.
-let YoutubePlayer: any = null;
 let RNWebView: any = null;
 if (Platform.OS !== 'web') {
-  YoutubePlayer = require('react-native-youtube-iframe').default;
   RNWebView = require('react-native-webview').WebView;
 }
 
@@ -35,7 +34,6 @@ if (Platform.OS !== 'web') {
 const OVERLAY = {
   scrimButton: 'rgba(0,0,0,0.45)',
   white: '#FFFFFF',
-  youtube: '#FF0000',
 };
 
 const HERO_HEIGHT = 280;
@@ -78,14 +76,17 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
   const duration = getDuration(post);
   const description = getDescription(post);
 
-  const [playing, setPlaying] = useState(false);
-  const [thumbFailed, setThumbFailed] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
-  const heroUri =
-    (youtubeId && !post.coverUrl
-      ? youtubeThumbnail(youtubeId, thumbFailed ? 'hqdefault' : 'maxresdefault')
-      : post.coverUrl) || (youtubeId ? youtubeThumbnail(youtubeId, 'hqdefault') : null);
+  // Episodes without a YouTube id can still carry a direct video file as a
+  // `video` block — surface the first one in the hero player.
+  const heroFileBlock = youtubeId
+    ? null
+    : (post.blocks.find((b): b is VideoBlock => b.type === 'video' && !!b.data.url) ?? null);
+  const heroVideoUrl = heroFileBlock?.data.url ?? null;
+  const hasVideo = !!(youtubeId || heroVideoUrl);
+
+  const heroUri = post.coverUrl || null;
 
   const publishDate = new Date(post.publishAt ?? post.createdAt).toLocaleDateString(undefined, {
     year: 'numeric',
@@ -97,62 +98,36 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
   const shownDescription =
     collapsible && !expanded ? `${description.slice(0, DESCRIPTION_COLLAPSE_LENGTH).trimEnd()}…` : description;
 
-  // Blocks already surfaced by the redesigned layout
-  const extraBlocks = post.blocks.filter(
-    (b) => b.type !== 'text' && b.type !== 'spotify' && !(b.type === 'embed' && b.data.platform === 'youtube')
-  );
+  // Blocks already surfaced by the redesigned layout (including whichever
+  // video the hero player took over).
+  const extraBlocks = post.blocks.filter((b) => {
+    if (b.type === 'text' || b.type === 'spotify') return false;
+    if (b.type === 'embed' && b.data.platform === 'youtube') return false;
+    if (b.type === 'video') {
+      if (b === heroFileBlock) return false;
+      if (youtubeId && b.data.url && extractYoutubeIdFromUrl(b.data.url) === youtubeId) return false;
+    }
+    return true;
+  });
 
   const renderHero = () => {
-    if (playing && youtubeId) {
-      if (Platform.OS === 'web') {
-        return (
-          <View style={styles.heroPlayer}>
-            {/* @ts-ignore web-only element */}
-            <iframe
-              src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1`}
-              style={{ width: '100%', height: '100%', border: 'none' }}
-              allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-              allowFullScreen
-            />
-          </View>
-        );
-      }
+    if (hasVideo) {
       return (
-        <View style={styles.heroPlayer}>
-          <YoutubePlayer height={HERO_HEIGHT} play videoId={youtubeId} />
-        </View>
+        <EpisodeVideoPlayer
+          youtubeId={youtubeId}
+          videoUrl={heroVideoUrl}
+          poster={heroUri}
+          height={HERO_HEIGHT}
+        />
       );
     }
 
-    return (
-      <>
-        {heroUri ? (
-          <Image
-            source={{ uri: heroUri }}
-            style={StyleSheet.absoluteFill}
-            resizeMode="cover"
-            onError={() => {
-              if (!thumbFailed) setThumbFailed(true);
-            }}
-          />
-        ) : (
-          <View style={[StyleSheet.absoluteFill, styles.heroPlaceholder, { backgroundColor: colors.surfaceElevated }]}>
-            <Mic size={48} color={colors.textMuted} />
-          </View>
-        )}
-        {youtubeId ? (
-          <Pressable style={styles.playOverlay} onPress={() => setPlaying(true)}>
-            <View style={styles.playCircle}>
-              <Play size={26} color={OVERLAY.white} fill={OVERLAY.white} />
-            </View>
-          </Pressable>
-        ) : null}
-        {youtubeId ? (
-          <View style={styles.watchTag}>
-            <Text style={styles.watchTagText}>{t('podcast.watch')}</Text>
-          </View>
-        ) : null}
-      </>
+    return heroUri ? (
+      <Image source={{ uri: heroUri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+    ) : (
+      <View style={[StyleSheet.absoluteFill, styles.heroPlaceholder, { backgroundColor: colors.surfaceElevated }]}>
+        <Mic size={48} color={colors.textMuted} />
+      </View>
     );
   };
 
@@ -270,40 +245,9 @@ const styles = StyleSheet.create({
     width: '100%',
     overflow: 'hidden',
   },
-  heroPlayer: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
   heroPlaceholder: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  playOverlay: {
-    ...StyleSheet.absoluteFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  playCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: OVERLAY.youtube,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  watchTag: {
-    position: 'absolute',
-    right: 14,
-    bottom: 14,
-    backgroundColor: OVERLAY.scrimButton,
-    borderRadius: RADII.pill,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-  },
-  watchTagText: {
-    color: OVERLAY.white,
-    fontSize: 12,
-    fontWeight: '600',
   },
   floatingBar: {
     position: 'absolute',
