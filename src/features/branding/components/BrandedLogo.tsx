@@ -2,6 +2,7 @@ import { Image, type ImageStyle } from 'expo-image';
 import type { StyleProp } from 'react-native';
 
 import { useAppConfig } from '@/core/config';
+import { cacheBustUrl } from '@/shared/utils/cacheBustUrl';
 
 type Props = {
   style?: StyleProp<ImageStyle>;
@@ -23,14 +24,10 @@ export function BrandedLogo({ style }: Props) {
 
   return (
     <Image
-      source={{ uri: `${appLogoUrl}?v=${appLogoVersion}` }}
+      source={{ uri: cacheBustUrl(appLogoUrl, appLogoVersion) }}
       style={style}
       contentFit="contain"
       cachePolicy="memory-disk"
-      // expo-image defaults the underlying web <img> to loading="lazy",
-      // which never resolves for this full-bleed/header image sitting under
-      // Expo Router's screen-transition wrapper — see (auth)/index.tsx.
-      loading="eager"
     />
   );
 }

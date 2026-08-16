@@ -48,7 +48,6 @@ export async function bootstrap(): Promise<void> {
       setState({ ...state, status: 'error' });
       return;
     }
-    console.log('[appConfigStore] GET /api/config ok', data);
     setState({
       status: 'ready',
       loginBackgroundUrl: data.loginBackgroundUrl ?? null,

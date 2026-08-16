@@ -18,6 +18,7 @@ import { ThemedView } from '@/shared/components/themed-view';
 import { RADII, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { showAlert } from '@/shared/utils/alert';
+import { cacheBustUrl } from '@/shared/utils/cacheBustUrl';
 
 const PREVIEW_HEIGHT = 140;
 
@@ -223,7 +224,11 @@ export default function BrandingScreen() {
             {config?.assets?.length ? (
               config.assets.map((asset) => (
                 <View key={asset.id ?? asset.name} style={[styles.assetRow, { borderColor: theme.border }]}>
-                  <Image source={{ uri: `${asset.url}?v=${asset.version}` }} style={styles.assetThumb} contentFit="cover" />
+                  <Image
+                    source={{ uri: cacheBustUrl(asset.url ?? '', asset.version ?? 0) }}
+                    style={styles.assetThumb}
+                    contentFit="cover"
+                  />
                   <View style={styles.assetInfo}>
                     <ThemedText type="smallBold" numberOfLines={1}>
                       {asset.name}
@@ -306,7 +311,7 @@ function Preview({ uri, version, contentFit = 'cover' }: { uri?: string | null; 
   return (
     <View style={[styles.previewWrapper, { borderColor: theme.border, backgroundColor: theme.surface }]}>
       {uri ? (
-        <Image source={{ uri: `${uri}?v=${version ?? 0}` }} style={styles.preview} contentFit={contentFit} />
+        <Image source={{ uri: cacheBustUrl(uri, version ?? 0) }} style={styles.preview} contentFit={contentFit} />
       ) : (
         <ThemedText type="small" themeColor="textSecondary">
           Not set — using the app default
