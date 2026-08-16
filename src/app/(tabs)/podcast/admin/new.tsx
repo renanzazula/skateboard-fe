@@ -1,10 +1,10 @@
 import { Redirect, router } from 'expo-router';
-import { Alert } from 'react-native';
 
 import { useAuth } from '@/core/auth';
 import { PostForm, type PostFormValues } from '@/features/podcast/components/PostForm';
 import { usePodcastAdmin } from '@/features/podcast/hooks/usePodcastAdmin';
 import { isBffError } from '@/shared/api/errors';
+import { showAlert } from '@/shared/utils/alert';
 
 export default function NewPodcastPostScreen() {
   const { hasAuthority } = useAuth();
@@ -19,7 +19,7 @@ export default function NewPodcastPostScreen() {
       const created = await createPost({ ...values });
       router.replace(`/podcast/${created.slug}`);
     } catch (submitError) {
-      Alert.alert('Could not create post', isBffError(submitError) ? submitError.message : 'Try again.');
+      showAlert('Could not create post', isBffError(submitError) ? submitError.message : 'Try again.');
     }
   };
 

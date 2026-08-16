@@ -22,7 +22,7 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/core/auth';
@@ -171,11 +171,11 @@ function useLocalSettings() {
 
   const clearCache = useCallback(async () => {
     if (!FileSystem.cacheDirectory) {
-      Alert.alert('Clear cache', 'No cache directory is available on this platform.');
+      showAlert('Clear cache', 'No cache directory is available on this platform.');
       return;
     }
 
-    Alert.alert('Clear cache', 'Clear local cached files? Backend user data will not be changed.', [
+    showAlert('Clear cache', 'Clear local cached files? Backend user data will not be changed.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Clear',

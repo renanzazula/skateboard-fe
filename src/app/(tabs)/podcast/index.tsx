@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Mic, Plus } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -45,6 +45,16 @@ export default function PodcastListScreen() {
     usePodcastFeed(selectedCategory?.slug);
 
   const { triggerSync, submitting: syncing } = usePodcastAdmin();
+
+  // This screen stays mounted while the user is on a detail/admin screen, so
+  // deletes/edits/creates made there would otherwise keep showing stale rows
+  // here. Refetch page 0 whenever the screen regains focus; usePodcastFeed's
+  // in-flight guard collapses this with the category-change load on mount.
+  useFocusEffect(
+    useCallback(() => {
+      refreshPosts();
+    }, [refreshPosts])
+  );
 
   const canCreate = hasAuthority('FUNC_PODCAST_CREATE_POST');
   const canImport = hasAuthority('FUNC_PODCAST_IMPORT_JSON');
