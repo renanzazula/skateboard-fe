@@ -13,11 +13,10 @@ import { TextField } from '@/shared/components/TextField';
 import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
 import { MAX_FORM_WIDTH, Spacing } from '@/shared/constants/theme';
-import { cacheBustUrl } from '@/shared/utils/cacheBustUrl';
 
 export default function LoginScreen() {
   const { loginWithPassword } = useAuth();
-  const { loginBackgroundUrl, loginBackgroundVersion } = useAppConfig();
+  const { loginBackgroundUrl } = useAppConfig();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [signingIn, setSigningIn] = useState(false);
@@ -49,7 +48,7 @@ export default function LoginScreen() {
       {loginBackgroundUrl ? (
         <>
           <Image
-            source={{ uri: cacheBustUrl(loginBackgroundUrl, loginBackgroundVersion) }}
+            source={{ uri: loginBackgroundUrl }}
             style={StyleSheet.absoluteFill}
             contentFit="cover"
             cachePolicy="memory-disk"
