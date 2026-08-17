@@ -1,10 +1,11 @@
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { Film } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { VideoThumbnailCard } from '@/features/home/components/VideoThumbnailCard';
+import { HomeVideoGalleryItem } from '@/features/home/components/HomeVideoGalleryItem';
 import { registerHomeReload } from '@/features/home/homeReloadRegistry';
 import { useHomeVideos } from '@/features/home/hooks/useHomeVideos';
 import { isBffError } from '@/shared/api/errors';
@@ -25,7 +26,7 @@ export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const listRef = useRef<FlatList<Video>>(null);
+  const listRef = useRef<FlashListRef<Video>>(null);
   const { videos, isLoading, error, refresh, reloadHome } = useHomeVideos();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -62,19 +63,19 @@ export default function HomeScreen() {
           <ActivityIndicator color={theme.primary} />
         </View>
       ) : (
-        <FlatList
+        <FlashList
           ref={listRef}
           data={videos}
           keyExtractor={(item) => item.id}
+          masonry
           numColumns={2}
-          renderItem={({ item, index }) => (
-            <VideoThumbnailCard video={item} index={index} onPress={handleVideoPress} />
-          )}
-          columnWrapperStyle={styles.row}
-          contentContainerStyle={[
-            styles.listContent,
-            { paddingTop: insets.top + Spacing.three, paddingBottom: BottomTabInset + Spacing.four },
-          ]}
+          renderItem={({ item }) => <HomeVideoGalleryItem video={item} onPress={handleVideoPress} />}
+          style={styles.list}
+          contentContainerStyle={{
+            paddingHorizontal: Spacing.one,
+            paddingTop: insets.top + Spacing.two,
+            paddingBottom: BottomTabInset + Spacing.four,
+          }}
           showsVerticalScrollIndicator={false}
           refreshing={refreshing}
           onRefresh={handleRefresh}
@@ -83,10 +84,6 @@ export default function HomeScreen() {
               <EmptyState icon={Film} title="No videos available yet." actionLabel="Refresh" onAction={refresh} />
             ) : null
           }
-          initialNumToRender={10}
-          maxToRenderPerBatch={10}
-          windowSize={7}
-          removeClippedSubviews
         />
       )}
     </ThemedView>
@@ -102,15 +99,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  listContent: {
-    flexGrow: 1,
-    paddingHorizontal: Spacing.three,
-    gap: Spacing.two,
+  list: {
     width: '100%',
     maxWidth: MAX_CONTENT_WIDTH,
     alignSelf: 'center',
-  },
-  row: {
-    gap: Spacing.two,
   },
 });
