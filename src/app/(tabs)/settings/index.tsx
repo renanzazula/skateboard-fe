@@ -287,6 +287,8 @@ function ModalCloseButton({ onPress }: { onPress: () => void }) {
 export default function SettingsScreen() {
   const { logout, hasAuthority } = useAuth();
   const canManageBranding = hasAuthority('FUNC_TAB_SETTINGS_BRANDING');
+  const canAdministerPodcast =
+    hasAuthority('FUNC_PODCAST_IMPORT_JSON') || hasAuthority('FUNC_PODCAST_MANAGE_CATEGORIES');
   const { profile } = useProfile();
   const {
     language,
@@ -447,19 +449,35 @@ export default function SettingsScreen() {
         { key: 'report', title: 'Report a problem', icon: Flag, disabled: true, trailing: { type: 'chevron' } },
       ],
     },
-    ...(canManageBranding
+    ...(canManageBranding || canAdministerPodcast
       ? [
           {
             title: 'Administration',
             items: [
-              {
-                key: 'branding',
-                title: 'Branding',
-                icon: Palette,
-                subtitle: 'Manage login background, app logo & assets',
-                onPress: () => router.push('/settings/branding'),
-                trailing: { type: 'chevron' as const },
-              },
+              ...(canManageBranding
+                ? [
+                    {
+                      key: 'branding',
+                      title: 'Branding',
+                      icon: Palette,
+                      subtitle: 'Manage login background, app logo & assets',
+                      onPress: () => router.push('/settings/branding'),
+                      trailing: { type: 'chevron' as const },
+                    },
+                  ]
+                : []),
+              ...(canAdministerPodcast
+                ? [
+                    {
+                      key: 'podcast-admin',
+                      title: 'Podcast',
+                      icon: Mic,
+                      subtitle: 'Sync now & manage categories',
+                      onPress: () => router.push('/settings/podcast-admin'),
+                      trailing: { type: 'chevron' as const },
+                    },
+                  ]
+                : []),
             ],
           },
         ]
