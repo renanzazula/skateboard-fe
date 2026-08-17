@@ -1,80 +1,94 @@
 import { useRouter } from 'expo-router';
-import { Mic } from 'lucide-react-native';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Film } from 'lucide-react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useAuth } from '@/core/auth';
-import { useProfile } from '@/features/account/hooks/useProfile';
-import { BrandedLogo } from '@/features/branding/components/BrandedLogo';
-import { EpisodeCard } from '@/features/podcast/components/EpisodeCard';
-import { useCategories } from '@/features/podcast/hooks/useCategories';
-import { usePodcastFeed } from '@/features/podcast/hooks/usePodcastFeed';
-import { getEpisodeNumber } from '@/features/podcast/services/episodeMeta';
+import { VideoThumbnailCard } from '@/features/home/components/VideoThumbnailCard';
+import { registerHomeReload } from '@/features/home/homeReloadRegistry';
+import { useHomeVideos } from '@/features/home/hooks/useHomeVideos';
+import { isBffError } from '@/shared/api/errors';
 import { EmptyState } from '@/shared/components/EmptyState';
-import { ThemedText } from '@/shared/components/themed-text';
+import { ErrorBanner } from '@/shared/components/ErrorBanner';
 import { ThemedView } from '@/shared/components/themed-view';
 import { BottomTabInset, MAX_CONTENT_WIDTH, Spacing } from '@/shared/constants/theme';
+import { useTheme } from '@/shared/hooks/use-theme';
+import type { Video } from '@/shared/types/video';
 
+// README_HOME_DASHBOARD.md: random visual wall of video thumbnails — the
+// main dashboard. Reselecting the Home tab reshuffles + scrolls to top (see
+// features/home/homeReloadRegistry.ts and (tabs)/_layout.tsx's tabPress
+// listener). Order is preserved across a Video Details visit and back (§18)
+// since reshuffling only happens on first load, explicit reselect, or
+// pull-to-refresh — never on refocus.
 export default function HomeScreen() {
-  const { authorities } = useAuth();
-  const { profile } = useProfile();
+  const theme = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const listRef = useRef<FlatList<Video>>(null);
+  const { videos, isLoading, error, refresh, reloadHome } = useHomeVideos();
+  const [refreshing, setRefreshing] = useState(false);
 
-  const canSeePodcast = authorities.includes('FUNC_TAB_PODCAST');
-  const { defaultCategory } = useCategories();
-  const { posts, total, isLoading } = usePodcastFeed(defaultCategory?.slug);
-  const latestPost = posts[0] ?? null;
+  const handleReselect = useCallback(() => {
+    reloadHome();
+    requestAnimationFrame(() => {
+      listRef.current?.scrollToOffset({ offset: 0, animated: true });
+    });
+  }, [reloadHome]);
+
+  useEffect(() => registerHomeReload(handleReselect), [handleReselect]);
+
+  const handleVideoPress = useCallback(
+    (video: Video) => {
+      router.push(`/podcast/${video.slug}`);
+    },
+    [router]
+  );
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refresh();
+    setRefreshing(false);
+  }, [refresh]);
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ScrollView
-          contentContainerStyle={[styles.content, { paddingBottom: BottomTabInset + Spacing.four }]}
-          showsVerticalScrollIndicator={false}>
-          <View style={styles.header}>
-            <BrandedLogo style={styles.logo} />
-            <ThemedText type="small" themeColor="textSecondary">
-              Welcome back
-            </ThemedText>
-            <ThemedText type="title" style={styles.wordmark}>
-              {profile?.displayName || 'Skateboard'}
-            </ThemedText>
-          </View>
+      {error ? (
+        <ErrorBanner message={isBffError(error) ? error.message : 'We couldn’t load the videos.'} onRetry={refresh} />
+      ) : null}
 
-          {canSeePodcast ? (
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <ThemedText type="subtitle" style={styles.sectionTitle}>
-                  Latest episode
-                </ThemedText>
-                {total > 0 ? (
-                  <Pressable onPress={() => router.push('/podcast')} hitSlop={8}>
-                    <ThemedText type="linkPrimary">View all</ThemedText>
-                  </Pressable>
-                ) : null}
-              </View>
-
-              {latestPost ? (
-                <EpisodeCard
-                  post={latestPost}
-                  episodeNumber={getEpisodeNumber(latestPost) ?? total}
-                  onPress={() => router.push(`/podcast/${latestPost.slug}`)}
-                />
-              ) : !isLoading ? (
-                <EmptyState
-                  icon={Mic}
-                  title="No episodes yet"
-                  description="New episodes will show up here when they're published."
-                />
-              ) : null}
-            </View>
-          ) : (
-            <ThemedText type="default" themeColor="textSecondary">
-              You&apos;re signed in.
-            </ThemedText>
+      {isLoading && videos.length === 0 ? (
+        <View style={styles.loading}>
+          <ActivityIndicator color={theme.primary} />
+        </View>
+      ) : (
+        <FlatList
+          ref={listRef}
+          data={videos}
+          keyExtractor={(item) => item.id}
+          numColumns={2}
+          renderItem={({ item, index }) => (
+            <VideoThumbnailCard video={item} index={index} onPress={handleVideoPress} />
           )}
-        </ScrollView>
-      </SafeAreaView>
+          columnWrapperStyle={styles.row}
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingTop: insets.top + Spacing.three, paddingBottom: BottomTabInset + Spacing.four },
+          ]}
+          showsVerticalScrollIndicator={false}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          ListEmptyComponent={
+            !isLoading && !error ? (
+              <EmptyState icon={Film} title="No videos available yet." actionLabel="Refresh" onAction={refresh} />
+            ) : null
+          }
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={7}
+          removeClippedSubviews
+        />
+      )}
     </ThemedView>
   );
 }
@@ -83,39 +97,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  safeArea: {
+  loading: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  content: {
-    gap: Spacing.five,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.four,
+  listContent: {
+    flexGrow: 1,
+    paddingHorizontal: Spacing.three,
+    gap: Spacing.two,
     width: '100%',
     maxWidth: MAX_CONTENT_WIDTH,
     alignSelf: 'center',
   },
-  header: {
-    gap: Spacing.half,
-  },
-  logo: {
-    width: 40,
-    height: 40,
-    marginBottom: Spacing.two,
-  },
-  wordmark: {
-    fontSize: 34,
-    lineHeight: 38,
-  },
-  section: {
-    gap: Spacing.three,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  sectionTitle: {
-    fontSize: 20,
-    lineHeight: 26,
+  row: {
+    gap: Spacing.two,
   },
 });

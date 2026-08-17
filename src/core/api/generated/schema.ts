@@ -438,6 +438,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/home/videos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the videos eligible for the Home dashboard (unshuffled — the client randomizes for display; see README_HOME_DASHBOARD.md §4/§23) */
+        get: operations["getHomeVideos"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/config/home/video-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the Home dashboard video-category configuration (admin only — for the config screen) */
+        get: operations["getHomeVideoCategoryConfig"];
+        /** Update which video categories are eligible for the Home dashboard (admin only) */
+        put: operations["updateHomeVideoCategoryConfig"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -668,6 +703,29 @@ export interface components {
             platform?: components["schemas"]["ProblemReportPlatform"];
             /** Format: date-time */
             createdAt?: string;
+        };
+        /** @enum {string} */
+        HomeVideoCategoryConfigMode: "ALL" | "SELECTED";
+        HomeVideoCategoryConfigResponse: {
+            mode?: components["schemas"]["HomeVideoCategoryConfigMode"];
+            enabledCategoryIds?: string[];
+            /** Format: date-time */
+            updatedAt?: string | null;
+        };
+        HomeVideoCategoryConfigRequest: {
+            mode: components["schemas"]["HomeVideoCategoryConfigMode"];
+            enabledCategoryIds?: string[];
+        };
+        HomeVideoResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** @description Required for navigation — Video Details (/podcast/{slug}) has no by-id route. */
+            slug?: string;
+            title?: string;
+            thumbnailUrl?: string | null;
+            youtubeVideoId?: string | null;
+            /** @description Category slug the video was fetched under (null in ALL mode). */
+            category?: string | null;
         };
         ErrorResponse: {
             status?: number;
@@ -2116,6 +2174,133 @@ export interface operations {
             };
             /** @description Branding asset not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getHomeVideos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Home dashboard videos */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeVideoResponse"][];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_TAB_HOME required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getHomeVideoCategoryConfig: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Home video-category configuration */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeVideoCategoryConfigResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_HOME_CATEGORY_CONFIG required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateHomeVideoCategoryConfig: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HomeVideoCategoryConfigRequest"];
+            };
+        };
+        responses: {
+            /** @description Home video-category configuration updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeVideoCategoryConfigResponse"];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_HOME_CATEGORY_CONFIG required */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

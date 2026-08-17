@@ -3,6 +3,7 @@ import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import type { ColorValue } from 'react-native';
 
 import { useAuth } from '@/core/auth';
+import { triggerHomeReload } from '@/features/home/homeReloadRegistry';
 import { useTheme } from '@/shared/hooks/use-theme';
 
 function tabIcon(name: SymbolViewProps['name']) {
@@ -38,6 +39,16 @@ export default function TabsLayout() {
           href: gate('FUNC_TAB_HOME'),
           tabBarIcon: tabIcon({ ios: 'house.fill', android: 'home', web: 'home' }),
         }}
+        listeners={({ navigation }) => ({
+          // Only reshuffle/scroll-to-top on a true reselect (already on
+          // Home) — not on the initial navigation into the tab from
+          // elsewhere (README_HOME_DASHBOARD.md §9/§11).
+          tabPress: () => {
+            if (navigation.isFocused()) {
+              triggerHomeReload();
+            }
+          },
+        })}
       />
       <Tabs.Screen
         name="podcast"

@@ -26,6 +26,8 @@ tags:
     description: Public, pre-auth app configuration
   - name: branding
     description: Branding management endpoints (FUNC_TAB_SETTINGS_BRANDING)
+  - name: home
+    description: Home dashboard video feed (FUNC_TAB_HOME)
 
 paths:
 
@@ -1197,6 +1199,107 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /api/home/videos:
+    get:
+      tags: [home]
+      operationId: getHomeVideos
+      summary: >-
+        Get the videos eligible for the Home dashboard (unshuffled — the
+        client randomizes for display; see README_HOME_DASHBOARD.md §4/§23)
+      security:
+        - bearerAuth: []
+      x-required-permissions:
+        - FUNC_TAB_HOME
+      responses:
+        '200':
+          description: Home dashboard videos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HomeVideoResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden – FUNC_TAB_HOME required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/config/home/video-categories:
+    get:
+      tags: [home]
+      operationId: getHomeVideoCategoryConfig
+      summary: Get the Home dashboard video-category configuration (admin only — for the config screen)
+      security:
+        - bearerAuth: []
+      x-required-permissions:
+        - FUNC_HOME_CATEGORY_CONFIG
+      responses:
+        '200':
+          description: Home video-category configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeVideoCategoryConfigResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden – FUNC_HOME_CATEGORY_CONFIG required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [home]
+      operationId: updateHomeVideoCategoryConfig
+      summary: Update which video categories are eligible for the Home dashboard (admin only)
+      security:
+        - bearerAuth: []
+      x-required-permissions:
+        - FUNC_HOME_CATEGORY_CONFIG
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HomeVideoCategoryConfigRequest'
+      responses:
+        '200':
+          description: Home video-category configuration updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeVideoCategoryConfigResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden – FUNC_HOME_CATEGORY_CONFIG required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1666,6 +1769,57 @@ components:
         createdAt:
           type: string
           format: date-time
+
+    HomeVideoCategoryConfigMode:
+      type: string
+      enum: [ALL, SELECTED]
+
+    HomeVideoCategoryConfigResponse:
+      type: object
+      properties:
+        mode:
+          $ref: '#/components/schemas/HomeVideoCategoryConfigMode'
+        enabledCategoryIds:
+          type: array
+          items:
+            type: string
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    HomeVideoCategoryConfigRequest:
+      type: object
+      required: [mode]
+      properties:
+        mode:
+          $ref: '#/components/schemas/HomeVideoCategoryConfigMode'
+        enabledCategoryIds:
+          type: array
+          items:
+            type: string
+
+    HomeVideoResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+          description: Required for navigation — Video Details (/podcast/{slug}) has no by-id route.
+        title:
+          type: string
+        thumbnailUrl:
+          type: string
+          nullable: true
+        youtubeVideoId:
+          type: string
+          nullable: true
+        category:
+          type: string
+          nullable: true
+          description: Category slug the video was fetched under (null in ALL mode).
 
     ErrorResponse:
       type: object

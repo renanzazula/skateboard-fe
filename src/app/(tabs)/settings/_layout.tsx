@@ -10,6 +10,7 @@ export default function SettingsLayout() {
       <Stack.Screen name="profile-picture" options={{ title: 'Profile picture', presentation: 'modal' }} />
       <Stack.Screen name="change-password" options={{ title: 'Change password', presentation: 'modal' }} />
       <Stack.Screen name="branding" options={{ title: 'Branding', presentation: 'modal' }} />
+      <Stack.Screen name="home-categories" options={{ title: 'Home Video Categories', presentation: 'modal' }} />
       <Stack.Screen name="podcast-admin" options={{ title: 'Podcast administration' }} />
       <Stack.Screen name="manage-categories" options={{ title: 'Manage categories' }} />
     </Stack>

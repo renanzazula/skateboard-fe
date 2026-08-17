@@ -11,6 +11,7 @@ import {
   Flag,
   Globe,
   HelpCircle,
+  Home,
   Image,
   KeyRound,
   LogOut,
@@ -287,6 +288,7 @@ function ModalCloseButton({ onPress }: { onPress: () => void }) {
 export default function SettingsScreen() {
   const { logout, hasAuthority } = useAuth();
   const canManageBranding = hasAuthority('FUNC_TAB_SETTINGS_BRANDING');
+  const canConfigureHomeCategories = hasAuthority('FUNC_HOME_CATEGORY_CONFIG');
   const canAdministerPodcast =
     hasAuthority('FUNC_PODCAST_IMPORT_JSON') || hasAuthority('FUNC_PODCAST_MANAGE_CATEGORIES');
   const { profile } = useProfile();
@@ -449,7 +451,7 @@ export default function SettingsScreen() {
         { key: 'report', title: 'Report a problem', icon: Flag, disabled: true, trailing: { type: 'chevron' } },
       ],
     },
-    ...(canManageBranding || canAdministerPodcast
+    ...(canManageBranding || canAdministerPodcast || canConfigureHomeCategories
       ? [
           {
             title: 'Administration',
@@ -462,6 +464,18 @@ export default function SettingsScreen() {
                       icon: Palette,
                       subtitle: 'Manage login background, app logo & assets',
                       onPress: () => router.push('/settings/branding'),
+                      trailing: { type: 'chevron' as const },
+                    },
+                  ]
+                : []),
+              ...(canConfigureHomeCategories
+                ? [
+                    {
+                      key: 'home-categories',
+                      title: 'Home Video Categories',
+                      icon: Home,
+                      subtitle: 'Choose which categories appear on the Home dashboard',
+                      onPress: () => router.push('/settings/home-categories'),
                       trailing: { type: 'chevron' as const },
                     },
                   ]
