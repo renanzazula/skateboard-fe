@@ -21,5 +21,10 @@ export function toPost(response: PostResponse): Post {
     createdAt: response.createdAt ?? '',
     updatedAt: response.updatedAt ?? '',
     createdBy: response.createdBy ?? '',
+    youtubeVideoId: response.youtubeVideoId,
+    youtubeUrl: response.youtubeUrl,
+    description: response.description,
+    durationSeconds: response.durationSeconds,
+    episodeNumber: response.episodeNumber,
   };
 }
