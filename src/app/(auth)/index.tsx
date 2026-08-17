@@ -1,7 +1,7 @@
 import * as AuthSession from 'expo-auth-session';
 import { Image } from 'expo-image';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/core/auth';
@@ -13,15 +13,35 @@ import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
 import { MAX_FORM_WIDTH, Spacing } from '@/shared/constants/theme';
 
+// Mirrors CSS clamp(min, vh-fraction, max) so the title/logo areas scale
+// with viewport height the same way across native and web without needing
+// separate stylesheets.
+const clampByHeight = (min: number, vhFraction: number, max: number, windowHeight: number) =>
+  Math.min(max, Math.max(min, windowHeight * vhFraction));
+
+// Below this viewport height, use fixed compact values instead of the
+// clamp() curve — same idea as the reference layout's `max-height: 750px`
+// breakpoint.
+const COMPACT_HEIGHT_BREAKPOINT = 750;
+const COMPACT_TITLE_PADDING_TOP = 40;
+const COMPACT_LOGO_AREA_HEIGHT = 240;
+
 export default function LoginScreen() {
   const { loginWithPassword } = useAuth();
   const { loginBackgroundUrl, loginTitle, loginMessage } = useAppConfig();
+  const { height: windowHeight } = useWindowDimensions();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [signingIn, setSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const canSubmit = username.trim().length > 0 && password.length > 0 && !signingIn;
+  const isCompactHeight = windowHeight <= COMPACT_HEIGHT_BREAKPOINT;
+  // Reserved logo area height stays within this range regardless of the
+  // logo's real dimensions — BrandedLogo scales to fit inside it (contain),
+  // so a tall or wide tenant logo never pushes the form down.
+  const titlePaddingTop = isCompactHeight ? COMPACT_TITLE_PADDING_TOP : clampByHeight(60, 0.08, 90, windowHeight);
+  const logoAreaHeight = isCompactHeight ? COMPACT_LOGO_AREA_HEIGHT : clampByHeight(280, 0.34, 340, windowHeight);
 
   const handleLogin = async () => {
     setSigningIn(true);
@@ -58,42 +78,64 @@ export default function LoginScreen() {
         </>
       ) : null}
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.brand}>
-          {loginTitle ? (
-            <ThemedText type="title" style={styles.title}>
-              {loginTitle}
-            </ThemedText>
-          ) : null}
-          <BrandedLogo style={styles.logo} />
-          <ThemedText type="default" themeColor="textSecondary" style={styles.subtitle}>
-            {loginMessage || 'Sign in to continue'}
-          </ThemedText>
-        </View>
+        <KeyboardAvoidingView style={styles.keyboardAvoiding} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.content}>
+              {/* 1. Title — near the top, above the logo. */}
+              <View style={[styles.titleContainer, { paddingTop: titlePaddingTop }]}>
+                {loginTitle ? (
+                  <ThemedText type="title" style={styles.title}>
+                    {loginTitle}
+                  </ThemedText>
+                ) : null}
+              </View>
 
-        <View style={styles.form}>
-          <TextField
-            value={username}
-            onChangeText={setUsername}
-            placeholder="Username or email"
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="email-address"
-          />
-          <TextField value={password} onChangeText={setPassword} placeholder="Password" secureTextEntry />
+              {/* 2. Logo — reserved area of fixed/responsive height; the
+                  logo scales inside it (contain) instead of the area
+                  growing to the logo's natural size, so different tenant
+                  logos never move the form below. */}
+              <View style={[styles.logoContainer, { height: logoAreaHeight }]}>
+                <BrandedLogo style={styles.logo} />
+              </View>
 
-          <PrimaryButton
-            title={signingIn ? 'Signing in…' : 'Log in'}
-            onPress={handleLogin}
-            disabled={!canSubmit}
-            loading={signingIn}
-          />
+              {/* 3-6. Message, then the form (username, password, login). */}
+              <View style={styles.formSection}>
+                <ThemedText type="default" themeColor="textSecondary" style={styles.message}>
+                  {loginMessage || 'Sign in to continue'}
+                </ThemedText>
 
-          {error && (
-            <ThemedText type="small" themeColor="destructive" style={styles.error}>
-              {error}
-            </ThemedText>
-          )}
-        </View>
+                <View style={styles.form}>
+                  <TextField
+                    value={username}
+                    onChangeText={setUsername}
+                    placeholder="Username or email"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardType="email-address"
+                  />
+                  <TextField value={password} onChangeText={setPassword} placeholder="Password" secureTextEntry />
+
+                  <PrimaryButton
+                    title={signingIn ? 'Signing in…' : 'Log in'}
+                    onPress={handleLogin}
+                    disabled={!canSubmit}
+                    loading={signingIn}
+                  />
+
+                  {error && (
+                    <ThemedText type="small" themeColor="destructive" style={styles.error}>
+                      {error}
+                    </ThemedText>
+                  )}
+                </View>
+              </View>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -108,28 +150,44 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    justifyContent: 'center',
+    width: '100%',
+  },
+  keyboardAvoiding: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     alignItems: 'center',
-    alignSelf: 'center',
+  },
+  content: {
     width: '100%',
     maxWidth: MAX_FORM_WIDTH,
     paddingHorizontal: Spacing.four,
+    paddingBottom: Spacing.five,
   },
-  brand: {
+  titleContainer: {
+    width: '100%',
     alignItems: 'center',
-    marginBottom: Spacing.five,
   },
   title: {
     textAlign: 'center',
-    marginBottom: Spacing.two,
+  },
+  logoContainer: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   logo: {
-    width: 400,
-    height: 400,
+    width: '85%',
+    height: '100%',
   },
-  subtitle: {
+  formSection: {
+    width: '100%',
+    marginTop: Spacing.four,
+  },
+  message: {
     textAlign: 'center',
-    marginTop: Spacing.one,
+    marginBottom: Spacing.four,
   },
   form: {
     width: '100%',
