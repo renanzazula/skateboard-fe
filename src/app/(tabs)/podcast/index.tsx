@@ -8,7 +8,6 @@ import { useAuth } from '@/core/auth';
 import { CategorySelector } from '@/features/podcast/components/CategorySelector';
 import { EpisodeCard } from '@/features/podcast/components/EpisodeCard';
 import { useCategories } from '@/features/podcast/hooks/useCategories';
-import { usePodcastAdmin } from '@/features/podcast/hooks/usePodcastAdmin';
 import { usePodcastFeed } from '@/features/podcast/hooks/usePodcastFeed';
 import { getEpisodeNumber } from '@/features/podcast/services/episodeMeta';
 import { EmptyState } from '@/shared/components/EmptyState';
@@ -19,7 +18,6 @@ import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import type { Category } from '@/shared/types/category';
 import type { Post } from '@/shared/types/posts';
-import { showAlert } from '@/shared/utils/alert';
 
 // Ported from rork-standard-app/expo's modules/feed/screens/PodcastScreen.tsx
 // (via migrate/podcast/screens/PodcastScreen.tsx), then reworked for
@@ -44,8 +42,6 @@ export default function PodcastListScreen() {
   const { posts, total, isLoading: postsLoading, error, hasMore, loadMore, refresh: refreshPosts } =
     usePodcastFeed(selectedCategory?.slug);
 
-  const { triggerSync, submitting: syncing } = usePodcastAdmin();
-
   // This screen stays mounted while the user is on a detail/admin screen, so
   // deletes/edits/creates (and category renames/reorders) made there would
   // otherwise keep showing stale data here. Refetch on every regained focus;
@@ -59,8 +55,6 @@ export default function PodcastListScreen() {
   );
 
   const canCreate = hasAuthority('FUNC_PODCAST_CREATE_POST');
-  const canImport = hasAuthority('FUNC_PODCAST_IMPORT_JSON');
-  const canManageCategories = hasAuthority('FUNC_PODCAST_MANAGE_CATEGORIES');
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -86,19 +80,6 @@ export default function PodcastListScreen() {
     if (category.slug !== selectedCategory?.slug) setSelectedCategory(category);
   };
 
-  const handleSync = async () => {
-    try {
-      const result = await triggerSync();
-      showAlert(
-        t('common.success'),
-        t('podcast.syncSuccess').replace('{created}', String(result.created ?? 0))
-      );
-      await Promise.all([refreshCategories(), refreshPosts()]);
-    } catch (syncError) {
-      showAlert(t('common.error'), isBffError(syncError) ? syncError.message : t('podcast.syncFailed'));
-    }
-  };
-
   const ListHeader = () => (
     <View style={styles.screenHeader}>
       <View style={styles.screenHeaderTop}>
@@ -107,22 +88,6 @@ export default function PodcastListScreen() {
           <Text style={[styles.screenSubtitle, { color: colors.textSecondary }]}>
             {t('podcast.episodeCount').replace('{count}', String(total))}
           </Text>
-        </View>
-        <View style={styles.headerActions}>
-          {canImport ? (
-            <Pressable onPress={handleSync} disabled={syncing} hitSlop={8}>
-              <Text style={[styles.importLink, { color: colors.primary }]}>
-                {syncing ? t('podcast.syncing') : t('podcast.syncNow')}
-              </Text>
-            </Pressable>
-          ) : null}
-          {canManageCategories ? (
-            <Pressable onPress={() => router.push('/podcast/admin/categories')} hitSlop={8}>
-              <Text style={[styles.importLink, { color: colors.primary }]}>
-                {t('podcast.manageCategories')}
-              </Text>
-            </Pressable>
-          ) : null}
         </View>
       </View>
 
@@ -222,15 +187,6 @@ const styles = StyleSheet.create({
   },
   screenHeaderTitles: {
     flex: 1,
-  },
-  headerActions: {
-    alignItems: 'flex-end',
-    gap: 6,
-  },
-  importLink: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginTop: 4,
   },
   screenTitle: {
     fontSize: 26,

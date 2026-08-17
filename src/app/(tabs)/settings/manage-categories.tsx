@@ -50,7 +50,7 @@ export default function ManageCategoriesScreen() {
   }, [load]);
 
   if (!hasAuthority('FUNC_PODCAST_MANAGE_CATEGORIES')) {
-    return <Redirect href="/podcast" />;
+    return <Redirect href="/settings" />;
   }
 
   const move = async (index: number, direction: -1 | 1) => {
