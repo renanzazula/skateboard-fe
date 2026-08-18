@@ -5,6 +5,7 @@ import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, Text, View }
 
 import { useAuth } from '@/core/auth';
 import { useCategoryAdmin, type AdminCategory } from '@/features/podcast/hooks/useCategoryAdmin';
+import { SettingsHeader } from '@/features/settings/components/SettingsHeader';
 import { isBffError } from '@/shared/api/errors';
 import { ErrorBanner } from '@/shared/components/ErrorBanner';
 import { PrimaryButton } from '@/shared/components/PrimaryButton';
@@ -95,11 +96,21 @@ export default function ManageCategoriesScreen() {
   };
 
   if (loading) {
-    return <ActivityIndicator style={styles.loading} color={colors.primary} />;
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <SettingsHeader title="Manage categories" />
+        <ActivityIndicator style={styles.loading} color={colors.primary} />
+      </View>
+    );
   }
 
   if (error) {
-    return <ErrorBanner message={isBffError(error) ? error.message : 'Could not load categories.'} onRetry={load} />;
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <SettingsHeader title="Manage categories" />
+        <ErrorBanner message={isBffError(error) ? error.message : 'Could not load categories.'} onRetry={load} />
+      </View>
+    );
   }
 
   const renderRow = ({ item, index }: { item: AdminCategory; index: number }) => (
@@ -169,6 +180,7 @@ export default function ManageCategoriesScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <SettingsHeader title="Manage categories" />
       <FlatList
         data={categories}
         keyExtractor={(item) => item.id!}

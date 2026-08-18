@@ -1,6 +1,7 @@
 import { Fragment, type ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { SectionLabel } from '@/features/settings/components/SectionLabel';
 import { useTheme } from '@/shared/hooks/use-theme';
 
 type Props = {
@@ -9,7 +10,7 @@ type Props = {
   children: ReactNode[];
 };
 
-/** Section label + one card wrapping its rows, hairline dividers between them (none after the last). */
+/** Section label + its rows, flat on the screen background with hairline dividers between them (none after the last). No card. */
 export function SettingsSection({ label, tone = 'default', children }: Props) {
   const theme = useTheme();
   const rows = Array.isArray(children) ? children : [children];
@@ -17,15 +18,8 @@ export function SettingsSection({ label, tone = 'default', children }: Props) {
 
   return (
     <View style={styles.section}>
-      {label ? <Text style={[styles.label, { color: theme.textSecondary }]}>{label}</Text> : null}
-      <View
-        style={[
-          styles.card,
-          {
-            backgroundColor: danger ? theme.destructiveBg : theme.surface,
-            borderColor: danger ? theme.destructiveBorder : theme.border,
-          },
-        ]}>
+      {label ? <SectionLabel label={label} danger={danger} /> : null}
+      <View>
         {rows.map((row, index) => (
           <Fragment key={index}>
             {row}
@@ -39,22 +33,10 @@ export function SettingsSection({ label, tone = 'default', children }: Props) {
 
 const styles = StyleSheet.create({
   section: {
-    gap: 8,
-  },
-  label: {
-    fontSize: 11,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.06 * 11,
-    paddingHorizontal: 4,
-  },
-  card: {
-    borderRadius: 12,
-    borderWidth: 1,
-    overflow: 'hidden',
+    gap: 0,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    marginLeft: 14 + 32 + 12,
+    marginLeft: 24 + 16,
   },
 });

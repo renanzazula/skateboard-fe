@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { HomeHeader } from '@/features/home/components/HomeHeader';
 import { HomeVideoGalleryItem, TILE_INSET } from '@/features/home/components/HomeVideoGalleryItem';
 import { registerHomeReload } from '@/features/home/homeReloadRegistry';
 import { useHomeVideos } from '@/features/home/hooks/useHomeVideos';
@@ -41,7 +42,10 @@ export default function HomeScreen() {
 
   const handleVideoPress = useCallback(
     (video: Video) => {
-      router.push(`/podcast/${video.slug}`);
+      // Pushes the root-level /video/[slug] route (not /podcast/[slug]) so
+      // this stays on the root stack instead of the Podcast tab's own
+      // stack — see app/video/[slug].tsx for why.
+      router.push({ pathname: '/video/[slug]', params: { slug: video.slug } });
     },
     [router]
   );
@@ -54,6 +58,10 @@ export default function HomeScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <View style={{ paddingTop: insets.top + Spacing.two }}>
+        <HomeHeader />
+      </View>
+
       {error ? (
         <ErrorBanner message={isBffError(error) ? error.message : 'We couldn’t load the videos.'} onRetry={refresh} />
       ) : null}
@@ -78,7 +86,8 @@ export default function HomeScreen() {
             // Tiles inset themselves by TILE_INSET on every side, so subtract
             // it here to keep the visible outer margin at Spacing.two (8px).
             paddingHorizontal: Spacing.two - TILE_INSET,
-            paddingTop: insets.top + Spacing.two,
+            // No safe-area inset here — HomeHeader's wrapper above applies it.
+            paddingTop: Spacing.two,
             paddingBottom: BottomTabInset + Spacing.four,
           }}
           showsVerticalScrollIndicator={false}

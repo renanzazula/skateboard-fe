@@ -6,6 +6,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { useAuth } from '@/core/auth';
 import { CategoryChip } from '@/features/podcast/components/CategoryChip';
 import { useCategories } from '@/features/podcast/hooks/useCategories';
+import { SettingsHeader } from '@/features/settings/components/SettingsHeader';
 import { SettingsRow } from '@/features/settings/components/SettingsRow';
 import type { HomeCategoryConfigMode } from '@/features/home/hooks/useHomeCategoryAdmin';
 import { useHomeCategoryAdmin } from '@/features/home/hooks/useHomeCategoryAdmin';
@@ -89,15 +90,26 @@ export default function HomeCategoriesScreen() {
   const error = configError ?? categoriesError;
 
   if (isLoading) {
-    return <ActivityIndicator style={styles.loading} color={theme.primary} />;
+    return (
+      <ThemedView style={styles.container}>
+        <SettingsHeader title="Home Video Categories" />
+        <ActivityIndicator style={styles.loading} color={theme.primary} />
+      </ThemedView>
+    );
   }
 
   if (error) {
-    return <ErrorBanner message={isBffError(error) ? error.message : 'Could not load Home categories.'} onRetry={handleRetry} />;
+    return (
+      <ThemedView style={styles.container}>
+        <SettingsHeader title="Home Video Categories" />
+        <ErrorBanner message={isBffError(error) ? error.message : 'Could not load Home categories.'} onRetry={handleRetry} />
+      </ThemedView>
+    );
   }
 
   return (
     <ThemedView style={styles.container}>
+      <SettingsHeader title="Home Video Categories" />
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedText type="default" themeColor="textSecondary" style={styles.hint}>
           Choose which video categories can appear on the Home dashboard. Videos from disabled categories

@@ -35,6 +35,9 @@ function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Protected guard={status === 'signedIn'}>
           <Stack.Screen name="(tabs)" />
+          {/* Sits above (tabs) so Home can link into it without pushing onto
+              the Podcast tab's own stack — see app/video/[slug].tsx. */}
+          <Stack.Screen name="video/[slug]" />
         </Stack.Protected>
         <Stack.Protected guard={status !== 'signedIn'}>
           <Stack.Screen name="(auth)" />

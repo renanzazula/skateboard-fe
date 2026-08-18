@@ -4,12 +4,12 @@ import { Redirect } from 'expo-router';
 import { Plus, Trash2 } from 'lucide-react-native';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/core/auth';
 import { refreshAppConfig } from '@/core/config';
 import type { BrandingAsset, BrandingConfig } from '@/features/branding/hooks/useBrandingAdmin';
 import { useBrandingAdmin } from '@/features/branding/hooks/useBrandingAdmin';
+import { SettingsHeader } from '@/features/settings/components/SettingsHeader';
 import { isBffError } from '@/shared/api/errors';
 import { PrimaryButton } from '@/shared/components/PrimaryButton';
 import { TextField } from '@/shared/components/TextField';
@@ -185,15 +185,19 @@ export default function BrandingScreen() {
 
   if (loading) {
     return (
-      <ThemedView style={styles.loading}>
-        <ActivityIndicator color={theme.primary} />
+      <ThemedView style={styles.screen}>
+        <SettingsHeader title="Branding" />
+        <ThemedView style={styles.loading}>
+          <ActivityIndicator color={theme.primary} />
+        </ThemedView>
       </ThemedView>
     );
   }
 
   return (
     <ThemedView style={styles.screen}>
-      <SafeAreaView style={styles.safeArea}>
+      <SettingsHeader title="Branding" />
+      <View style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <Section title="Login text">
             <TextField
@@ -282,7 +286,7 @@ export default function BrandingScreen() {
             )}
           </Section>
         </ScrollView>
-      </SafeAreaView>
+      </View>
 
       <Modal animationType="slide" transparent visible={newAssetPromptVisible} onRequestClose={() => setNewAssetPromptVisible(false)}>
         <ThemedView style={styles.modalBackdrop}>

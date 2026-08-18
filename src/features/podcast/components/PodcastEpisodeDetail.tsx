@@ -1,4 +1,4 @@
-import { Stack, useRouter } from 'expo-router';
+import { Stack } from 'expo-router';
 import { ArrowLeft, Calendar, Clock, Mic, Pencil, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
 import { Image, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -44,6 +44,7 @@ type Props = {
   episodeNumber: number | null;
   canEdit: boolean;
   canDelete: boolean;
+  onBack: () => void;
   onEdit: () => void;
   onDelete: () => void;
 };
@@ -64,10 +65,9 @@ function FloatingButton({
   );
 }
 
-export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, onEdit, onDelete }: Props) {
+export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, onBack, onEdit, onDelete }: Props) {
   const colors = useTheme();
   const { t } = useTranslation();
-  const router = useRouter();
   const insets = useSafeAreaInsets();
 
   const youtubeId = getYoutubeId(post);
@@ -213,7 +213,7 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
       </ScrollView>
 
       <View style={[styles.floatingBar, { top: insets.top + 8 }]}>
-        <FloatingButton onPress={() => router.back()} label="Back">
+        <FloatingButton onPress={onBack} label="Back">
           <ArrowLeft size={20} color={OVERLAY.white} />
         </FloatingButton>
         <View style={styles.floatingActions}>
