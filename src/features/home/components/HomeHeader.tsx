@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useProfile } from '@/features/account/hooks/useProfile';
 import { BrandedLogo } from '@/features/branding/components/BrandedLogo';
+import { ThemedText } from '@/shared/components/themed-text';
 import { MAX_CONTENT_WIDTH, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 
@@ -50,9 +51,9 @@ export function HomeHeader() {
         </View>
 
         <View style={[styles.side, styles.sideRight]}>
-          <Text style={[styles.username, { color: theme.textPrimary }]} numberOfLines={1}>
+          <ThemedText type="smallBold" numberOfLines={1}>
             {username}
-          </Text>
+          </ThemedText>
         </View>
       </View>
     </View>
@@ -102,9 +103,5 @@ const styles = StyleSheet.create({
   logo: {
     width: 120,
     height: LOGO_HEIGHT,
-  },
-  username: {
-    fontSize: 13,
-    fontWeight: '600',
   },
 });
