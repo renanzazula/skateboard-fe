@@ -12,13 +12,27 @@ import { Spacing } from '@/shared/constants/theme';
 import { showAlert } from '@/shared/utils/alert';
 
 export default function PodcastDetailScreen() {
-  const { slug } = useLocalSearchParams<{ slug: string }>();
+  const { slug, from } = useLocalSearchParams<{ slug: string; from?: string }>();
   const { hasAuthority } = useAuth();
   const { post, loading, error, refetch } = usePodcastPost(slug);
   const { deletePost, submitting } = usePodcastAdmin();
 
   const canEdit = hasAuthority('FUNC_PODCAST_EDIT_POST');
   const canDelete = hasAuthority('FUNC_PODCAST_DELETE_POST');
+
+  // Reaching this screen from Home pushes it onto the Podcast tab's own
+  // stack (cross-tab navigation), so a plain router.back() unpredictably
+  // pops to the Podcast list instead of returning to Home, depending on
+  // whether that stack already had history. Home tags its link with
+  // `from=home` so we can route back there explicitly instead of relying
+  // on ambiguous stack-pop behavior.
+  const handleBack = () => {
+    if (from === 'home') {
+      router.navigate('/');
+      return;
+    }
+    router.back();
+  };
 
   const handleEdit = () => {
     if (!post) return;
@@ -65,6 +79,7 @@ export default function PodcastDetailScreen() {
       episodeNumber={getEpisodeNumber(post)}
       canEdit={canEdit}
       canDelete={canDelete}
+      onBack={handleBack}
       onEdit={handleEdit}
       onDelete={handleDelete}
     />

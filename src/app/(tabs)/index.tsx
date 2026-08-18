@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { HomeHeader } from '@/features/home/components/HomeHeader';
 import { HomeVideoGalleryItem } from '@/features/home/components/HomeVideoGalleryItem';
 import { registerHomeReload } from '@/features/home/homeReloadRegistry';
 import { useHomeVideos } from '@/features/home/hooks/useHomeVideos';
@@ -41,7 +42,9 @@ export default function HomeScreen() {
 
   const handleVideoPress = useCallback(
     (video: Video) => {
-      router.push(`/podcast/${video.slug}`);
+      // `from: 'home'` lets the detail screen's back button return here
+      // deterministically — see (tabs)/podcast/[slug].tsx's handleBack.
+      router.push({ pathname: '/podcast/[slug]', params: { slug: video.slug, from: 'home' } });
     },
     [router]
   );
@@ -54,6 +57,10 @@ export default function HomeScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <View style={{ paddingTop: insets.top + Spacing.two }}>
+        <HomeHeader />
+      </View>
+
       {error ? (
         <ErrorBanner message={isBffError(error) ? error.message : 'We couldn’t load the videos.'} onRetry={refresh} />
       ) : null}
@@ -73,7 +80,7 @@ export default function HomeScreen() {
           style={styles.list}
           contentContainerStyle={{
             paddingHorizontal: Spacing.one,
-            paddingTop: insets.top + Spacing.two,
+            paddingTop: Spacing.two,
             paddingBottom: BottomTabInset + Spacing.four,
           }}
           showsVerticalScrollIndicator={false}
