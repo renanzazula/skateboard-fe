@@ -42,9 +42,10 @@ export default function HomeScreen() {
 
   const handleVideoPress = useCallback(
     (video: Video) => {
-      // `from: 'home'` lets the detail screen's back button return here
-      // deterministically — see (tabs)/podcast/[slug].tsx's handleBack.
-      router.push({ pathname: '/podcast/[slug]', params: { slug: video.slug, from: 'home' } });
+      // Pushes the root-level /video/[slug] route (not /podcast/[slug]) so
+      // this stays on the root stack instead of the Podcast tab's own
+      // stack — see app/video/[slug].tsx for why.
+      router.push({ pathname: '/video/[slug]', params: { slug: video.slug } });
     },
     [router]
   );
