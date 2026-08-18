@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { HomeVideoGalleryItem } from '@/features/home/components/HomeVideoGalleryItem';
+import { HomeVideoGalleryItem, TILE_INSET } from '@/features/home/components/HomeVideoGalleryItem';
 import { registerHomeReload } from '@/features/home/homeReloadRegistry';
 import { useHomeVideos } from '@/features/home/hooks/useHomeVideos';
 import { isBffError } from '@/shared/api/errors';
@@ -69,10 +69,15 @@ export default function HomeScreen() {
           keyExtractor={(item) => item.id}
           masonry
           numColumns={2}
+          // Places each tile in the shortest column rather than the next grid
+          // cell, so a tall thumbnail doesn't strand empty space beside it.
+          optimizeItemArrangement
           renderItem={({ item }) => <HomeVideoGalleryItem video={item} onPress={handleVideoPress} />}
           style={styles.list}
           contentContainerStyle={{
-            paddingHorizontal: Spacing.one,
+            // Tiles inset themselves by TILE_INSET on every side, so subtract
+            // it here to keep the visible outer margin at Spacing.two (8px).
+            paddingHorizontal: Spacing.two - TILE_INSET,
             paddingTop: insets.top + Spacing.two,
             paddingBottom: BottomTabInset + Spacing.four,
           }}

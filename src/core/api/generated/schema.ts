@@ -723,6 +723,10 @@ export interface components {
             slug?: string;
             title?: string;
             thumbnailUrl?: string | null;
+            /** @description Intrinsic pixel width of thumbnailUrl, captured by podcast-be's YouTube sync. Lets the Home masonry gallery size a tile from its real aspect ratio without measuring the image first. Null on videos whose dimensions were never captured — clients must fall back to probing. */
+            thumbnailWidth?: number | null;
+            /** @description Intrinsic pixel height of thumbnailUrl; see thumbnailWidth. */
+            thumbnailHeight?: number | null;
             youtubeVideoId?: string | null;
             /** @description Category slug the video was fetched under (null in ALL mode). */
             category?: string | null;

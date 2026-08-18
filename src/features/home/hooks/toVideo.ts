@@ -9,6 +9,8 @@ export function toVideo(response: HomeVideoResponse): Video {
     slug: response.slug ?? '',
     title: response.title ?? '',
     thumbnailUrl: response.thumbnailUrl ?? null,
+    thumbnailWidth: response.thumbnailWidth ?? null,
+    thumbnailHeight: response.thumbnailHeight ?? null,
     youtubeVideoId: response.youtubeVideoId ?? null,
     category: response.category ?? null,
   };
