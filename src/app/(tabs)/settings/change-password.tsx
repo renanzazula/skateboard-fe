@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { useAccountActions } from '@/features/account/hooks/useAccountActions';
+import { SettingsHeader } from '@/features/settings/components/SettingsHeader';
 import { isBffError } from '@/shared/api/errors';
 import { PrimaryButton } from '@/shared/components/PrimaryButton';
 import { TextField } from '@/shared/components/TextField';
@@ -34,6 +35,7 @@ export default function ChangePasswordScreen() {
 
   return (
     <ThemedView style={styles.screen}>
+      <SettingsHeader title="Change password" />
       <ThemedView style={styles.container}>
         <TextField
           label="New password"

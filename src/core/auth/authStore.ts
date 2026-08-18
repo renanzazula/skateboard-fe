@@ -21,10 +21,11 @@ interface AuthState {
   status: AuthStatus;
   accessToken: string | null;
   authorities: string[];
+  email: string | null;
   expiresAt: number | null;
 }
 
-let state: AuthState = { status: 'loading', accessToken: null, authorities: [], expiresAt: null };
+let state: AuthState = { status: 'loading', accessToken: null, authorities: [], email: null, expiresAt: null };
 const listeners = new Set<() => void>();
 
 function setState(next: AuthState): void {
@@ -48,6 +49,11 @@ interface AccessTokenClaims {
   // podcast-be read server-side. Decoded here for UI-only role gating
   // (tab visibility); it is never trusted as a security boundary.
   authorities?: string[];
+  // Standard OIDC claim, present because `login()` requests the `email`
+  // scope. /api/me has no email field (see UserResponse in
+  // core/api/generated/schema.ts), so the Settings profile card reads it
+  // from here instead — display-only, same as `authorities`.
+  email?: string;
 }
 
 function decodeAuthorities(accessToken: string): string[] {
@@ -55,6 +61,14 @@ function decodeAuthorities(accessToken: string): string[] {
     return jwtDecode<AccessTokenClaims>(accessToken).authorities ?? [];
   } catch {
     return [];
+  }
+}
+
+function decodeEmail(accessToken: string): string | null {
+  try {
+    return jwtDecode<AccessTokenClaims>(accessToken).email ?? null;
+  } catch {
+    return null;
   }
 }
 
@@ -73,6 +87,7 @@ function applyTokenResponse(tokenResponse: AuthSession.TokenResponse): void {
     status: 'signedIn',
     accessToken,
     authorities: decodeAuthorities(accessToken),
+    email: decodeEmail(accessToken),
     expiresAt,
   });
   // Keycloak may omit refresh_token on a refresh-grant response (reusing the
@@ -83,7 +98,7 @@ function applyTokenResponse(tokenResponse: AuthSession.TokenResponse): void {
 }
 
 async function signOutLocal(): Promise<void> {
-  setState({ status: 'signedOut', accessToken: null, authorities: [], expiresAt: null });
+  setState({ status: 'signedOut', accessToken: null, authorities: [], email: null, expiresAt: null });
   await secureStorage.deleteItem(REFRESH_TOKEN_KEY).catch(() => {});
 }
 

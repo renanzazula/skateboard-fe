@@ -18,6 +18,7 @@ export function useAuth() {
   return {
     status: state.status,
     authorities: state.authorities,
+    email: state.email,
     hasAuthority,
     login: authStore.login,
     loginWithPassword: authStore.loginWithPassword,

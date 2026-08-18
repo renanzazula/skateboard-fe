@@ -27,8 +27,9 @@ type Props = {
 };
 
 /**
- * The one row primitive the redesign centers on — icon chip, title/subtitle,
- * one of four trailing variants. See .docs/SETTINGS_REDESIGN.md §4.
+ * The one row primitive the redesign centers on — icon + title/description +
+ * one of four trailing variants, flat on the screen background (no icon chip
+ * or card). See .docs/SETTINGS_REDESIGN_2.md §4/§6.
  */
 export function SettingsRow({ icon: Icon, title, subtitle, trailing = { type: 'none' }, onPress, variant = 'default', disabled }: Props) {
   const theme = useTheme();
@@ -61,8 +62,8 @@ export function SettingsRow({ icon: Icon, title, subtitle, trailing = { type: 'n
         pressed && isPressable && { backgroundColor: theme.surfacePressed },
         disabled && styles.disabled,
       ]}>
-      <View style={[styles.chip, { backgroundColor: destructive ? theme.destructiveBg : theme.chipBg }]}>
-        <Icon color={destructive ? theme.destructive : theme.textSecondary} size={18} strokeWidth={2} />
+      <View style={styles.iconColumn}>
+        <Icon color={destructive ? theme.destructive : theme.textSecondary} size={20} strokeWidth={2} />
       </View>
 
       <View style={styles.textStack}>
@@ -86,19 +87,21 @@ function Trailing({ trailing, onSwitchChange }: { trailing: SettingsRowTrailing;
 
   if (trailing.type === 'switch') {
     return (
-      <Switch
-        value={trailing.value}
-        onValueChange={onSwitchChange}
-        disabled={trailing.disabled}
-        trackColor={{ false: theme.toggleTrackOff, true: theme.primary }}
-        thumbColor={trailing.value ? theme.toggleThumbOn : theme.toggleThumbOff}
-      />
+      <View style={styles.trailing}>
+        <Switch
+          value={trailing.value}
+          onValueChange={onSwitchChange}
+          disabled={trailing.disabled}
+          trackColor={{ false: theme.toggleTrackOff, true: theme.primary }}
+          thumbColor={trailing.value ? theme.toggleThumbOn : theme.toggleThumbOff}
+        />
+      </View>
     );
   }
 
   if (trailing.type === 'value') {
     return (
-      <View style={styles.valueGroup}>
+      <View style={[styles.trailing, styles.valueGroup]}>
         {trailing.loading ? (
           <Skeleton width={48} />
         ) : (
@@ -108,13 +111,17 @@ function Trailing({ trailing, onSwitchChange }: { trailing: SettingsRowTrailing;
             {trailing.text}
           </Text>
         )}
-        {trailing.chevron ? <ChevronRight color={theme.textMuted} size={18} /> : null}
+        {trailing.chevron ? <ChevronRight color={theme.textMuted} size={16} /> : null}
       </View>
     );
   }
 
   if (trailing.type === 'chevron') {
-    return <ChevronRight color={theme.textMuted} size={18} />;
+    return (
+      <View style={styles.trailing}>
+        <ChevronRight color={theme.textMuted} size={16} />
+      </View>
+    );
   }
 
   return null;
@@ -124,32 +131,31 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
     minHeight: 56,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    paddingVertical: 15,
   },
   disabled: {
     opacity: 0.5,
   },
-  chip: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
+  iconColumn: {
+    width: 24,
     alignItems: 'center',
-    justifyContent: 'center',
   },
   textStack: {
     flex: 1,
     gap: 2,
+    marginLeft: 16,
   },
   title: {
-    fontSize: 15,
-    fontWeight: '500',
+    fontSize: 16,
+    fontWeight: '700',
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '400',
+  },
+  trailing: {
+    marginLeft: 8,
   },
   valueGroup: {
     flexDirection: 'row',

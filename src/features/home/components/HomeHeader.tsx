@@ -31,9 +31,9 @@ export function HomeHeader() {
       <View style={styles.row}>
         <View style={styles.side}>
           <Pressable
-            onPress={() => router.push('/settings/profile')}
+            onPress={() => router.push('/settings')}
             accessibilityRole="button"
-            accessibilityLabel="Edit profile"
+            accessibilityLabel="Open Settings"
             style={({ pressed }) => [
               styles.avatar,
               { backgroundColor: theme.primary, opacity: pressed ? 0.8 : 1 },

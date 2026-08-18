@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet } from 'react-native';
 
 import { useAuth } from '@/core/auth';
 import { usePodcastAdmin } from '@/features/podcast/hooks/usePodcastAdmin';
+import { SettingsHeader } from '@/features/settings/components/SettingsHeader';
 import { SettingsRow } from '@/features/settings/components/SettingsRow';
 import { SettingsSection } from '@/features/settings/components/SettingsSection';
 import { isBffError } from '@/shared/api/errors';
@@ -73,6 +74,7 @@ export default function PodcastAdminScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <SettingsHeader title="Podcast sync" />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <ThemedText type="small" themeColor="textSecondary">
           Administrative actions for the Podcast tab.

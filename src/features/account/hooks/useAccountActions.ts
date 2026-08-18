@@ -74,6 +74,19 @@ export function useAccountActions() {
     return uploadProfilePicture(result.assets[0]);
   }, [uploadProfilePicture]);
 
+  /** Requests camera permission, lets the user take a photo, and uploads it. Returns null if the user cancels. */
+  const takeAndUploadProfilePicture = useCallback(async (): Promise<UserProfile | null> => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      throw new Error('Camera permission is required to take a new profile picture.');
+    }
+    const result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.8 });
+    if (result.canceled || !result.assets?.length) {
+      return null;
+    }
+    return uploadProfilePicture(result.assets[0]);
+  }, [uploadProfilePicture]);
+
   const changePassword = useCallback(async (newPassword: string): Promise<void> => {
     setSubmitting(true);
     try {
@@ -108,6 +121,7 @@ export function useAccountActions() {
     submitting,
     changeUsername,
     pickAndUploadProfilePicture,
+    takeAndUploadProfilePicture,
     changePassword,
     deactivateAccount,
     deleteAccount,
