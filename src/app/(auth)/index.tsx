@@ -23,7 +23,7 @@ const clampByHeight = (min: number, vhFraction: number, max: number, windowHeigh
 // clamp() curve — same idea as the reference layout's `max-height: 750px`
 // breakpoint.
 const COMPACT_HEIGHT_BREAKPOINT = 750;
-const COMPACT_TITLE_PADDING_TOP = 40;
+const COMPACT_LOGO_AREA_PADDING_TOP = 40;
 const COMPACT_LOGO_AREA_HEIGHT = 240;
 
 export default function LoginScreen() {
@@ -39,8 +39,8 @@ export default function LoginScreen() {
   const isCompactHeight = windowHeight <= COMPACT_HEIGHT_BREAKPOINT;
   // Reserved logo area height stays within this range regardless of the
   // logo's real dimensions — BrandedLogo scales to fit inside it (contain),
-  // so a tall or wide tenant logo never pushes the form down.
-  const titlePaddingTop = isCompactHeight ? COMPACT_TITLE_PADDING_TOP : clampByHeight(60, 0.08, 90, windowHeight);
+  // so a tall or wide tenant logo never pushes the title/form down.
+  const logoAreaPaddingTop = isCompactHeight ? COMPACT_LOGO_AREA_PADDING_TOP : clampByHeight(60, 0.08, 90, windowHeight);
   const logoAreaHeight = isCompactHeight ? COMPACT_LOGO_AREA_HEIGHT : clampByHeight(280, 0.34, 340, windowHeight);
 
   const handleLogin = async () => {
@@ -85,53 +85,50 @@ export default function LoginScreen() {
             showsVerticalScrollIndicator={false}
           >
             <View style={styles.content}>
-              {/* 1. Title — near the top, above the logo. */}
-              <View style={[styles.titleContainer, { paddingTop: titlePaddingTop }]}>
-                {loginTitle ? (
-                  <ThemedText type="title" style={styles.title}>
-                    {loginTitle}
-                  </ThemedText>
-                ) : null}
-              </View>
-
-              {/* 2. Logo — reserved area of fixed/responsive height; the
+              {/* 1. Logo — reserved area of fixed/responsive height; the
                   logo scales inside it (contain) instead of the area
                   growing to the logo's natural size, so different tenant
-                  logos never move the form below. */}
-              <View style={[styles.logoContainer, { height: logoAreaHeight }]}>
+                  logos never move the title/form below. */}
+              <View style={[styles.logoContainer, { height: logoAreaHeight, paddingTop: logoAreaPaddingTop }]}>
                 <BrandedLogo style={styles.logo} />
               </View>
 
-              {/* 3-6. Message, then the form (username, password, login). */}
-              <View style={styles.formSection}>
-                <ThemedText type="default" themeColor="textSecondary" style={styles.message}>
-                  {loginMessage || 'Sign in to continue'}
+              {/* 2. Title, directly below the logo. */}
+              {loginTitle ? (
+                <ThemedText type="title" style={styles.title}>
+                  {loginTitle}
                 </ThemedText>
+              ) : null}
 
-                <View style={styles.form}>
-                  <TextField
-                    value={username}
-                    onChangeText={setUsername}
-                    placeholder="Username or email"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    keyboardType="email-address"
-                  />
-                  <TextField value={password} onChangeText={setPassword} placeholder="Password" secureTextEntry />
+              {/* 3. Message, directly below the title. */}
+              <ThemedText type="default" themeColor="textSecondary" style={styles.message}>
+                {loginMessage || 'Sign in to continue'}
+              </ThemedText>
 
-                  <PrimaryButton
-                    title={signingIn ? 'Signing in…' : 'Log in'}
-                    onPress={handleLogin}
-                    disabled={!canSubmit}
-                    loading={signingIn}
-                  />
+              {/* 4-6. Username, password, login button. */}
+              <View style={styles.form}>
+                <TextField
+                  value={username}
+                  onChangeText={setUsername}
+                  placeholder="Username or email"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="email-address"
+                />
+                <TextField value={password} onChangeText={setPassword} placeholder="Password" secureTextEntry />
 
-                  {error && (
-                    <ThemedText type="small" themeColor="destructive" style={styles.error}>
-                      {error}
-                    </ThemedText>
-                  )}
-                </View>
+                <PrimaryButton
+                  title={signingIn ? 'Signing in…' : 'Log in'}
+                  onPress={handleLogin}
+                  disabled={!canSubmit}
+                  loading={signingIn}
+                />
+
+                {error && (
+                  <ThemedText type="small" themeColor="destructive" style={styles.error}>
+                    {error}
+                  </ThemedText>
+                )}
               </View>
             </View>
           </ScrollView>
@@ -165,13 +162,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingBottom: Spacing.five,
   },
-  titleContainer: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  title: {
-    textAlign: 'center',
-  },
   logoContainer: {
     width: '100%',
     alignItems: 'center',
@@ -181,12 +171,15 @@ const styles = StyleSheet.create({
     width: '85%',
     height: '100%',
   },
-  formSection: {
+  title: {
     width: '100%',
-    marginTop: Spacing.four,
+    marginTop: Spacing.three,
+    textAlign: 'center',
   },
   message: {
+    width: '100%',
     textAlign: 'center',
+    marginTop: Spacing.two,
     marginBottom: Spacing.four,
   },
   form: {
