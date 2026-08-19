@@ -1,21 +1,29 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { Clock, Mic, Play } from 'lucide-react-native';
 import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { getDuration, getYoutubeId, youtubeThumbnail } from '@/features/podcast/services/episodeMeta';
+import { Badge } from '@/shared/components/Badge';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { RADII } from '@/shared/constants/theme';
 import type { Post } from '@/shared/types/posts';
 
-// Stacked thumbnail-then-content card per
-// .docs/README_YOUTUBE_PLAYLIST_CATEGORIES_MIGRATION.md §24-25 — replaces
-// the previous text-over-image gradient-scrim layout. Same data sources
-// (episodeMeta.ts), new layout only.
-//
-// The episode number badge and title were deliberately dropped: the artwork
-// already carries both, so repeating them below only duplicated information.
-// What's left is what the thumbnail can't tell you — when it aired and how
-// long it runs.
+// Full-bleed artwork with the episode details laid over it, behind a bottom
+// scrim that keeps them readable on any thumbnail. The alternative — a text
+// block stacked under the image — costs a lot of vertical space per row and
+// makes the artwork feel like a header rather than the card itself.
+
+// These sit on imagery, so they stay fixed regardless of theme — same
+// convention as Badge and PodcastEpisodeDetail's OVERLAY.
+const OVERLAY = {
+  white: '#FFFFFF',
+  muted: 'rgba(255,255,255,0.82)',
+  playFill: 'rgba(255,255,255,0.28)',
+  playBorder: 'rgba(255,255,255,0.85)',
+};
+
+const PLAY_SIZE = 56;
 
 function formatDate(iso: string): string {
   try {
@@ -29,9 +37,9 @@ function formatDate(iso: string): string {
   }
 }
 
-type Props = { post: Post; onPress: () => void };
+type Props = { post: Post; episodeNumber: number; onPress: () => void };
 
-export function EpisodeCard({ post, onPress }: Props) {
+export function EpisodeCard({ post, episodeNumber, onPress }: Props) {
   const colors = useTheme();
   const youtubeId = getYoutubeId(post);
   const [thumbFailed, setThumbFailed] = useState(false);
@@ -45,41 +53,51 @@ export function EpisodeCard({ post, onPress }: Props) {
       style={[styles.card, { borderColor: colors.border, backgroundColor: colors.surfaceElevated }]}
       onPress={onPress}
       accessibilityRole="button"
-      // The title is no longer rendered, so it has to reach screen readers
-      // here — otherwise the card announces only a date and a duration.
-      accessibilityLabel={post.title}>
-      <View style={styles.thumbnail}>
-        {imageUri ? (
-          <Image
-            source={{ uri: imageUri }}
-            style={StyleSheet.absoluteFill}
-            resizeMode="cover"
-            onError={() => {
-              if (!post.coverUrl && !thumbFailed) setThumbFailed(true);
-            }}
-          />
-        ) : (
-          <View style={[StyleSheet.absoluteFill, styles.thumbnailPlaceholder, { backgroundColor: colors.surface }]}>
-            <Mic size={40} color={colors.textMuted} />
-          </View>
-        )}
-        <View style={styles.playButton}>
-          <Play size={20} color={colors.textPrimary} fill={colors.textPrimary} />
+      // One coherent label instead of four separate text nodes.
+      accessibilityLabel={`${post.title}, episode ${episodeNumber}`}>
+      {imageUri ? (
+        <Image
+          source={{ uri: imageUri }}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+          onError={() => {
+            if (!post.coverUrl && !thumbFailed) setThumbFailed(true);
+          }}
+        />
+      ) : (
+        <View style={[StyleSheet.absoluteFill, styles.placeholder, { backgroundColor: colors.surface }]}>
+          <Mic size={40} color={colors.textMuted} />
         </View>
-      </View>
+      )}
 
-      <View style={styles.content}>
+      {/* Bottom-weighted so the top of the artwork stays untouched. Three
+          stops rather than two: a straight transparent->black ramp washes out
+          the middle of the image well above where the text actually sits. */}
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.35)', 'rgba(0,0,0,0.88)']}
+        locations={[0.35, 0.62, 1]}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
+
+      <View style={styles.overlay}>
+        <Badge label={`EP #${episodeNumber}`} style={styles.badge} />
+        <Text style={styles.title} numberOfLines={2}>
+          {post.title}
+        </Text>
         <View style={styles.metaRow}>
-          <Text style={[styles.metaText, { color: colors.textSecondary }]}>
-            {formatDate(post.publishAt ?? post.createdAt)}
-          </Text>
+          <Text style={styles.metaText}>{formatDate(post.publishAt ?? post.createdAt)}</Text>
           {duration ? (
             <>
-              <Clock size={13} color={colors.textSecondary} />
-              <Text style={[styles.metaText, { color: colors.textSecondary }]}>{duration}</Text>
+              <Clock size={13} color={OVERLAY.muted} />
+              <Text style={styles.metaText}>{duration}</Text>
             </>
           ) : null}
         </View>
+      </View>
+
+      <View style={styles.playButton}>
+        <Play size={24} color={OVERLAY.white} fill={OVERLAY.white} />
       </View>
     </Pressable>
   );
@@ -87,37 +105,35 @@ export function EpisodeCard({ post, onPress }: Props) {
 
 const styles = StyleSheet.create({
   card: {
+    // 16:9 keeps YouTube thumbnails uncropped; the overlay rides on top
+    // rather than adding height below.
+    aspectRatio: 16 / 9,
+    width: '100%',
     borderRadius: RADII.card,
     borderWidth: 1,
     marginBottom: 14,
     overflow: 'hidden',
+    justifyContent: 'flex-end',
   },
-  thumbnail: {
-    aspectRatio: 16 / 9,
-    width: '100%',
-  },
-  thumbnailPlaceholder: {
+  placeholder: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  playButton: {
-    position: 'absolute',
-    right: 12,
-    bottom: 12,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  overlay: {
+    padding: 14,
+    // Keeps the title clear of the play button on narrow screens.
+    paddingRight: PLAY_SIZE + 22,
   },
-  content: {
-    // Tighter than the old three-row block — a single meta line doesn't need
-    // the vertical room the badge/title stack did.
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+  badge: {
+    marginBottom: 8,
+  },
+  title: {
+    color: OVERLAY.white,
+    fontSize: 19,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+    lineHeight: 24,
+    marginBottom: 6,
   },
   metaRow: {
     flexDirection: 'row',
@@ -125,6 +141,20 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   metaText: {
+    color: OVERLAY.muted,
     fontSize: 13,
+  },
+  playButton: {
+    position: 'absolute',
+    right: 14,
+    bottom: 14,
+    width: PLAY_SIZE,
+    height: PLAY_SIZE,
+    borderRadius: PLAY_SIZE / 2,
+    backgroundColor: OVERLAY.playFill,
+    borderWidth: 2,
+    borderColor: OVERLAY.playBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
