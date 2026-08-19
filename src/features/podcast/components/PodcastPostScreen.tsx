@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { useCallback } from 'react';
 import { ActivityIndicator, StyleSheet } from 'react-native';
 
 import { useAuth } from '@/core/auth';
@@ -28,6 +29,21 @@ export function PodcastPostScreen() {
   const canEdit = hasAuthority('FUNC_PODCAST_EDIT_POST');
   const canDelete = hasAuthority('FUNC_PODCAST_DELETE_POST');
 
+  // router.back() is a silent no-op when this screen is the *first* entry on
+  // the stack, which happens whenever the app opens straight onto it: a cold
+  // start from a deep link (skateboardfe://video/…) or a push notification,
+  // and on web every time someone opens or refreshes /video/<slug> directly.
+  // Without this guard the back button simply does nothing in those cases.
+  // Home is the fallback because that's where the video routes are reached
+  // from, and it's a valid destination for the podcast route too.
+  const goBack = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/');
+    }
+  }, []);
+
   const handleEdit = () => {
     if (!post) return;
     router.push({
@@ -50,7 +66,7 @@ export function PodcastPostScreen() {
         onPress: async () => {
           try {
             await deletePost(post.id);
-            router.back();
+            goBack();
           } catch (deleteError) {
             showAlert('Could not delete post', isBffError(deleteError) ? deleteError.message : 'Try again.');
           }
@@ -73,7 +89,7 @@ export function PodcastPostScreen() {
       episodeNumber={getEpisodeNumber(post)}
       canEdit={canEdit}
       canDelete={canDelete}
-      onBack={() => router.back()}
+      onBack={goBack}
       onEdit={handleEdit}
       onDelete={handleDelete}
     />
