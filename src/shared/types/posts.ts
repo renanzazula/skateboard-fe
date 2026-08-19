@@ -61,6 +61,11 @@ export type SocialMediaLink = {
   platform?: string;
 };
 
+export type PlatformLink = {
+  platform: 'YOUTUBE' | 'SPOTIFY';
+  externalUrl: string | null;
+};
+
 export type Post = {
   id: string;
   slug: string;
@@ -81,4 +86,10 @@ export type Post = {
   description?: string | null;
   durationSeconds?: number | null;
   episodeNumber?: number | null;
+  // Distribution-platform links attached by the YouTube/Spotify sync jobs
+  // (see .docs/README_SPOTIFY_YOUTUBE_PODCAST_INTEGRATION.md) — the current
+  // source of truth for a synced episode's Spotify link. Manually-authored
+  // posts predating that integration instead carry a `spotify` content block;
+  // episodeMeta.ts's getSpotifyEmbedUrl checks both.
+  platforms?: PlatformLink[];
 };

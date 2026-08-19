@@ -583,6 +583,13 @@ export interface components {
             description?: string | null;
             durationSeconds?: number | null;
             episodeNumber?: number | null;
+            /** @description Distribution-platform links for this episode (YouTube, Spotify, ...). May be empty for manually-authored posts. */
+            platforms?: components["schemas"]["PostPlatformResponse"][];
+        };
+        PostPlatformResponse: {
+            /** @enum {string} */
+            platform?: "YOUTUBE" | "SPOTIFY";
+            externalUrl?: string | null;
         };
         FeedPageResponse: {
             posts?: components["schemas"]["PostResponse"][];

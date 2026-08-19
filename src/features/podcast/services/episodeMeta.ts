@@ -1,3 +1,4 @@
+import { extractSpotifyInfo } from '@/features/podcast/services/spotify';
 import type { Post } from '@/shared/types/posts';
 
 // Posts created by podcast-be's YouTube sync job (see
@@ -39,7 +40,16 @@ export function getEpisodeNumber(post: Post): number | null {
   return match ? parseInt(match[1], 10) : null;
 }
 
+// Prefers the platform link the sync jobs attach (see
+// .docs/README_SPOTIFY_YOUTUBE_PODCAST_INTEGRATION.md) — the only source for
+// synced episodes, which never carry a `spotify` content block. Falls back to
+// the legacy block for manually-authored posts predating that integration.
 export function getSpotifyEmbedUrl(post: Post): string | null {
+  const link = post.platforms?.find((p) => p.platform === 'SPOTIFY')?.externalUrl;
+  if (link) {
+    const info = extractSpotifyInfo(link);
+    if (info) return `https://open.spotify.com/embed/${info.spotifyType}/${info.spotifyId}`;
+  }
   for (const block of post.blocks) {
     if (block.type === 'spotify') {
       return `https://open.spotify.com/embed/${block.data.spotifyType}/${block.data.spotifyId}`;

@@ -26,5 +26,8 @@ export function toPost(response: PostResponse): Post {
     description: response.description,
     durationSeconds: response.durationSeconds,
     episodeNumber: response.episodeNumber,
+    platforms: response.platforms
+      ?.filter((p) => p.platform != null)
+      .map((p) => ({ platform: p.platform as 'YOUTUBE' | 'SPOTIFY', externalUrl: p.externalUrl ?? null })),
   };
 }
