@@ -7,7 +7,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HomeHeader } from '@/features/home/components/HomeHeader';
 import { HomeVideoGalleryItem, TILE_INSET } from '@/features/home/components/HomeVideoGalleryItem';
+import { MiniPodcastPlayer } from '@/features/home/components/MiniPodcastPlayer';
 import { registerHomeReload } from '@/features/home/homeReloadRegistry';
+import { useHomeFeaturedPlayer } from '@/features/home/hooks/useHomeFeaturedPlayer';
 import { useHomeVideos } from '@/features/home/hooks/useHomeVideos';
 import { isBffError } from '@/shared/api/errors';
 import { EmptyState } from '@/shared/components/EmptyState';
@@ -29,6 +31,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const listRef = useRef<FlashListRef<Video>>(null);
   const { videos, isLoading, error, refresh, reloadHome } = useHomeVideos();
+  const { content: featuredContent } = useHomeFeaturedPlayer();
   const [refreshing, setRefreshing] = useState(false);
 
   const handleReselect = useCallback(() => {
@@ -61,6 +64,12 @@ export default function HomeScreen() {
       <View style={{ paddingTop: insets.top + Spacing.two }}>
         <HomeHeader />
       </View>
+
+      {featuredContent && featuredContent.position === 'TOP' ? (
+        <View style={styles.topPlayer}>
+          <MiniPodcastPlayer content={featuredContent} />
+        </View>
+      ) : null}
 
       {error ? (
         <ErrorBanner message={isBffError(error) ? error.message : 'We couldn’t load the videos.'} onRetry={refresh} />
@@ -100,6 +109,12 @@ export default function HomeScreen() {
           }
         />
       )}
+
+      {featuredContent && featuredContent.position === 'BOTTOM' ? (
+        <View style={[styles.bottomPlayer, { bottom: BottomTabInset + Spacing.two }]} pointerEvents="box-none">
+          <MiniPodcastPlayer content={featuredContent} />
+        </View>
+      ) : null}
     </ThemedView>
   );
 }
@@ -117,5 +132,21 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MAX_CONTENT_WIDTH,
     alignSelf: 'center',
+  },
+  topPlayer: {
+    width: '100%',
+    maxWidth: MAX_CONTENT_WIDTH,
+    alignSelf: 'center',
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.two,
+  },
+  bottomPlayer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    width: '100%',
+    maxWidth: MAX_CONTENT_WIDTH,
+    alignSelf: 'center',
+    paddingHorizontal: Spacing.three,
   },
 });

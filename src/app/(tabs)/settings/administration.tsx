@@ -1,5 +1,5 @@
 import { Redirect, router } from 'expo-router';
-import { Home, Mic, Palette } from 'lucide-react-native';
+import { Home, Mic, Music, Palette } from 'lucide-react-native';
 import { ScrollView, StyleSheet } from 'react-native';
 
 import { useAuth } from '@/core/auth';
@@ -15,9 +15,10 @@ export default function AdministrationScreen() {
 
   const canManageBranding = hasAuthority('FUNC_TAB_SETTINGS_BRANDING');
   const canConfigureHomeCategories = hasAuthority('FUNC_HOME_CATEGORY_CONFIG');
+  const canConfigureFeaturedPlayer = hasAuthority('FUNC_HOME_FEATURED_PLAYER_CONFIG');
   const canAdministerPodcast = hasAuthority('FUNC_PODCAST_IMPORT_JSON') || hasAuthority('FUNC_PODCAST_MANAGE_CATEGORIES');
 
-  if (!canManageBranding && !canConfigureHomeCategories && !canAdministerPodcast) {
+  if (!canManageBranding && !canConfigureHomeCategories && !canConfigureFeaturedPlayer && !canAdministerPodcast) {
     return <Redirect href="/settings" />;
   }
 
@@ -40,6 +41,15 @@ export default function AdministrationScreen() {
             title="Home Video Categories"
             subtitle="Choose which categories appear on the Home dashboard"
             onPress={() => router.push('/settings/home-categories')}
+            trailing={{ type: 'chevron' }}
+          />
+        ) : null}
+        {canConfigureFeaturedPlayer ? (
+          <SettingsRow
+            icon={Music}
+            title="Featured Player"
+            subtitle="Pick the episode featured on the Home dashboard"
+            onPress={() => router.push('/settings/featured-player')}
             trailing={{ type: 'chevron' }}
           />
         ) : null}

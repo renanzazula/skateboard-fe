@@ -473,6 +473,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/home/featured-player": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the effective Featured Player content for the Home dashboard, or 204 when none is active/configured/resolvable */
+        get: operations["getHomeFeaturedPlayer"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/config/home/featured-player": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the default Home Featured Player configuration (admin only — for the config screen) */
+        get: operations["getHomeFeaturedPlayerConfig"];
+        /** Update the default Home Featured Player configuration (admin only) */
+        put: operations["updateHomeFeaturedPlayerConfig"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -716,6 +751,47 @@ export interface components {
             mode: components["schemas"]["HomeVideoCategoryConfigMode"];
             enabledCategoryIds?: string[];
         };
+        /**
+         * @description Logical content source owning the referenced contentId. Only PODCAST exists today; new sources are added here as they're onboarded.
+         * @enum {string}
+         */
+        FeaturedContentSource: "PODCAST";
+        /** @enum {string} */
+        HomePlayerType: "MINI";
+        /** @enum {string} */
+        HomePlayerPosition: "TOP" | "BOTTOM";
+        HomeFeaturedPlayerConfigResponse: {
+            enabled?: boolean;
+            contentSource?: components["schemas"]["FeaturedContentSource"] | null;
+            contentId?: string | null;
+            playerType?: components["schemas"]["HomePlayerType"];
+            position?: components["schemas"]["HomePlayerPosition"];
+            /** Format: date-time */
+            updatedAt?: string | null;
+        };
+        UpdateHomeFeaturedPlayerConfigRequest: {
+            enabled: boolean;
+            contentSource?: components["schemas"]["FeaturedContentSource"] | null;
+            contentId?: string | null;
+            playerType: components["schemas"]["HomePlayerType"];
+            position: components["schemas"]["HomePlayerPosition"];
+        };
+        HomeFeaturedPlayerPlayback: {
+            /** @description Playback adapter the mini player should use, e.g. SPOTIFY_EMBED or YOUTUBE. */
+            type?: string;
+            /** @description Provider-specific playback reference (e.g. the Spotify/YouTube URL) — opaque to the frontend beyond picking the adapter for `type`. */
+            reference?: string;
+        };
+        HomeFeaturedPlayerResponse: {
+            id?: string;
+            source?: components["schemas"]["FeaturedContentSource"];
+            title?: string;
+            subtitle?: string | null;
+            thumbnailUrl?: string | null;
+            duration?: number | null;
+            playback?: components["schemas"]["HomeFeaturedPlayerPlayback"];
+            position?: components["schemas"]["HomePlayerPosition"];
+        };
         HomeVideoResponse: {
             /** Format: uuid */
             id?: string;
@@ -752,6 +828,8 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                /** @description Case-insensitive title filter (used by the Home Featured Player episode picker) */
+                search?: string;
             };
             header?: never;
             path?: never;
@@ -2304,6 +2382,140 @@ export interface operations {
                 };
             };
             /** @description Forbidden – FUNC_HOME_CATEGORY_CONFIG required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getHomeFeaturedPlayer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Featured Player content */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeFeaturedPlayerResponse"];
+                };
+            };
+            /** @description No Featured Player to show */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_TAB_HOME required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getHomeFeaturedPlayerConfig: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Home Featured Player configuration */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeFeaturedPlayerConfigResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_HOME_FEATURED_PLAYER_CONFIG required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateHomeFeaturedPlayerConfig: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateHomeFeaturedPlayerConfigRequest"];
+            };
+        };
+        responses: {
+            /** @description Home Featured Player configuration updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeFeaturedPlayerConfigResponse"];
+                };
+            };
+            /** @description Invalid input (e.g. enabled=true without contentSource/contentId) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_HOME_FEATURED_PLAYER_CONFIG required */
             403: {
                 headers: {
                     [name: string]: unknown;
