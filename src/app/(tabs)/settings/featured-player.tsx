@@ -1,7 +1,7 @@
 import { Redirect } from 'expo-router';
-import { Calendar, Music } from 'lucide-react-native';
+import { Check, Music } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Image, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useAuth } from '@/core/auth';
 import { CategoryChip } from '@/features/podcast/components/CategoryChip';
@@ -141,6 +141,10 @@ export default function FeaturedPlayerScreen() {
 
             <View style={styles.section}>
               <ThemedText type="smallBold">Featured episode</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                Pick any episode below. If it has a matched Spotify link (shown as a badge), the mini player
+                uses Spotify automatically — otherwise it falls back to YouTube.
+              </ThemedText>
 
               {selectedPost ? (
                 <View style={[styles.selectedRow, { borderColor: theme.primary, backgroundColor: theme.primarySoft }]}>
@@ -203,16 +207,48 @@ function EpisodeThumbnail({ post }: { post: Post }) {
   );
 }
 
+// Shows which platform(s) the episode actually has a matched link for, so an
+// admin looking to feature a Spotify-playable episode can tell at a glance —
+// there's no separate "source" picker to choose Spotify vs YouTube with
+// (playback.type is resolved automatically per-episode by the BFF, preferring
+// Spotify when both exist; see PodcastFeaturedContentResolver).
 function EpisodeRow({ post, selected, onPress }: { post: Post; selected: boolean; onPress: () => void }) {
   const theme = useTheme();
+  const hasSpotify = post.platforms?.some((p) => p.platform === 'SPOTIFY');
+  const hasYoutube = post.platforms?.some((p) => p.platform === 'YOUTUBE') || Boolean(post.youtubeVideoId);
+
   return (
-    <SettingsRow
-      icon={selected ? Music : Calendar}
-      title={post.title}
-      subtitle={post.publishAt ? new Date(post.publishAt).toLocaleDateString() : undefined}
+    <Pressable
+      style={[styles.episodeRow, { borderColor: theme.border }]}
       onPress={onPress}
-      trailing={{ type: 'value', text: selected ? 'Selected' : '', tone: selected ? 'accent' : 'default' }}
-    />
+      accessibilityRole="button"
+      accessibilityState={{ selected: Boolean(selected) }}
+    >
+      <EpisodeThumbnail post={post} />
+      <View style={styles.episodeRowText}>
+        <ThemedText type="smallBold" numberOfLines={1}>
+          {post.title}
+        </ThemedText>
+        <View style={styles.platformRow}>
+          {post.publishAt ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              {new Date(post.publishAt).toLocaleDateString()}
+            </ThemedText>
+          ) : null}
+          {hasSpotify ? (
+            <View style={[styles.platformPill, { borderColor: theme.spotify }]}>
+              <Text style={[styles.platformPillText, { color: theme.spotify }]}>Spotify</Text>
+            </View>
+          ) : null}
+          {hasYoutube ? (
+            <View style={[styles.platformPill, { borderColor: theme.youtube }]}>
+              <Text style={[styles.platformPillText, { color: theme.youtube }]}>YouTube</Text>
+            </View>
+          ) : null}
+        </View>
+      </View>
+      {selected ? <Check size={18} color={theme.primary} /> : null}
+    </Pressable>
   );
 }
 
@@ -272,6 +308,33 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: RADII.card,
     overflow: 'hidden',
+  },
+  episodeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    padding: Spacing.two,
+    borderBottomWidth: 1,
+  },
+  episodeRowText: {
+    flex: 1,
+    gap: 4,
+  },
+  platformRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: Spacing.one,
+  },
+  platformPill: {
+    borderWidth: 1,
+    borderRadius: RADII.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  platformPillText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   emptyHint: {
     padding: Spacing.three,
