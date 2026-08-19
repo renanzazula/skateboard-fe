@@ -36,7 +36,7 @@ export default function FeaturedPlayerScreen() {
   const theme = useTheme();
   const { hasAuthority } = useAuth();
   const { submitting, getConfig, updateConfig } = useFeaturedPlayerAdmin();
-  const { search, setSearch, posts, isLoading: searching } = useFeaturedContentPicker();
+  const { search, setSearch, posts, isLoading: searching, hasMore, loadMore } = useFeaturedContentPicker();
 
   const [enabled, setEnabled] = useState(false);
   const [contentId, setContentId] = useState<string | null>(null);
@@ -213,24 +213,40 @@ export default function FeaturedPlayerScreen() {
                 style={[styles.searchInput, { color: theme.textPrimary, borderColor: theme.border, backgroundColor: theme.surface }]}
               />
 
-              {searching ? (
+              {searching && posts.length === 0 ? (
                 <ActivityIndicator style={styles.loading} color={theme.primary} />
               ) : (
-                <View style={[styles.episodeList, { borderColor: theme.border }]}>
-                  {posts.map((post) => (
-                    <EpisodeRow
-                      key={post.id}
-                      post={post}
-                      selected={post.id === contentId}
-                      onPress={() => handleSelectEpisode(post)}
-                    />
-                  ))}
-                  {posts.length === 0 ? (
-                    <ThemedText type="small" themeColor="textSecondary" style={styles.emptyHint}>
-                      No episodes found.
-                    </ThemedText>
+                <>
+                  <View style={[styles.episodeList, { borderColor: theme.border }]}>
+                    {posts.map((post) => (
+                      <EpisodeRow
+                        key={post.id}
+                        post={post}
+                        selected={post.id === contentId}
+                        onPress={() => handleSelectEpisode(post)}
+                      />
+                    ))}
+                    {posts.length === 0 ? (
+                      <ThemedText type="small" themeColor="textSecondary" style={styles.emptyHint}>
+                        No episodes found.
+                      </ThemedText>
+                    ) : null}
+                  </View>
+
+                  {hasMore ? (
+                    <Pressable
+                      style={[styles.loadMoreButton, { borderColor: theme.border, backgroundColor: theme.surface }]}
+                      onPress={loadMore}
+                      disabled={searching}
+                    >
+                      {searching ? (
+                        <ActivityIndicator color={theme.primary} />
+                      ) : (
+                        <Text style={[styles.loadMoreText, { color: theme.textPrimary }]}>Load more</Text>
+                      )}
+                    </Pressable>
                   ) : null}
-                </View>
+                </>
               )}
             </View>
           </>
@@ -384,5 +400,17 @@ const styles = StyleSheet.create({
   },
   emptyHint: {
     padding: Spacing.three,
+  },
+  loadMoreButton: {
+    marginTop: Spacing.two,
+    borderWidth: 1,
+    borderRadius: RADII.control,
+    paddingVertical: Spacing.two,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadMoreText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
