@@ -2,9 +2,9 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Mic, Plus } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/core/auth';
+import { AppHeader } from '@/shared/components/AppHeader';
 import { CategorySelector } from '@/features/podcast/components/CategorySelector';
 import { EpisodeCard } from '@/features/podcast/components/EpisodeCard';
 import { useCategories } from '@/features/podcast/hooks/useCategories';
@@ -13,7 +13,7 @@ import { getEpisodeNumber } from '@/features/podcast/services/episodeMeta';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { ErrorBanner } from '@/shared/components/ErrorBanner';
 import { isBffError } from '@/shared/api/errors';
-import { BottomTabInset, DisplayFontFamily, MAX_CONTENT_WIDTH } from '@/shared/constants/theme';
+import { BottomTabInset, MAX_CONTENT_WIDTH } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import type { Category } from '@/shared/types/category';
@@ -28,7 +28,6 @@ export default function PodcastListScreen() {
   const { t } = useTranslation();
   const { hasAuthority } = useAuth();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
 
   const { categories, defaultCategory, isLoading: categoriesLoading, refresh: refreshCategories } = useCategories();
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>(undefined);
@@ -80,17 +79,10 @@ export default function PodcastListScreen() {
     if (category.slug !== selectedCategory?.slug) setSelectedCategory(category);
   };
 
+  // Title and episode count live in the AppHeader above the list now, so
+  // this is just the category rail.
   const ListHeader = () => (
     <View style={styles.screenHeader}>
-      <View style={styles.screenHeaderTop}>
-        <View style={styles.screenHeaderTitles}>
-          <Text style={[styles.screenTitle, { color: colors.textPrimary }]}>Podcast</Text>
-          <Text style={[styles.screenSubtitle, { color: colors.textSecondary }]}>
-            {t('podcast.episodeCount').replace('{count}', String(total))}
-          </Text>
-        </View>
-      </View>
-
       <CategorySelector
         categories={categories}
         selectedSlug={selectedCategory?.slug}
@@ -131,6 +123,11 @@ export default function PodcastListScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingBottom: BottomTabInset }]}>
+      <AppHeader
+        title="Podcast"
+        subtitle={t('podcast.episodeCount').replace('{count}', String(total))}
+      />
+
       {error ? (
         <ErrorBanner message={isBffError(error) ? error.message : t('podcast.couldNotLoadVideos')} onRetry={refreshPosts} />
       ) : null}
@@ -144,7 +141,7 @@ export default function PodcastListScreen() {
           const episodeNumber = getEpisodeNumber(item) ?? total - index;
           return <EpisodeCard post={item} episodeNumber={episodeNumber} onPress={() => handlePostPress(item)} />;
         }}
-        contentContainerStyle={[styles.listContent, { paddingTop: insets.top + 16 }]}
+        contentContainerStyle={styles.listContent}
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.5}
         ListHeaderComponent={<ListHeader />}
@@ -172,6 +169,8 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 16,
+    // No safe-area inset — AppHeader applies it above the list.
+    paddingTop: 4,
     paddingBottom: 100,
     flexGrow: 1,
     width: '100%',
@@ -180,25 +179,6 @@ const styles = StyleSheet.create({
   },
   screenHeader: {
     marginBottom: 18,
-  },
-  screenHeaderTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 14,
-  },
-  screenHeaderTitles: {
-    flex: 1,
-  },
-  screenTitle: {
-    fontSize: 26,
-    fontFamily: DisplayFontFamily,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-  },
-  screenSubtitle: {
-    fontSize: 13,
-    marginTop: 4,
   },
   footer: {
     paddingVertical: 20,

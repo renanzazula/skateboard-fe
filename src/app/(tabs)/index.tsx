@@ -58,9 +58,7 @@ export default function HomeScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <View style={{ paddingTop: insets.top + Spacing.two }}>
-        <HomeHeader />
-      </View>
+      <HomeHeader />
 
       {error ? (
         <ErrorBanner message={isBffError(error) ? error.message : 'We couldn’t load the videos.'} onRetry={refresh} />
@@ -86,7 +84,7 @@ export default function HomeScreen() {
             // Tiles inset themselves by TILE_INSET on every side, so subtract
             // it here to keep the visible outer margin at Spacing.two (8px).
             paddingHorizontal: Spacing.two - TILE_INSET,
-            // No safe-area inset here — HomeHeader's wrapper above applies it.
+            // No safe-area inset here — AppHeader applies it above the list.
             paddingTop: Spacing.two,
             paddingBottom: BottomTabInset + Spacing.four,
           }}
