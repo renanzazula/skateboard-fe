@@ -9,7 +9,6 @@ import { CategorySelector } from '@/features/podcast/components/CategorySelector
 import { EpisodeCard } from '@/features/podcast/components/EpisodeCard';
 import { useCategories } from '@/features/podcast/hooks/useCategories';
 import { usePodcastFeed } from '@/features/podcast/hooks/usePodcastFeed';
-import { getEpisodeNumber } from '@/features/podcast/services/episodeMeta';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { ErrorBanner } from '@/shared/components/ErrorBanner';
 import { isBffError } from '@/shared/api/errors';
@@ -138,10 +137,7 @@ export default function PodcastListScreen() {
       <FlatList
         data={posts}
         keyExtractor={(item) => item.id}
-        renderItem={({ item, index }) => {
-          const episodeNumber = getEpisodeNumber(item) ?? total - index;
-          return <EpisodeCard post={item} episodeNumber={episodeNumber} onPress={() => handlePostPress(item)} />;
-        }}
+        renderItem={({ item }) => <EpisodeCard post={item} onPress={() => handlePostPress(item)} />}
         contentContainerStyle={[styles.listContent, { paddingTop: insets.top + 16 }]}
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.5}

@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { getDuration, getYoutubeId, youtubeThumbnail } from '@/features/podcast/services/episodeMeta';
-import { Badge } from '@/shared/components/Badge';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { RADII } from '@/shared/constants/theme';
 import type { Post } from '@/shared/types/posts';
@@ -12,6 +11,11 @@ import type { Post } from '@/shared/types/posts';
 // .docs/README_YOUTUBE_PLAYLIST_CATEGORIES_MIGRATION.md §24-25 — replaces
 // the previous text-over-image gradient-scrim layout. Same data sources
 // (episodeMeta.ts), new layout only.
+//
+// The episode number badge and title were deliberately dropped: the artwork
+// already carries both, so repeating them below only duplicated information.
+// What's left is what the thumbnail can't tell you — when it aired and how
+// long it runs.
 
 function formatDate(iso: string): string {
   try {
@@ -25,9 +29,9 @@ function formatDate(iso: string): string {
   }
 }
 
-type Props = { post: Post; episodeNumber: number; onPress: () => void };
+type Props = { post: Post; onPress: () => void };
 
-export function EpisodeCard({ post, episodeNumber, onPress }: Props) {
+export function EpisodeCard({ post, onPress }: Props) {
   const colors = useTheme();
   const youtubeId = getYoutubeId(post);
   const [thumbFailed, setThumbFailed] = useState(false);
@@ -39,7 +43,11 @@ export function EpisodeCard({ post, episodeNumber, onPress }: Props) {
   return (
     <Pressable
       style={[styles.card, { borderColor: colors.border, backgroundColor: colors.surfaceElevated }]}
-      onPress={onPress}>
+      onPress={onPress}
+      accessibilityRole="button"
+      // The title is no longer rendered, so it has to reach screen readers
+      // here — otherwise the card announces only a date and a duration.
+      accessibilityLabel={post.title}>
       <View style={styles.thumbnail}>
         {imageUri ? (
           <Image
@@ -61,10 +69,6 @@ export function EpisodeCard({ post, episodeNumber, onPress }: Props) {
       </View>
 
       <View style={styles.content}>
-        <Badge label={`EP #${episodeNumber}`} style={styles.epBadge} />
-        <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={2}>
-          {post.title}
-        </Text>
         <View style={styles.metaRow}>
           <Text style={[styles.metaText, { color: colors.textSecondary }]}>
             {formatDate(post.publishAt ?? post.createdAt)}
@@ -110,15 +114,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
-    padding: 14,
-  },
-  epBadge: {
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 6,
+    // Tighter than the old three-row block — a single meta line doesn't need
+    // the vertical room the badge/title stack did.
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
   metaRow: {
     flexDirection: 'row',
