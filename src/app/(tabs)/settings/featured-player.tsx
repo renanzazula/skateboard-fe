@@ -5,7 +5,11 @@ import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, Text
 
 import { useAuth } from '@/core/auth';
 import { CategoryChip } from '@/features/podcast/components/CategoryChip';
-import type { FeaturedContentSource, HomePlayerPosition } from '@/features/home/hooks/useFeaturedPlayerAdmin';
+import type {
+  FeaturedContentSource,
+  HomePlayerPosition,
+  PreferredPlaybackPlatform,
+} from '@/features/home/hooks/useFeaturedPlayerAdmin';
 import { useFeaturedPlayerAdmin } from '@/features/home/hooks/useFeaturedPlayerAdmin';
 import { useFeaturedContentPicker } from '@/features/home/hooks/useFeaturedContentPicker';
 import { SettingsHeader } from '@/features/settings/components/SettingsHeader';
@@ -38,6 +42,7 @@ export default function FeaturedPlayerScreen() {
   const [contentId, setContentId] = useState<string | null>(null);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [position, setPosition] = useState<HomePlayerPosition>('BOTTOM');
+  const [preferredPlatform, setPreferredPlatform] = useState<PreferredPlaybackPlatform | null>(null);
   const [loading, setLoading] = useState(true);
   const [configError, setConfigError] = useState<Error | null>(null);
 
@@ -51,6 +56,7 @@ export default function FeaturedPlayerScreen() {
       setEnabled(config.enabled ?? false);
       setContentId(config.contentId ?? null);
       setPosition(config.position ?? 'BOTTOM');
+      setPreferredPlatform(config.preferredPlatform ?? null);
     } catch (loadError) {
       setConfigError(loadError as Error);
     } finally {
@@ -87,12 +93,27 @@ export default function FeaturedPlayerScreen() {
         contentId,
         playerType: 'MINI',
         position,
+        preferredPlatform,
       });
       showAlert('Saved', 'Home Featured Player updated.');
     } catch (saveError) {
       showAlert('Could not save', isBffError(saveError) ? saveError.message : 'Try again.');
     }
   };
+
+  const handleSelectEpisode = (post: Post) => {
+    setContentId(post.id);
+    // A stale preference from a previously-selected episode shouldn't carry
+    // over silently — reset it and let the admin re-choose if this episode
+    // also has both platforms.
+    setPreferredPlatform(null);
+  };
+
+  const selectedHasSpotify = Boolean(selectedPost?.platforms?.some((p) => p.platform === 'SPOTIFY'));
+  const selectedHasYoutube = Boolean(
+    selectedPost?.platforms?.some((p) => p.platform === 'YOUTUBE') || selectedPost?.youtubeVideoId
+  );
+  const selectedHasBothPlatforms = selectedHasSpotify && selectedHasYoutube;
 
   const canSave = !enabled || Boolean(contentId);
 
@@ -159,6 +180,31 @@ export default function FeaturedPlayerScreen() {
                 </ThemedText>
               ) : null}
 
+              {selectedHasBothPlatforms ? (
+                <View style={styles.section}>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    This episode has both Spotify and YouTube. Choose which one to feature:
+                  </ThemedText>
+                  <View style={styles.modeRow}>
+                    <CategoryChip
+                      label="Auto (Spotify first)"
+                      selected={preferredPlatform == null}
+                      onPress={() => setPreferredPlatform(null)}
+                    />
+                    <CategoryChip
+                      label="Spotify"
+                      selected={preferredPlatform === 'SPOTIFY'}
+                      onPress={() => setPreferredPlatform('SPOTIFY')}
+                    />
+                    <CategoryChip
+                      label="YouTube"
+                      selected={preferredPlatform === 'YOUTUBE'}
+                      onPress={() => setPreferredPlatform('YOUTUBE')}
+                    />
+                  </View>
+                </View>
+              ) : null}
+
               <TextInput
                 value={search}
                 onChangeText={setSearch}
@@ -176,7 +222,7 @@ export default function FeaturedPlayerScreen() {
                       key={post.id}
                       post={post}
                       selected={post.id === contentId}
-                      onPress={() => setContentId(post.id)}
+                      onPress={() => handleSelectEpisode(post)}
                     />
                   ))}
                   {posts.length === 0 ? (

@@ -8,6 +8,7 @@ export type FeaturedPlayerConfig = components['schemas']['HomeFeaturedPlayerConf
 export type FeaturedContentSource = components['schemas']['FeaturedContentSource'];
 export type HomePlayerType = components['schemas']['HomePlayerType'];
 export type HomePlayerPosition = components['schemas']['HomePlayerPosition'];
+export type PreferredPlaybackPlatform = components['schemas']['PreferredPlaybackPlatform'];
 
 /**
  * Admin mutations for the Home dashboard's Featured Player configuration
@@ -36,6 +37,7 @@ export function useFeaturedPlayerAdmin() {
       contentId: string | null;
       playerType: HomePlayerType;
       position: HomePlayerPosition;
+      preferredPlatform?: PreferredPlaybackPlatform | null;
     }): Promise<FeaturedPlayerConfig> => {
       setSubmitting(true);
       try {

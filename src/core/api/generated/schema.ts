@@ -767,12 +767,18 @@ export interface components {
         HomePlayerType: "MINI";
         /** @enum {string} */
         HomePlayerPosition: "TOP" | "BOTTOM";
+        /**
+         * @description Which distribution platform to prefer when the featured content has more than one available (e.g. a podcast episode with both a Spotify and a YouTube link). Null/omitted means the resolver decides (today: prefer Spotify, fall back to YouTube). Still falls back to whichever platform is actually available if the preferred one isn't.
+         * @enum {string}
+         */
+        PreferredPlaybackPlatform: "SPOTIFY" | "YOUTUBE";
         HomeFeaturedPlayerConfigResponse: {
             enabled?: boolean;
             contentSource?: components["schemas"]["FeaturedContentSource"] | null;
             contentId?: string | null;
             playerType?: components["schemas"]["HomePlayerType"];
             position?: components["schemas"]["HomePlayerPosition"];
+            preferredPlatform?: components["schemas"]["PreferredPlaybackPlatform"] | null;
             /** Format: date-time */
             updatedAt?: string | null;
         };
@@ -782,6 +788,7 @@ export interface components {
             contentId?: string | null;
             playerType: components["schemas"]["HomePlayerType"];
             position: components["schemas"]["HomePlayerPosition"];
+            preferredPlatform?: components["schemas"]["PreferredPlaybackPlatform"] | null;
         };
         HomeFeaturedPlayerPlayback: {
             /** @description Playback adapter the mini player should use, e.g. SPOTIFY_EMBED or YOUTUBE. */
