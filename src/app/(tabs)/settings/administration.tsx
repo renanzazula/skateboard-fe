@@ -6,6 +6,7 @@ import { useAuth } from '@/core/auth';
 import { useProfile } from '@/features/account/hooks/useProfile';
 import { SettingsHeader } from '@/features/settings/components/SettingsHeader';
 import { SettingsRow } from '@/features/settings/components/SettingsRow';
+import { SettingsSection } from '@/features/settings/components/SettingsSection';
 import { ThemedView } from '@/shared/components/themed-view';
 import { Spacing } from '@/shared/constants/theme';
 
@@ -26,6 +27,7 @@ export default function AdministrationScreen() {
     <ThemedView style={styles.container}>
       <SettingsHeader title="Administration" handle={profile?.username ? `@${profile.username}` : undefined} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <SettingsSection label="Configuration">
         {canManageBranding ? (
           <SettingsRow
             icon={Palette}
@@ -62,6 +64,7 @@ export default function AdministrationScreen() {
             trailing={{ type: 'chevron' }}
           />
         ) : null}
+        </SettingsSection>
       </ScrollView>
     </ThemedView>
   );

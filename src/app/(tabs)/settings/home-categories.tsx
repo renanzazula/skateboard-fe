@@ -122,7 +122,7 @@ export default function HomeCategoriesScreen() {
         </View>
 
         {mode === 'SELECTED' ? (
-          <View style={[styles.categoryList, { borderColor: theme.border }]}>
+          <View style={[styles.categoryList, { borderColor: theme.border, backgroundColor: theme.surface }]}>
             {categories.map((category) => (
               <SettingsRow
                 key={category.id}

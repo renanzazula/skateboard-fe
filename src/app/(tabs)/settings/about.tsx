@@ -6,6 +6,7 @@ import { Modal, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useProfile } from '@/features/account/hooks/useProfile';
 import { SettingsHeader } from '@/features/settings/components/SettingsHeader';
 import { SettingsRow } from '@/features/settings/components/SettingsRow';
+import { SettingsSection } from '@/features/settings/components/SettingsSection';
 import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
 import { RADII, Spacing } from '@/shared/constants/theme';
@@ -70,12 +71,20 @@ export default function AboutScreen() {
     <ThemedView style={styles.container}>
       <SettingsHeader title="About" handle={profile?.username ? `@${profile.username}` : undefined} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <SettingsRow icon={Code} title="App version" trailing={{ type: 'value', text: appVersion() }} />
-        <SettingsRow icon={FileText} title="Terms & Conditions" onPress={() => setTopic('terms')} trailing={{ type: 'chevron' }} />
-        <SettingsRow icon={Shield} title="Privacy Policy" onPress={() => setTopic('privacy')} trailing={{ type: 'chevron' }} />
-        <SettingsRow icon={Code} title="Open-source licenses" onPress={() => setTopic('licenses')} trailing={{ type: 'chevron' }} />
-        <SettingsRow icon={HelpCircle} title="Contact & support" onPress={() => setTopic('support')} trailing={{ type: 'chevron' }} />
-        <SettingsRow icon={Flag} title="Report a problem" disabled trailing={{ type: 'chevron' }} />
+        <SettingsSection label="App">
+          <SettingsRow icon={Code} title="App version" trailing={{ type: 'value', text: appVersion() }} />
+        </SettingsSection>
+
+        <SettingsSection label="Legal">
+          <SettingsRow icon={FileText} title="Terms & Conditions" onPress={() => setTopic('terms')} trailing={{ type: 'chevron' }} />
+          <SettingsRow icon={Shield} title="Privacy Policy" onPress={() => setTopic('privacy')} trailing={{ type: 'chevron' }} />
+          <SettingsRow icon={Code} title="Open-source licenses" onPress={() => setTopic('licenses')} trailing={{ type: 'chevron' }} />
+        </SettingsSection>
+
+        <SettingsSection label="Support">
+          <SettingsRow icon={HelpCircle} title="Contact & support" onPress={() => setTopic('support')} trailing={{ type: 'chevron' }} />
+          <SettingsRow icon={Flag} title="Report a problem" disabled trailing={{ type: 'chevron' }} />
+        </SettingsSection>
       </ScrollView>
 
       <AboutModal topic={topic} onClose={() => setTopic(null)} />
