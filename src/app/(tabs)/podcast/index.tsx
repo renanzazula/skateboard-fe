@@ -5,6 +5,7 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from '
 
 import { useAuth } from '@/core/auth';
 import { AppHeader } from '@/shared/components/AppHeader';
+import { useProfile } from '@/features/account/hooks/useProfile';
 import { CategorySelector } from '@/features/podcast/components/CategorySelector';
 import { EpisodeCard } from '@/features/podcast/components/EpisodeCard';
 import { useCategories } from '@/features/podcast/hooks/useCategories';
@@ -27,6 +28,7 @@ export default function PodcastListScreen() {
   const colors = useTheme();
   const { t } = useTranslation();
   const { hasAuthority } = useAuth();
+  const { profile } = useProfile();
   const router = useRouter();
 
   const { categories, defaultCategory, isLoading: categoriesLoading, refresh: refreshCategories } = useCategories();
@@ -123,10 +125,7 @@ export default function PodcastListScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingBottom: BottomTabInset }]}>
-      <AppHeader
-        title="Podcast"
-        subtitle={t('podcast.episodeCount').replace('{count}', String(total))}
-      />
+      <AppHeader title="Podcast" subtitle={profile?.username ? `@${profile.username}` : undefined} />
 
       {error ? (
         <ErrorBanner message={isBffError(error) ? error.message : t('podcast.couldNotLoadVideos')} onRetry={refreshPosts} />
