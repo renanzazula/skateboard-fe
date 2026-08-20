@@ -1,7 +1,7 @@
 import { Fragment, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { SectionLabel } from '@/features/settings/components/SectionLabel';
+import { SECTION_GAP, SectionLabel } from '@/features/settings/components/SectionLabel';
 import { RADII } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 
@@ -33,7 +33,10 @@ export function SettingsSection({ label, tone = 'default', children }: Props) {
   const danger = tone === 'danger';
 
   return (
-    <View style={styles.section}>
+    // A labelled section gets its top spacing from the label's own padding;
+    // an unlabelled one has to supply it, or its card butts straight up
+    // against the card above (Log out under About on the Settings home).
+    <View style={[styles.section, label ? null : styles.unlabelled]}>
       {label ? <SectionLabel label={label} danger={danger} /> : null}
       <View
         style={[
@@ -64,6 +67,9 @@ export function SettingsSection({ label, tone = 'default', children }: Props) {
 const styles = StyleSheet.create({
   section: {
     gap: 0,
+  },
+  unlabelled: {
+    marginTop: SECTION_GAP,
   },
   card: {
     borderWidth: 1,
