@@ -1,0 +1,4 @@
+# The seeded canvas is ~2MB of generated editor code, rebuilt from the
+# .dc.html sources beside it — source is tracked, output is not.
+*.html
+!*.dc.html

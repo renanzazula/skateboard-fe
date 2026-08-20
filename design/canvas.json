@@ -1,0 +1,31 @@
+{
+  "artboards": [
+    { "file": "Current.dc.html", "x": 0, "y": 0, "w": 390, "h": 844, "title": "Today — flat rows" },
+    { "file": "Main.dc.html", "x": 480, "y": 0, "w": 390, "h": 844, "title": "Proposed — grouped cards" },
+    { "file": "Account.dc.html", "x": 960, "y": 0, "w": 390, "h": 844, "title": "Proposed — Your account" }
+  ],
+  "annotations": [
+    {
+      "id": "note-current",
+      "x": 0,
+      "y": -150,
+      "w": 390,
+      "text": "TODAY\nRows sit flat on the screen background with hairline dividers. The profile block is already a card — so the screen mixes both languages."
+    },
+    {
+      "id": "note-proposed",
+      "x": 480,
+      "y": -150,
+      "w": 390,
+      "text": "PROPOSED\nSame rows, same tokens, now grouped into the card the rest of the app already uses: 16px radius, 1px #262521 border, #161615 fill. Gold section labels stay."
+    },
+    {
+      "id": "note-account",
+      "x": 960,
+      "y": -150,
+      "w": 390,
+      "text": "SUB-PAGE\nDanger Zone becomes a destructive-tinted card (#2A1A1A on #3A2020) instead of loose red rows — both colours are already in the theme."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}
