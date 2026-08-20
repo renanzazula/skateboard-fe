@@ -14,7 +14,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.renanzazula.skateaboard"
     },
     "web": {
       "output": "static",
@@ -42,6 +43,12 @@
         "projectId": "9f8716ca-4e20-4f3a-babd-47f9e92558f2"
       }
     },
-    "owner": "renanzazula"
+    "owner": "renanzazula",
+    "ios": {
+      "bundleIdentifier": "com.renanzazula.skateaboard",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    }
   }
 }

@@ -1,0 +1,27 @@
+{
+  "cli": {
+    "version": ">= 22.2.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal"
+    },
+    "production": {
+      "autoIncrement": true,
+      "environment": "production",
+      "env": {
+        "EXPO_PUBLIC_KEYCLOAK_ISSUER": "https://keycloak-production-4776.up.railway.app/realms/skateboard-podcast",
+        "EXPO_PUBLIC_KEYCLOAK_CLIENT_ID": "skateboard-mobile",
+        "EXPO_PUBLIC_BFF_BASE_URL": "https://skateboard-ui-backend-production.up.railway.app"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
