@@ -53,7 +53,6 @@ export const en = {
     validationInvalidUrl: 'Invalid URL. Must start with http:// or https://',
   },
   podcast: {
-    episodeCount: '{count} episodes',
     watch: 'Watch',
     listenOnSpotify: 'Listen on Spotify',
     showMore: 'Show more',
