@@ -36,6 +36,14 @@ type Props = {
  * link out to another screen. Internally dispatches on
  * `content.playback.type` per §16 — the component itself never mentions
  * Spotify/YouTube in its public shape.
+ *
+ * Carries the brand yellow rather than the neutral card recipe the rest of
+ * the app uses: primary border over a primarySoft fill, with the icon and
+ * chevron to match. Home stacks it directly above the masonry gallery, and
+ * the accent is what marks it as the one featured thing on the screen. Note
+ * the accent stops at the bar — once expanded, the embed below paints its
+ * own chrome (Spotify green, YouTube red) inside the WebView, which isn't
+ * ours to theme.
  */
 export function MiniPodcastPlayer({ content }: Props) {
   const theme = useTheme();
@@ -43,7 +51,7 @@ export function MiniPodcastPlayer({ content }: Props) {
   const embedUrl = resolveEmbedUrl(content);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.surfaceElevated, borderColor: theme.border }]}>
+    <View style={[styles.container, { backgroundColor: theme.primarySoft, borderColor: theme.primary }]}>
       <Pressable
         style={styles.bar}
         onPress={() => setExpanded((v) => !v)}
@@ -54,7 +62,7 @@ export function MiniPodcastPlayer({ content }: Props) {
           {content.thumbnailUrl ? (
             <Image source={{ uri: content.thumbnailUrl }} style={StyleSheet.absoluteFill} contentFit="cover" cachePolicy="memory-disk" />
           ) : (
-            <Music size={18} color={theme.textMuted} />
+            <Music size={18} color={theme.primary} />
           )}
         </View>
 
@@ -69,7 +77,7 @@ export function MiniPodcastPlayer({ content }: Props) {
           ) : null}
         </View>
 
-        {expanded ? <ChevronDown size={20} color={theme.textSecondary} /> : <ChevronUp size={20} color={theme.textSecondary} />}
+        {expanded ? <ChevronDown size={20} color={theme.primary} /> : <ChevronUp size={20} color={theme.primary} />}
       </Pressable>
 
       {expanded && embedUrl ? <View style={styles.embedWrapper}>{renderEmbed(embedUrl)}</View> : null}
