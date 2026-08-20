@@ -1,6 +1,7 @@
 import { Fraunces_700Bold, useFonts } from '@expo-google-fonts/fraunces';
 import { DarkTheme, Stack, ThemeProvider as NavigationThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AuthProvider, useAuth } from '@/core/auth';
 import { AppConfigProvider } from '@/core/config';
@@ -12,11 +13,13 @@ export default function RootLayout() {
   const [fontsLoaded] = useFonts({ Fraunces_700Bold });
 
   return (
-    <AppConfigProvider>
-      <AuthProvider>
-        <RootNavigator fontsLoaded={fontsLoaded} />
-      </AuthProvider>
-    </AppConfigProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AppConfigProvider>
+        <AuthProvider>
+          <RootNavigator fontsLoaded={fontsLoaded} />
+        </AuthProvider>
+      </AppConfigProvider>
+    </GestureHandlerRootView>
   );
 }
 

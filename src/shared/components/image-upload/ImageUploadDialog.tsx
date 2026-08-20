@@ -4,6 +4,7 @@ import type { ImagePickerAsset } from 'expo-image-picker';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import { useRef, useState } from 'react';
 import { ActivityIndicator, Modal, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { ImageCropper, type ImageCropperHandle } from '@/shared/components/image-upload/ImageCropper';
 import type { CropRect } from '@/shared/components/image-upload/cropMath';
@@ -151,70 +152,75 @@ export function ImageUploadDialog({ visible, title = 'Choose image', constraints
 
   return (
     <Modal animationType="fade" transparent visible={visible} onRequestClose={handleCancel}>
-      <ThemedView style={styles.backdrop}>
-        <ThemedView type="surface" style={[styles.card, { width: cardWidth, borderColor: theme.border }]}>
-          <ThemedText type="subtitle" style={styles.title}>
-            {title}
-          </ThemedText>
+      {/* RN's Modal renders into its own native root, so the app-level
+          GestureHandlerRootView (in _layout.tsx) doesn't cover it — the
+          cropper's pan/pinch/corner-drag gestures need one in here too. */}
+      <GestureHandlerRootView style={styles.backdrop}>
+        <ThemedView style={styles.backdrop}>
+          <ThemedView type="surface" style={[styles.card, { width: cardWidth, borderColor: theme.border }]}>
+            <ThemedText type="subtitle" style={styles.title}>
+              {title}
+            </ThemedText>
 
-          {step === 'source' ? (
-            <View style={styles.sourceActions}>
-              <PrimaryButton title="Choose from Library" onPress={() => pickFromLibrary().then(handlePicked).catch(handlePickError)} />
-              <SecondaryButton title="Take Photo" onPress={() => pickFromCamera().then(handlePicked).catch(handlePickError)} />
-              <SecondaryButton title="Cancel" onPress={handleCancel} />
-            </View>
-          ) : null}
-
-          {step === 'preview' && asset ? (
-            <View>
-              <Image source={{ uri: asset.uri }} style={{ width: cropAreaSize, height: cropAreaSize, borderRadius: RADII.control }} contentFit="contain" />
-              <View style={styles.footerActions}>
-                <SecondaryButton title="Retake" onPress={reset} />
-                <PrimaryButton title="Use Photo" onPress={handleUsePhoto} />
-              </View>
-            </View>
-          ) : null}
-
-          {step === 'crop' && asset && constraints.aspectRatio != null ? (
-            <View>
-              <ImageCropper
-                ref={cropperRef}
-                imageUri={asset.uri}
-                imageWidth={asset.width}
-                imageHeight={asset.height}
-                aspectRatio={constraints.aspectRatio}
-                containerWidth={cropAreaSize}
-                containerHeight={Math.min(cropAreaSize, windowHeight * 0.5)}
-              />
-              <View style={styles.footerActions}>
-                <SecondaryButton title="Retake" onPress={reset} />
-                <PrimaryButton title="Use Photo" onPress={handleUsePhoto} />
-              </View>
-            </View>
-          ) : null}
-
-          {step === 'processing' ? (
-            <View style={styles.processing}>
-              <ActivityIndicator color={theme.primary} />
-              <ThemedText type="small" themeColor="textSecondary">
-                Processing…
-              </ThemedText>
-            </View>
-          ) : null}
-
-          {step === 'error' ? (
-            <View>
-              <ThemedText type="small" themeColor="destructive" style={styles.errorText}>
-                {errorMessage}
-              </ThemedText>
-              <View style={styles.footerActions}>
+            {step === 'source' ? (
+              <View style={styles.sourceActions}>
+                <PrimaryButton title="Choose from Library" onPress={() => pickFromLibrary().then(handlePicked).catch(handlePickError)} />
+                <SecondaryButton title="Take Photo" onPress={() => pickFromCamera().then(handlePicked).catch(handlePickError)} />
                 <SecondaryButton title="Cancel" onPress={handleCancel} />
-                <PrimaryButton title="Try Again" onPress={reset} />
               </View>
-            </View>
-          ) : null}
+            ) : null}
+
+            {step === 'preview' && asset ? (
+              <View>
+                <Image source={{ uri: asset.uri }} style={{ width: cropAreaSize, height: cropAreaSize, borderRadius: RADII.control }} contentFit="contain" />
+                <View style={styles.footerActions}>
+                  <SecondaryButton title="Retake" onPress={reset} />
+                  <PrimaryButton title="Use Photo" onPress={handleUsePhoto} />
+                </View>
+              </View>
+            ) : null}
+
+            {step === 'crop' && asset && constraints.aspectRatio != null ? (
+              <View>
+                <ImageCropper
+                  ref={cropperRef}
+                  imageUri={asset.uri}
+                  imageWidth={asset.width}
+                  imageHeight={asset.height}
+                  aspectRatio={constraints.aspectRatio}
+                  containerWidth={cropAreaSize}
+                  containerHeight={Math.min(cropAreaSize, windowHeight * 0.5)}
+                />
+                <View style={styles.footerActions}>
+                  <SecondaryButton title="Retake" onPress={reset} />
+                  <PrimaryButton title="Use Photo" onPress={handleUsePhoto} />
+                </View>
+              </View>
+            ) : null}
+
+            {step === 'processing' ? (
+              <View style={styles.processing}>
+                <ActivityIndicator color={theme.primary} />
+                <ThemedText type="small" themeColor="textSecondary">
+                  Processing…
+                </ThemedText>
+              </View>
+            ) : null}
+
+            {step === 'error' ? (
+              <View>
+                <ThemedText type="small" themeColor="destructive" style={styles.errorText}>
+                  {errorMessage}
+                </ThemedText>
+                <View style={styles.footerActions}>
+                  <SecondaryButton title="Cancel" onPress={handleCancel} />
+                  <PrimaryButton title="Try Again" onPress={reset} />
+                </View>
+              </View>
+            ) : null}
+          </ThemedView>
         </ThemedView>
-      </ThemedView>
+      </GestureHandlerRootView>
     </Modal>
   );
 }

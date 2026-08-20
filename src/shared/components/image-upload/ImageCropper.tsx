@@ -321,6 +321,8 @@ const styles = StyleSheet.create({
   clip: {
     flex: 1,
     overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   freeFormDim: {
     backgroundColor: 'rgba(0,0,0,0.35)',
