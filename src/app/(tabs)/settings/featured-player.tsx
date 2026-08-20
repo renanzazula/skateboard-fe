@@ -14,6 +14,7 @@ import { useFeaturedPlayerAdmin } from '@/features/home/hooks/useFeaturedPlayerA
 import { useFeaturedContentPicker } from '@/features/home/hooks/useFeaturedContentPicker';
 import { SettingsHeader } from '@/features/settings/components/SettingsHeader';
 import { SettingsRow } from '@/features/settings/components/SettingsRow';
+import { SettingsSection } from '@/features/settings/components/SettingsSection';
 import { isBffError } from '@/shared/api/errors';
 import { ErrorBanner } from '@/shared/components/ErrorBanner';
 import { PrimaryButton } from '@/shared/components/PrimaryButton';
@@ -144,11 +145,13 @@ export default function FeaturedPlayerScreen() {
           shown until an episode is selected and enabled.
         </ThemedText>
 
-        <SettingsRow
-          icon={Music}
-          title="Enable Featured Player"
-          trailing={{ type: 'switch', value: enabled, onChange: setEnabled }}
-        />
+        <SettingsSection>
+          <SettingsRow
+            icon={Music}
+            title="Enable Featured Player"
+            trailing={{ type: 'switch', value: enabled, onChange: setEnabled }}
+          />
+        </SettingsSection>
 
         {enabled ? (
           <>

@@ -3,6 +3,7 @@ import { ChevronRight, type LucideIcon } from 'lucide-react-native';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { Skeleton } from '@/features/settings/components/Skeleton';
+import { Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 
 export type SettingsRowTrailing =
@@ -133,6 +134,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minHeight: 56,
     paddingVertical: 15,
+    // Inset from the section card's edge (SettingsSection holds no padding of
+    // its own, so the row owns it and the pressed highlight spans the card).
+    paddingHorizontal: Spacing.three,
   },
   disabled: {
     opacity: 0.5,

@@ -22,5 +22,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.09 * 12,
     paddingTop: 18,
     paddingBottom: 6,
+    // Nudged in so the label doesn't sit flush against its card's left edge.
+    paddingLeft: 4,
   },
 });

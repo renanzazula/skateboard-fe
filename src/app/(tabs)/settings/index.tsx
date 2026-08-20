@@ -8,6 +8,7 @@ import { useProfile } from '@/features/account/hooks/useProfile';
 import { ProfileCard } from '@/features/settings/components/ProfileCard';
 import { SettingsHeader } from '@/features/settings/components/SettingsHeader';
 import { SettingsRow, type SettingsRowTrailing } from '@/features/settings/components/SettingsRow';
+import { SettingsSection } from '@/features/settings/components/SettingsSection';
 import { LANGUAGE_LABELS, LANGUAGES, useLocalSettings, type LanguageCode } from '@/features/settings/hooks/useLocalSettings';
 import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
@@ -22,6 +23,13 @@ type HomeRow = {
   trailing?: SettingsRowTrailing;
   onPress?: () => void;
   variant?: 'default' | 'destructive';
+};
+
+type HomeSection = {
+  key: string;
+  label?: string;
+  tone?: 'default' | 'danger';
+  rows: HomeRow[];
 };
 
 function LanguageModal({
@@ -86,57 +94,91 @@ export default function SettingsScreen() {
     ]);
   }, [logout]);
 
-  const rows: HomeRow[] = [
+  // Grouped rather than one flat list: each group is its own card, so the
+  // screen reads as sections instead of an undifferentiated run of rows.
+  const sections: HomeSection[] = [
     {
       key: 'account',
-      icon: User,
-      title: 'Your account',
-      subtitle: 'Password, deactivate, delete',
-      onPress: () => router.push('/settings/account'),
-      trailing: { type: 'chevron' },
-    },
-    {
-      key: 'notifications',
-      icon: Bell,
-      title: 'Notifications',
-      subtitle: 'Push & new podcast alerts',
-      onPress: () => router.push('/settings/notifications'),
-      trailing: { type: 'chevron' },
-    },
-    {
-      key: 'data-storage',
-      icon: Database,
-      title: 'Data & storage',
-      subtitle: 'Cache, downloads, usage',
-      onPress: () => router.push('/settings/data-storage'),
-      trailing: { type: 'chevron' },
-    },
-    {
-      key: 'language',
-      icon: Globe,
-      title: 'Language',
-      onPress: () => setLanguageModalVisible(true),
-      trailing: { type: 'value', text: LANGUAGE_LABELS[language], tone: 'accent', chevron: true },
+      label: 'Account',
+      rows: [
+        {
+          key: 'account',
+          icon: User,
+          title: 'Your account',
+          subtitle: 'Password, deactivate, delete',
+          onPress: () => router.push('/settings/account'),
+          trailing: { type: 'chevron' },
+        },
+        {
+          key: 'notifications',
+          icon: Bell,
+          title: 'Notifications',
+          subtitle: 'Push & new podcast alerts',
+          onPress: () => router.push('/settings/notifications'),
+          trailing: { type: 'chevron' },
+        },
+        {
+          key: 'data-storage',
+          icon: Database,
+          title: 'Data & storage',
+          subtitle: 'Cache, downloads, usage',
+          onPress: () => router.push('/settings/data-storage'),
+          trailing: { type: 'chevron' },
+        },
+        {
+          key: 'language',
+          icon: Globe,
+          title: 'Language',
+          onPress: () => setLanguageModalVisible(true),
+          trailing: { type: 'value', text: LANGUAGE_LABELS[language], tone: 'accent', chevron: true },
+        },
+      ],
     },
     ...(canAccessAdministration
       ? [
           {
-            key: 'administration',
-            icon: Shield,
-            title: 'Administration',
-            subtitle: 'Branding, categories, sync',
-            onPress: () => router.push('/settings/administration'),
-            trailing: { type: 'chevron' as const },
+            key: 'admin',
+            label: 'Admin configuration',
+            rows: [
+              {
+                key: 'administration',
+                icon: Shield,
+                title: 'Administration',
+                subtitle: 'Branding, categories, sync',
+                onPress: () => router.push('/settings/administration'),
+                trailing: { type: 'chevron' as const },
+              },
+            ],
           },
         ]
       : []),
     {
       key: 'about',
-      icon: Info,
-      title: 'About',
-      subtitle: 'Version, legal, support',
-      onPress: () => router.push('/settings/about'),
-      trailing: { type: 'chevron' },
+      label: 'About',
+      rows: [
+        {
+          key: 'about',
+          icon: Info,
+          title: 'About',
+          subtitle: 'Version, legal, support',
+          onPress: () => router.push('/settings/about'),
+          trailing: { type: 'chevron' },
+        },
+      ],
+    },
+    {
+      key: 'session',
+      tone: 'danger',
+      rows: [
+        {
+          key: 'log-out',
+          icon: LogOut,
+          title: 'Log out',
+          onPress: handleLogout,
+          variant: 'destructive',
+          trailing: { type: 'none' },
+        },
+      ],
     },
   ];
 
@@ -147,19 +189,21 @@ export default function SettingsScreen() {
         <ProfileCard />
 
         <ThemedView style={styles.rows}>
-          {rows.map((row) => (
-            <SettingsRow
-              key={row.key}
-              icon={row.icon}
-              title={row.title}
-              subtitle={row.subtitle}
-              trailing={row.trailing}
-              onPress={row.onPress}
-              variant={row.variant}
-            />
+          {sections.map((section) => (
+            <SettingsSection key={section.key} label={section.label} tone={section.tone}>
+              {section.rows.map((row) => (
+                <SettingsRow
+                  key={row.key}
+                  icon={row.icon}
+                  title={row.title}
+                  subtitle={row.subtitle}
+                  trailing={row.trailing}
+                  onPress={row.onPress}
+                  variant={row.variant}
+                />
+              ))}
+            </SettingsSection>
           ))}
-
-          <SettingsRow icon={LogOut} title="Log out" onPress={handleLogout} variant="destructive" trailing={{ type: 'none' }} />
         </ThemedView>
       </ScrollView>
 

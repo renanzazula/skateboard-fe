@@ -5,6 +5,7 @@ import { useNotificationPreferences } from '@/features/account/hooks/useNotifica
 import { useProfile } from '@/features/account/hooks/useProfile';
 import { SettingsHeader } from '@/features/settings/components/SettingsHeader';
 import { SettingsRow } from '@/features/settings/components/SettingsRow';
+import { SettingsSection } from '@/features/settings/components/SettingsSection';
 import { ThemedView } from '@/shared/components/themed-view';
 import { Spacing } from '@/shared/constants/theme';
 
@@ -16,18 +17,20 @@ export default function NotificationsScreen() {
     <ThemedView style={styles.container}>
       <SettingsHeader title="Notifications" handle={profile?.username ? `@${profile.username}` : undefined} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <SettingsRow
-          icon={Bell}
-          title="Push notifications"
-          subtitle="Receive notifications"
-          trailing={{ type: 'switch', value: preferences?.pushEnabled ?? false, onChange: setPushEnabled }}
-        />
-        <SettingsRow
-          icon={Mic}
-          title="New podcasts"
-          subtitle="Notify me when a new podcast is published"
-          trailing={{ type: 'switch', value: preferences?.newPodcastEnabled ?? false, onChange: setNewPodcastEnabled }}
-        />
+        <SettingsSection label="Alerts">
+          <SettingsRow
+            icon={Bell}
+            title="Push notifications"
+            subtitle="Receive notifications"
+            trailing={{ type: 'switch', value: preferences?.pushEnabled ?? false, onChange: setPushEnabled }}
+          />
+          <SettingsRow
+            icon={Mic}
+            title="New podcasts"
+            subtitle="Notify me when a new podcast is published"
+            trailing={{ type: 'switch', value: preferences?.newPodcastEnabled ?? false, onChange: setNewPodcastEnabled }}
+          />
+        </SettingsSection>
       </ScrollView>
     </ThemedView>
   );

@@ -57,13 +57,15 @@ export default function AccountScreen() {
     <ThemedView style={styles.container}>
       <SettingsHeader title="Your account" handle={profile?.username ? `@${profile.username}` : undefined} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <SettingsRow
-          icon={KeyRound}
-          title="Change password"
-          subtitle="Manage your account password"
-          onPress={() => router.push('/settings/change-password')}
-          trailing={{ type: 'chevron' }}
-        />
+        <SettingsSection label="Security">
+          <SettingsRow
+            icon={KeyRound}
+            title="Change password"
+            subtitle="Manage your account password"
+            onPress={() => router.push('/settings/change-password')}
+            trailing={{ type: 'chevron' }}
+          />
+        </SettingsSection>
 
         <SettingsSection label="Danger zone" tone="danger">
           <SettingsRow
