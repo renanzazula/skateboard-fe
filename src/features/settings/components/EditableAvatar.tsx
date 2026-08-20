@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { Camera } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAccountActions } from '@/features/account/hooks/useAccountActions';
@@ -31,6 +31,15 @@ export function EditableAvatar({ imageUrl, initials, onUploaded }: Props) {
   const theme = useTheme();
   const { pickAndUploadProfilePicture, takeAndUploadProfilePicture, submitting } = useAccountActions();
   const [sheetVisible, setSheetVisible] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
+
+  // Reset once the URL itself changes (e.g. a fresh upload), so a past
+  // failure doesn't permanently pin the fallback for the new image.
+  useEffect(() => {
+    setImageFailed(false);
+  }, [imageUrl]);
+
+  const showImage = !!imageUrl && !imageFailed;
 
   const runAction = async (action: () => Promise<unknown>) => {
     setSheetVisible(false);
@@ -51,8 +60,14 @@ export function EditableAvatar({ imageUrl, initials, onUploaded }: Props) {
         accessibilityRole="button"
         accessibilityLabel="Change profile picture">
         <View style={[styles.avatar, { backgroundColor: theme.primary }]}>
-          {imageUrl ? (
-            <Image source={{ uri: imageUrl }} style={styles.avatarImage} contentFit="cover" cachePolicy="memory-disk" />
+          {showImage ? (
+            <Image
+              source={{ uri: imageUrl }}
+              style={styles.avatarImage}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              onError={() => setImageFailed(true)}
+            />
           ) : (
             <Text style={[styles.initials, { color: theme.onPrimary }]}>{initials}</Text>
           )}

@@ -18,12 +18,20 @@ export function useProfile() {
 
   const load = useCallback(async () => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
-    const { data, error, response } = await bffClient.GET('/api/me');
-    if (error) {
-      setState({ profile: null, isLoading: false, error: toBffError(error, response.status) });
-      return;
+    try {
+      const { data, error, response } = await bffClient.GET('/api/me');
+      if (error) {
+        setState({ profile: null, isLoading: false, error: toBffError(error, response.status) });
+        return;
+      }
+      setState({ profile: data, isLoading: false, error: null });
+    } catch (err) {
+      // bffClient.GET only shapes HTTP-level (4xx/5xx) failures into `error`
+      // — a request that never got a response (network down, CORS, BFF
+      // unreachable) throws instead, which would otherwise leave isLoading
+      // stuck true forever (ProfileCard's avatar renders blank while loading).
+      setState({ profile: null, isLoading: false, error: err instanceof Error ? err : new Error('Could not load profile.') });
     }
-    setState({ profile: data, isLoading: false, error: null });
   }, []);
 
   useEffect(() => {

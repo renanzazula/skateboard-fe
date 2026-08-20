@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useProfile } from '@/features/account/hooks/useProfile';
@@ -26,9 +27,18 @@ function initials(name: string): string {
 export function HomeHeader() {
   const theme = useTheme();
   const { profile } = useProfile();
+  const [imageFailed, setImageFailed] = useState(false);
 
   const displayName = profile?.displayName || profile?.username || 'Skater';
   const username = profile?.username ? `@${profile.username}` : displayName;
+
+  // Reset once the URL itself changes (e.g. a fresh upload), so a past
+  // failure doesn't permanently pin the fallback for the new image.
+  useEffect(() => {
+    setImageFailed(false);
+  }, [profile?.profilePictureUrl]);
+
+  const showImage = !!profile?.profilePictureUrl && !imageFailed;
 
   return (
     <AppHeader>
@@ -39,8 +49,12 @@ export function HomeHeader() {
             accessibilityRole="button"
             accessibilityLabel="Open Settings"
             style={({ pressed }) => [styles.avatar, { backgroundColor: theme.primary, opacity: pressed ? 0.8 : 1 }]}>
-            {profile?.profilePictureUrl ? (
-              <Image source={{ uri: profile.profilePictureUrl }} style={styles.avatarImage} />
+            {showImage ? (
+              <Image
+                source={{ uri: profile.profilePictureUrl }}
+                style={styles.avatarImage}
+                onError={() => setImageFailed(true)}
+              />
             ) : (
               <Text style={[styles.avatarInitials, { color: theme.onPrimary }]}>{initials(displayName)}</Text>
             )}
