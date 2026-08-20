@@ -4,8 +4,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useProfile } from '@/features/account/hooks/useProfile';
 import { BrandedLogo } from '@/features/branding/components/BrandedLogo';
+import { AppHeader } from '@/shared/components/AppHeader';
 import { ThemedText } from '@/shared/components/themed-text';
-import { MAX_CONTENT_WIDTH, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 
 const AVATAR_SIZE = 34;
@@ -18,7 +18,11 @@ function initials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-/** Home's top bar: profile picture (left) — podcast logo (center) — username (right). */
+/**
+ * Home's top bar: profile picture (left) — podcast logo (centre) — username
+ * (right). Rendered through AppHeader so it's exactly as tall as the title
+ * header every other screen uses.
+ */
 export function HomeHeader() {
   const theme = useTheme();
   const { profile } = useProfile();
@@ -27,17 +31,14 @@ export function HomeHeader() {
   const username = profile?.username ? `@${profile.username}` : displayName;
 
   return (
-    <View style={styles.container}>
+    <AppHeader>
       <View style={styles.row}>
         <View style={styles.side}>
           <Pressable
             onPress={() => router.push('/settings')}
             accessibilityRole="button"
             accessibilityLabel="Open Settings"
-            style={({ pressed }) => [
-              styles.avatar,
-              { backgroundColor: theme.primary, opacity: pressed ? 0.8 : 1 },
-            ]}>
+            style={({ pressed }) => [styles.avatar, { backgroundColor: theme.primary, opacity: pressed ? 0.8 : 1 }]}>
             {profile?.profilePictureUrl ? (
               <Image source={{ uri: profile.profilePictureUrl }} style={styles.avatarImage} />
             ) : (
@@ -46,9 +47,7 @@ export function HomeHeader() {
           </Pressable>
         </View>
 
-        <View style={styles.center}>
-          <BrandedLogo style={styles.logo} />
-        </View>
+        <BrandedLogo style={styles.logo} />
 
         <View style={[styles.side, styles.sideRight]}>
           <ThemedText type="smallBold" numberOfLines={1}>
@@ -56,33 +55,24 @@ export function HomeHeader() {
           </ThemedText>
         </View>
       </View>
-    </View>
+    </AppHeader>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-    alignItems: 'center',
-  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '100%',
-    maxWidth: MAX_CONTENT_WIDTH,
-    paddingHorizontal: Spacing.three,
-    paddingBottom: Spacing.two,
+    gap: 10,
   },
+  // Equal-flex sides keep the logo optically centred however wide the
+  // username renders.
   side: {
     flex: 1,
     alignItems: 'flex-start',
   },
   sideRight: {
     alignItems: 'flex-end',
-  },
-  center: {
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   avatar: {
     width: AVATAR_SIZE,
