@@ -33,16 +33,20 @@ export function useHomeFeaturedPlayer() {
     loadingRef.current = true;
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
-    const { data, error, response } = await bffClient.GET('/api/home/featured-player');
+    try {
+      const { data, error, response } = await bffClient.GET('/api/home/featured-player');
 
-    if (error) {
-      setState({ content: null, isLoading: false, error: toBffError(error, response.status) });
+      if (error) {
+        setState({ content: null, isLoading: false, error: toBffError(error, response.status) });
+        return;
+      }
+
+      setState({ content: data ?? null, isLoading: false, error: null });
+    } catch (err) {
+      setState({ content: null, isLoading: false, error: err instanceof Error ? err : new Error('Network error') });
+    } finally {
       loadingRef.current = false;
-      return;
     }
-
-    setState({ content: data ?? null, isLoading: false, error: null });
-    loadingRef.current = false;
   }, []);
 
   useEffect(() => {

@@ -35,17 +35,24 @@ export function useHomeVideos() {
     loadingRef.current = true;
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
-    const { data, error, response } = await bffClient.GET('/api/home/videos');
+    try {
+      const { data, error, response } = await bffClient.GET('/api/home/videos');
 
-    if (error) {
-      setState((prev) => ({ ...prev, isLoading: false, error: toBffError(error, response.status) }));
+      if (error) {
+        setState((prev) => ({ ...prev, isLoading: false, error: toBffError(error, response.status) }));
+        return;
+      }
+
+      const videos = (data ?? []).map(toVideo);
+      setState({ sourceVideos: videos, shuffledVideos: shuffleVideos(videos), isLoading: false, error: null });
+    } catch (err) {
+      // A thrown network error (rather than openapi-fetch's {error} field)
+      // must still clear isLoading — otherwise Home is stuck on its spinner
+      // forever with no way to retry.
+      setState((prev) => ({ ...prev, isLoading: false, error: err instanceof Error ? err : new Error('Network error') }));
+    } finally {
       loadingRef.current = false;
-      return;
     }
-
-    const videos = (data ?? []).map(toVideo);
-    setState({ sourceVideos: videos, shuffledVideos: shuffleVideos(videos), isLoading: false, error: null });
-    loadingRef.current = false;
   }, []);
 
   useEffect(() => {

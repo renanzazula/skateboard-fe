@@ -1,13 +1,8 @@
 import * as AuthSession from 'expo-auth-session';
-import * as WebBrowser from 'expo-web-browser';
 import { jwtDecode } from 'jwt-decode';
 
 import { env } from '@/core/config/env';
 import { secureStorage } from '@/core/storage/secureStorage';
-
-// Required by expo-auth-session on web so the auth popup can close itself
-// and hand control back to the app; a harmless no-op on native.
-WebBrowser.maybeCompleteAuthSession();
 
 const REFRESH_TOKEN_KEY = 'skateboard.refreshToken';
 // Refresh a little before the access token's real expiry so a request that
@@ -124,44 +119,30 @@ export async function bootstrap(): Promise<void> {
   }
 }
 
-/** Authorization Code + PKCE flow via the system browser (env.keycloakClientId, e.g. skateboard-mobile). */
-export async function login(): Promise<boolean> {
+/**
+ * Direct Access Grant (Resource Owner Password Credentials) via the embedded
+ * username/password form. Requires directAccessGrantsEnabled on the
+ * env.keycloakClientId client (e.g. skateboard-mobile). expo-auth-session's
+ * GrantType enum has no "password" member, so the request is built on the
+ * generic TokenRequest base class (same performAsync/TokenResponse
+ * machinery `refreshAccessToken` uses) with an explicit grant type cast.
+ */
+export async function loginWithPassword(username: string, password: string): Promise<void> {
   const discovery = await getDiscovery();
-  // A bare `scheme://` (no path) is a syntactically empty-authority URI that
-  // Keycloak's redirect_uri validation rejects outright ("Invalid parameter:
-  // redirect_uri") regardless of what's registered on the client — verified
-  // against the live realm. Any non-empty path avoids that edge case.
-  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'skateboardfe', path: 'auth' });
-  const request = new AuthSession.AuthRequest({
-    clientId: env.keycloakClientId,
-    scopes: ['openid', 'profile', 'email'],
-    redirectUri,
-    responseType: AuthSession.ResponseType.Code,
-    usePKCE: true,
-  });
-
-  const result = await request.promptAsync(discovery);
-  if (result.type !== 'success') {
-    return false;
-  }
-
-  const tokenResponse = await AuthSession.exchangeCodeAsync(
+  const request = new AuthSession.TokenRequest(
     {
       clientId: env.keycloakClientId,
-      code: result.params.code,
-      redirectUri,
-      extraParams: { code_verifier: request.codeVerifier ?? '' },
+      extraParams: { username, password },
     },
-    discovery
+    'password' as AuthSession.GrantType
   );
+  const tokenResponse = await request.performAsync(discovery);
   applyTokenResponse(tokenResponse);
-  return true;
 }
 
 /**
- * Browser-based logout — a plain POST to Keycloak's end-session endpoint
- * with the refresh token, avoiding a second browser/webview pop-up just to
- * clear the SSO session.
+ * Plain POST to Keycloak's end-session endpoint with the refresh token — no
+ * browser/webview involved, since sign-in never opens one either.
  */
 export async function logout(): Promise<void> {
   const refreshToken = await secureStorage.getItem(REFRESH_TOKEN_KEY);

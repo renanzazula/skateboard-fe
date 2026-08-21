@@ -20,7 +20,7 @@ export function useAuth() {
     authorities: state.authorities,
     email: state.email,
     hasAuthority,
-    login: authStore.login,
+    loginWithPassword: authStore.loginWithPassword,
     logout: authStore.logout,
   };
 }

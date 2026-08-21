@@ -1,6 +1,5 @@
 import { Image, type ImageStyle } from 'expo-image';
-import { useState } from 'react';
-import { Text, type StyleProp } from 'react-native';
+import type { StyleProp } from 'react-native';
 
 import { useAppConfig } from '@/core/config';
 
@@ -21,23 +20,17 @@ type Props = {
  */
 export function BrandedLogo({ style }: Props) {
   const { appLogoUrl } = useAppConfig();
-  const [error, setError] = useState<string | null>(null);
 
   if (!appLogoUrl) {
     return null;
   }
 
   return (
-    <>
-      <Image
-        source={{ uri: appLogoUrl }}
-        style={style}
-        contentFit="contain"
-        cachePolicy="memory-disk"
-        onError={(e) => setError(e.error)}
-      />
-      {/* TEMP DEBUG: remove once the TestFlight image-loading issue is diagnosed. */}
-      {error ? <Text style={{ color: 'red', fontSize: 10 }}>logo error: {error}</Text> : null}
-    </>
+    <Image
+      source={{ uri: appLogoUrl }}
+      style={style}
+      contentFit="contain"
+      cachePolicy="memory-disk"
+    />
   );
 }
