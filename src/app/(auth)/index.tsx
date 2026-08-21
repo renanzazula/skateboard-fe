@@ -34,6 +34,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [signingIn, setSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bgError, setBgError] = useState<string | null>(null);
 
   const canSubmit = username.trim().length > 0 && password.length > 0 && !signingIn;
   const isCompactHeight = windowHeight <= COMPACT_HEIGHT_BREAKPOINT;
@@ -71,10 +72,15 @@ export default function LoginScreen() {
             style={StyleSheet.absoluteFill}
             contentFit="cover"
             cachePolicy="memory-disk"
+            onError={(e) => setBgError(e.error)}
           />
           {/* Normalizes contrast against admin-uploaded backgrounds of
               unpredictable brightness — see .docs/README-branding-login-background.md #6. */}
           <View style={[StyleSheet.absoluteFill, styles.overlay]} />
+          {/* TEMP DEBUG: remove once the TestFlight image-loading issue is diagnosed. */}
+          {bgError ? (
+            <ThemedText style={styles.debugError}>bg error: {bgError}</ThemedText>
+          ) : null}
         </>
       ) : null}
       <SafeAreaView style={styles.safeArea}>
@@ -144,6 +150,14 @@ const styles = StyleSheet.create({
   },
   overlay: {
     backgroundColor: 'rgba(0, 0, 0, 0.45)',
+  },
+  debugError: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    right: 8,
+    color: 'red',
+    fontSize: 10,
   },
   safeArea: {
     flex: 1,
