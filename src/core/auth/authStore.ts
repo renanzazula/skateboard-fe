@@ -104,12 +104,12 @@ async function signOutLocal(): Promise<void> {
 
 /** Silent sign-in from a stored refresh token. Call once at app start. */
 export async function bootstrap(): Promise<void> {
-  const refreshToken = await secureStorage.getItem(REFRESH_TOKEN_KEY);
-  if (!refreshToken) {
-    await signOutLocal();
-    return;
-  }
   try {
+    const refreshToken = await secureStorage.getItem(REFRESH_TOKEN_KEY);
+    if (!refreshToken) {
+      await signOutLocal();
+      return;
+    }
     const discovery = await getDiscovery();
     const tokenResponse = await AuthSession.refreshAsync(
       { clientId: env.keycloakClientId, refreshToken },
@@ -117,6 +117,9 @@ export async function bootstrap(): Promise<void> {
     );
     applyTokenResponse(tokenResponse);
   } catch {
+    // Any failure here (secure-store access, discovery fetch, stale refresh
+    // token) must still resolve `status` away from 'loading' — the root
+    // layout keeps the splash screen up and renders nothing until it does.
     await signOutLocal();
   }
 }
@@ -124,7 +127,11 @@ export async function bootstrap(): Promise<void> {
 /** Authorization Code + PKCE flow via the system browser (env.keycloakClientId, e.g. skateboard-mobile). */
 export async function login(): Promise<boolean> {
   const discovery = await getDiscovery();
-  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'skateboardfe' });
+  // A bare `scheme://` (no path) is a syntactically empty-authority URI that
+  // Keycloak's redirect_uri validation rejects outright ("Invalid parameter:
+  // redirect_uri") regardless of what's registered on the client — verified
+  // against the live realm. Any non-empty path avoids that edge case.
+  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'skateboardfe', path: 'auth' });
   const request = new AuthSession.AuthRequest({
     clientId: env.keycloakClientId,
     scopes: ['openid', 'profile', 'email'],
