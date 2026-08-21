@@ -21,7 +21,6 @@ export function useAuth() {
     email: state.email,
     hasAuthority,
     login: authStore.login,
-    loginWithPassword: authStore.loginWithPassword,
     logout: authStore.logout,
   };
 }

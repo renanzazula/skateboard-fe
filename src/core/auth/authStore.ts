@@ -121,7 +121,7 @@ export async function bootstrap(): Promise<void> {
   }
 }
 
-/** Authorization Code + PKCE flow via the system browser (skateboard-podcast-fe client). */
+/** Authorization Code + PKCE flow via the system browser (env.keycloakClientId, e.g. skateboard-mobile). */
 export async function login(): Promise<boolean> {
   const discovery = await getDiscovery();
   const redirectUri = AuthSession.makeRedirectUri({ scheme: 'skateboardfe' });
@@ -152,31 +152,9 @@ export async function login(): Promise<boolean> {
 }
 
 /**
- * Direct Access Grant (Resource Owner Password Credentials) via the embedded
- * username/password form. Requires directAccessGrantsEnabled on the
- * skateboard-podcast-fe client. expo-auth-session's GrantType enum has no
- * "password" member, so the request is built on the generic TokenRequest
- * base class (same performAsync/TokenResponse machinery `login`/
- * `refreshAccessToken` use) with an explicit grant type cast.
- */
-export async function loginWithPassword(username: string, password: string): Promise<void> {
-  const discovery = await getDiscovery();
-  const request = new AuthSession.TokenRequest(
-    {
-      clientId: env.keycloakClientId,
-      extraParams: { username, password },
-    },
-    'password' as AuthSession.GrantType
-  );
-  const tokenResponse = await request.performAsync(discovery);
-  applyTokenResponse(tokenResponse);
-}
-
-/**
- * Back-channel logout — a plain POST to Keycloak's end-session endpoint with
- * the refresh token, same as `loginWithPassword` avoids the browser for
- * sign-in. No browser/webview pop-up: there's no SSO cookie session left to
- * clear now that login is Direct Access Grant rather than a browser redirect.
+ * Browser-based logout — a plain POST to Keycloak's end-session endpoint
+ * with the refresh token, avoiding a second browser/webview pop-up just to
+ * clear the SSO session.
  */
 export async function logout(): Promise<void> {
   const refreshToken = await secureStorage.getItem(REFRESH_TOKEN_KEY);

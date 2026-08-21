@@ -1,14 +1,12 @@
-import * as AuthSession from 'expo-auth-session';
 import { Image } from 'expo-image';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/core/auth';
 import { useAppConfig } from '@/core/config';
 import { BrandedLogo } from '@/features/branding/components/BrandedLogo';
 import { PrimaryButton } from '@/shared/components/PrimaryButton';
-import { TextField } from '@/shared/components/TextField';
 import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
 import { MAX_FORM_WIDTH, Spacing } from '@/shared/constants/theme';
@@ -27,20 +25,17 @@ const COMPACT_LOGO_AREA_PADDING_TOP = 40;
 const COMPACT_LOGO_AREA_HEIGHT = 240;
 
 export default function LoginScreen() {
-  const { loginWithPassword } = useAuth();
+  const { login } = useAuth();
   const { loginBackgroundUrl, loginTitle, loginMessage } = useAppConfig();
   const { height: windowHeight } = useWindowDimensions();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
   const [signingIn, setSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bgError, setBgError] = useState<string | null>(null);
 
-  const canSubmit = username.trim().length > 0 && password.length > 0 && !signingIn;
   const isCompactHeight = windowHeight <= COMPACT_HEIGHT_BREAKPOINT;
   // Reserved logo area height stays within this range regardless of the
   // logo's real dimensions — BrandedLogo scales to fit inside it (contain),
-  // so a tall or wide tenant logo never pushes the title/form down.
+  // so a tall or wide tenant logo never pushes the title/form below.
   const logoAreaPaddingTop = isCompactHeight ? COMPACT_LOGO_AREA_PADDING_TOP : clampByHeight(60, 0.08, 90, windowHeight);
   const logoAreaHeight = isCompactHeight ? COMPACT_LOGO_AREA_HEIGHT : clampByHeight(280, 0.34, 340, windowHeight);
 
@@ -48,13 +43,12 @@ export default function LoginScreen() {
     setSigningIn(true);
     setError(null);
     try {
-      await loginWithPassword(username.trim(), password);
-    } catch (err) {
-      if (err instanceof AuthSession.TokenError && err.code === 'invalid_grant') {
-        setError('Invalid username or password.');
-      } else {
-        setError('Could not reach Keycloak. Check your connection and try again.');
+      const signedIn = await login();
+      if (!signedIn) {
+        setError(null);
       }
+    } catch {
+      setError('Could not reach Keycloak. Check your connection and try again.');
     } finally {
       setSigningIn(false);
     }
@@ -84,61 +78,46 @@ export default function LoginScreen() {
         </>
       ) : null}
       <SafeAreaView style={styles.safeArea}>
-        <KeyboardAvoidingView style={styles.keyboardAvoiding} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            <View style={styles.content}>
-              {/* 1. Logo — reserved area of fixed/responsive height; the
-                  logo scales inside it (contain) instead of the area
-                  growing to the logo's natural size, so different tenant
-                  logos never move the title/form below. */}
-              <View style={[styles.logoContainer, { height: logoAreaHeight, paddingTop: logoAreaPaddingTop }]}>
-                <BrandedLogo style={styles.logo} />
-              </View>
-
-              {/* 2. Title, directly below the logo. */}
-              {loginTitle ? (
-                <ThemedText type="title" style={styles.title}>
-                  {loginTitle}
-                </ThemedText>
-              ) : null}
-
-              {/* 3. Message, directly below the title. */}
-              <ThemedText type="default" themeColor="textSecondary" style={styles.message}>
-                {loginMessage || 'Sign in to continue'}
-              </ThemedText>
-
-              {/* 4-6. Username, password, login button. */}
-              <View style={styles.form}>
-                <TextField
-                  value={username}
-                  onChangeText={setUsername}
-                  placeholder="Username or email"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  keyboardType="email-address"
-                />
-                <TextField value={password} onChangeText={setPassword} placeholder="Password" secureTextEntry />
-
-                <PrimaryButton
-                  title={signingIn ? 'Signing in…' : 'Log in'}
-                  onPress={handleLogin}
-                  disabled={!canSubmit}
-                  loading={signingIn}
-                />
-
-                {error && (
-                  <ThemedText type="small" themeColor="destructive" style={styles.error}>
-                    {error}
-                  </ThemedText>
-                )}
-              </View>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <View style={styles.content}>
+            {/* 1. Logo — reserved area of fixed/responsive height; the
+                logo scales inside it (contain) instead of the area
+                growing to the logo's natural size, so different tenant
+                logos never move the title/form below. */}
+            <View style={[styles.logoContainer, { height: logoAreaHeight, paddingTop: logoAreaPaddingTop }]}>
+              <BrandedLogo style={styles.logo} />
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+
+            {/* 2. Title, directly below the logo. */}
+            {loginTitle ? (
+              <ThemedText type="title" style={styles.title}>
+                {loginTitle}
+              </ThemedText>
+            ) : null}
+
+            {/* 3. Message, directly below the title. */}
+            <ThemedText type="default" themeColor="textSecondary" style={styles.message}>
+              {loginMessage || 'Sign in to continue'}
+            </ThemedText>
+
+            {/* 4. Login button — opens the system browser for Keycloak's
+                Authorization Code + PKCE flow. */}
+            <View style={styles.form}>
+              <PrimaryButton
+                title={signingIn ? 'Signing in…' : 'Log in'}
+                onPress={handleLogin}
+                disabled={signingIn}
+                loading={signingIn}
+              />
+
+              {error && (
+                <ThemedText type="small" themeColor="destructive" style={styles.error}>
+                  {error}
+                </ThemedText>
+              )}
+            </View>
+          </View>
+        </ScrollView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -162,9 +141,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     width: '100%',
-  },
-  keyboardAvoiding: {
-    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
