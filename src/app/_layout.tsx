@@ -6,8 +6,18 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider, useAuth } from '@/core/auth';
 import { AppConfigProvider } from '@/core/config';
 import { AnimatedSplashOverlay } from '@/shared/components/animated-icon';
+import { RouteErrorFallback } from '@/shared/components/RouteErrorFallback';
 
 SplashScreen.preventAutoHideAsync();
+
+// Expo Router convention: exporting a component named `ErrorBoundary` from a
+// route file catches errors thrown during render anywhere below it, instead
+// of the app going blank with nothing logged anywhere (this is the root
+// layout, so it covers every screen). See RouteErrorFallback for why the
+// real error is shown unconditionally.
+export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
+  return <RouteErrorFallback error={error} retry={retry} />;
+}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({ Fraunces_700Bold });

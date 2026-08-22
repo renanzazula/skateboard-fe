@@ -111,10 +111,13 @@ export async function bootstrap(): Promise<void> {
       discovery
     );
     applyTokenResponse(tokenResponse);
-  } catch {
+  } catch (err) {
     // Any failure here (secure-store access, discovery fetch, stale refresh
     // token) must still resolve `status` away from 'loading' — the root
     // layout keeps the splash screen up and renders nothing until it does.
+    // Logged (not swallowed silently) so a real failure here is visible in
+    // device logs instead of looking identical to "no stored session".
+    console.warn('[auth] bootstrap failed, signing out locally', err);
     await signOutLocal();
   }
 }
@@ -179,7 +182,12 @@ export async function refreshAccessToken(): Promise<string | null> {
       );
       applyTokenResponse(tokenResponse);
       return tokenResponse.accessToken;
-    } catch {
+    } catch (err) {
+      // Logged for the same reason as bootstrap()'s catch — a silent
+      // sign-out mid-session (triggered by the 401-retry path in
+      // core/api/client.ts) would otherwise look identical to "content just
+      // isn't loading" with nothing to explain why.
+      console.warn('[auth] token refresh failed, signing out locally', err);
       await signOutLocal();
       return null;
     }
