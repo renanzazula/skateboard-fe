@@ -35,5 +35,21 @@ const authMiddleware: Middleware = {
   },
 };
 
-export const bffClient = createClient<paths>({ baseUrl: env.bffBaseUrl });
+const REQUEST_TIMEOUT_MS = 15_000;
+
+/**
+ * A hung request to the BFF (dead connection, carrier/firewall issue) would
+ * otherwise leave every screen's isLoading stuck true forever with nothing
+ * to throw or log — see core/auth/authStore.ts's KEYCLOAK_REQUEST_TIMEOUT_MS
+ * for the equivalent problem on the auth side. AbortController both rejects
+ * the caller's promise and actually cancels the underlying connection,
+ * unlike a bare Promise.race timeout.
+ */
+const fetchWithTimeout: typeof fetch = (input, init) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  return fetch(input, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer));
+};
+
+export const bffClient = createClient<paths>({ baseUrl: env.bffBaseUrl, fetch: fetchWithTimeout });
 bffClient.use(authMiddleware);

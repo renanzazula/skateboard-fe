@@ -3,12 +3,18 @@ import { jwtDecode } from 'jwt-decode';
 
 import { env } from '@/core/config/env';
 import { secureStorage } from '@/core/storage/secureStorage';
+import { withTimeout } from '@/shared/utils/withTimeout';
 
 const REFRESH_TOKEN_KEY = 'skateboard.refreshToken';
 // Refresh a little before the access token's real expiry so a request that
 // starts just before expiry doesn't race a 900s-lifespan token going stale
 // mid-flight (see skateboard-podcast-be realm-export.json accessTokenLifespan).
 const EXPIRY_SKEW_MS = 30_000;
+// Every bffClient call awaits ensureFreshAccessToken() (see core/api/client.ts's
+// authMiddleware), which can end up here — a hang in any of these Keycloak
+// calls with no timeout would silently freeze every screen's data fetch at
+// once, with nothing to throw or log. See core/auth/authStore.ts history.
+const KEYCLOAK_REQUEST_TIMEOUT_MS = 10_000;
 
 export type AuthStatus = 'loading' | 'signedIn' | 'signedOut';
 
@@ -70,7 +76,16 @@ function decodeEmail(accessToken: string): string | null {
 let discoveryPromise: Promise<AuthSession.DiscoveryDocument> | null = null;
 function getDiscovery(): Promise<AuthSession.DiscoveryDocument> {
   if (!discoveryPromise) {
-    discoveryPromise = AuthSession.fetchDiscoveryAsync(env.keycloakIssuer);
+    discoveryPromise = withTimeout(
+      AuthSession.fetchDiscoveryAsync(env.keycloakIssuer),
+      KEYCLOAK_REQUEST_TIMEOUT_MS,
+      'Keycloak discovery'
+    ).catch((err) => {
+      // Don't cache a hung/failed attempt forever — an app that never
+      // recovers from one bad network blip otherwise needs a restart.
+      discoveryPromise = null;
+      throw err;
+    });
   }
   return discoveryPromise;
 }
@@ -106,9 +121,10 @@ export async function bootstrap(): Promise<void> {
       return;
     }
     const discovery = await getDiscovery();
-    const tokenResponse = await AuthSession.refreshAsync(
-      { clientId: env.keycloakClientId, refreshToken },
-      discovery
+    const tokenResponse = await withTimeout(
+      AuthSession.refreshAsync({ clientId: env.keycloakClientId, refreshToken }, discovery),
+      KEYCLOAK_REQUEST_TIMEOUT_MS,
+      'Keycloak token refresh'
     );
     applyTokenResponse(tokenResponse);
   } catch (err) {
@@ -139,7 +155,11 @@ export async function loginWithPassword(username: string, password: string): Pro
     },
     'password' as AuthSession.GrantType
   );
-  const tokenResponse = await request.performAsync(discovery);
+  const tokenResponse = await withTimeout(
+    request.performAsync(discovery),
+    KEYCLOAK_REQUEST_TIMEOUT_MS,
+    'Keycloak login'
+  );
   applyTokenResponse(tokenResponse);
 }
 
@@ -176,9 +196,10 @@ export async function refreshAccessToken(): Promise<string | null> {
     }
     try {
       const discovery = await getDiscovery();
-      const tokenResponse = await AuthSession.refreshAsync(
-        { clientId: env.keycloakClientId, refreshToken },
-        discovery
+      const tokenResponse = await withTimeout(
+        AuthSession.refreshAsync({ clientId: env.keycloakClientId, refreshToken }, discovery),
+        KEYCLOAK_REQUEST_TIMEOUT_MS,
+        'Keycloak token refresh'
       );
       applyTokenResponse(tokenResponse);
       return tokenResponse.accessToken;
