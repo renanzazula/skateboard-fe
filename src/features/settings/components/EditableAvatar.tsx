@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAccountActions } from '@/features/account/hooks/useAccountActions';
+import { setProfile, type UserProfile } from '@/features/account/hooks/useProfile';
 import { isBffError } from '@/shared/api/errors';
 import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
@@ -41,11 +42,17 @@ export function EditableAvatar({ imageUrl, initials, onUploaded }: Props) {
 
   const showImage = !!imageUrl && !imageFailed;
 
-  const runAction = async (action: () => Promise<unknown>) => {
+  const runAction = async (action: () => Promise<UserProfile | null>) => {
     setSheetVisible(false);
     try {
       const updated = await action();
-      if (updated) onUploaded();
+      if (updated) {
+        // Apply the upload's own response immediately (it already is the
+        // fresh profile) instead of waiting on a second /api/me round trip
+        // — updates every screen sharing useProfile()'s store right away.
+        setProfile(updated);
+        onUploaded();
+      }
     } catch (actionError) {
       showAlert('Could not update profile picture', isBffError(actionError) ? actionError.message : 'Try again.');
     }
