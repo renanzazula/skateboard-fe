@@ -70,7 +70,11 @@ export default function HomeScreen() {
       ) : null}
 
       {error ? (
-        <ErrorBanner message={isBffError(error) ? error.message : 'We couldn’t load the videos.'} onRetry={refresh} />
+        <ErrorBanner
+          message={isBffError(error) ? error.message : 'We couldn’t load the videos.'}
+          detail={isBffError(error) ? undefined : error.message}
+          onRetry={refresh}
+        />
       ) : null}
 
       {isLoading && videos.length === 0 ? (
