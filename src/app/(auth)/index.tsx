@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/core/auth';
 import { useAppConfig } from '@/core/config';
 import { BrandedLogo } from '@/features/branding/components/BrandedLogo';
+import { warnImageUnreachable } from '@/features/branding/services/warnImageUnreachable';
 import { PrimaryButton } from '@/shared/components/PrimaryButton';
 import { TextField } from '@/shared/components/TextField';
 import { ThemedText } from '@/shared/components/themed-text';
@@ -71,6 +72,7 @@ export default function LoginScreen() {
             style={StyleSheet.absoluteFill}
             contentFit="cover"
             cachePolicy="memory-disk"
+            onError={({ error }) => warnImageUnreachable('login background', loginBackgroundUrl, error)}
           />
           {/* Normalizes contrast against admin-uploaded backgrounds of
               unpredictable brightness — see .docs/README-branding-login-background.md #6. */}
