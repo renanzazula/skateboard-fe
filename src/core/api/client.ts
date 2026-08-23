@@ -37,6 +37,12 @@ const authMiddleware: Middleware = {
 
 const REQUEST_TIMEOUT_MS = 15_000;
 
+function requestUrl(input: RequestInfo | URL): string {
+  if (typeof input === 'string') return input;
+  if (input instanceof URL) return input.toString();
+  return input.url;
+}
+
 /**
  * A hung request to the BFF (dead connection, carrier/firewall issue) would
  * otherwise leave every screen's isLoading stuck true forever with nothing
@@ -44,11 +50,31 @@ const REQUEST_TIMEOUT_MS = 15_000;
  * for the equivalent problem on the auth side. AbortController both rejects
  * the caller's promise and actually cancels the underlying connection,
  * unlike a bare Promise.race timeout.
+ *
+ * The rejection is also relabeled with the request URL and failure reason —
+ * a bare fetch() failure on native surfaces as an opaque "Aborted" /
+ * "Network request failed" with no indication of which host it was talking
+ * to, which is unreadable in a screen's error banner on a device we can't
+ * attach a debugger to.
  */
 const fetchWithTimeout: typeof fetch = (input, init) => {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-  return fetch(input, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer));
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, REQUEST_TIMEOUT_MS);
+
+  return fetch(input, { ...init, signal: controller.signal })
+    .catch((err) => {
+      const url = requestUrl(input);
+      if (timedOut) {
+        throw new Error(`Request to ${url} timed out after ${REQUEST_TIMEOUT_MS}ms`);
+      }
+      const reason = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+      throw new Error(`Request to ${url} failed (${reason})`);
+    })
+    .finally(() => clearTimeout(timer));
 };
 
 export const bffClient = createClient<paths>({ baseUrl: env.bffBaseUrl, fetch: fetchWithTimeout });
