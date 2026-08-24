@@ -11,14 +11,20 @@ import { RADII, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 
 // Loaded lazily so the web bundle never executes native-only modules — same
-// pattern as PodcastEpisodeDetail's Spotify WebView. Both Spotify and
-// YouTube embeds render through this one WebView (a YouTube iframe URL works
-// the same way a Spotify embed URL does), so there's no need for the native
-// react-native-youtube-iframe player EpisodeVideoPlayer uses for the full
-// hero video — this bar is compact, not a hero.
+// pattern as PodcastEpisodeDetail's Spotify WebView.
+//
+// Spotify's embed loads fine as a plain WebView URL. YouTube's does not: its
+// iframe player checks the referring origin, and a WebView pointed straight
+// at an /embed/ URL has none, so it refuses with "Error 153 — video player
+// configuration error" instead of playing. react-native-youtube-iframe hosts
+// the player in a document with a real base URL, which is why the hero video
+// in EpisodeVideoPlayer works; this bar now goes through the same component
+// rather than assuming a compact player could get away with less.
 let RNWebView: any = null;
+let YoutubePlayer: any = null;
 if (Platform.OS !== 'web') {
   RNWebView = require('react-native-webview').WebView;
+  YoutubePlayer = require('react-native-youtube-iframe').default;
 }
 
 /**
@@ -85,7 +91,7 @@ export function MiniPodcastPlayer({ content }: Props) {
   const theme = useTheme();
   const [expanded, setExpanded] = useState(false);
   const [embedWidth, setEmbedWidth] = useState(0);
-  const embedUrl = resolveEmbedUrl(content);
+  const embed = resolveEmbed(content);
   const embedHeight = embedHeightFor(content.playback?.type, embedWidth);
 
   // Measured on the card rather than on the embed itself: the card is laid
@@ -128,38 +134,50 @@ export function MiniPodcastPlayer({ content }: Props) {
         {expanded ? <ChevronDown size={20} color={theme.primary} /> : <ChevronUp size={20} color={theme.primary} />}
       </Pressable>
 
-      {expanded && embedUrl ? (
+      {expanded && embed ? (
         <View style={styles.embedWrapper}>
-          <View style={{ height: embedHeight }}>{renderEmbed(embedUrl)}</View>
+          <View style={{ height: embedHeight }}>{renderEmbed(embed, embedHeight)}</View>
         </View>
       ) : null}
     </View>
   );
 }
 
-function resolveEmbedUrl(content: FeaturedPlayerContent): string | null {
+/**
+ * Both platforms need the embed URL, but native YouTube additionally needs
+ * the bare video id — its player is a component, not a URL in a WebView.
+ */
+type ResolvedEmbed =
+  | { kind: 'youtube'; url: string; videoId: string }
+  | { kind: 'webEmbed'; url: string };
+
+function resolveEmbed(content: FeaturedPlayerContent): ResolvedEmbed | null {
   const playback = content.playback;
   if (!playback || !playback.reference) return null;
 
   if (playback.type === 'SPOTIFY_EMBED') {
     const info = extractSpotifyInfo(playback.reference);
-    return info ? `https://open.spotify.com/embed/${info.spotifyType}/${info.spotifyId}` : null;
+    return info
+      ? { kind: 'webEmbed', url: `https://open.spotify.com/embed/${info.spotifyType}/${info.spotifyId}` }
+      : null;
   }
 
   if (playback.type === 'YOUTUBE') {
-    const youtubeId = extractYoutubeIdFromUrl(playback.reference);
-    return youtubeId ? `https://www.youtube.com/embed/${youtubeId}?playsinline=1&rel=0` : null;
+    const videoId = extractYoutubeIdFromUrl(playback.reference);
+    return videoId
+      ? { kind: 'youtube', url: `https://www.youtube.com/embed/${videoId}?playsinline=1&rel=0`, videoId }
+      : null;
   }
 
   return null;
 }
 
-function renderEmbed(embedUrl: string) {
+function renderEmbed(embed: ResolvedEmbed, height: number) {
   if (Platform.OS === 'web') {
     return (
       // @ts-ignore web-only element
       <iframe
-        src={embedUrl}
+        src={embed.url}
         // Fills the sized box its parent computed, so native and web are
         // driven by the same height rather than each carrying their own.
         style={{ width: '100%', height: '100%', border: 'none', borderRadius: RADII.control }}
@@ -167,7 +185,14 @@ function renderEmbed(embedUrl: string) {
       />
     );
   }
-  return <RNWebView source={{ uri: embedUrl }} style={styles.webView} scrollEnabled={false} allowsInlineMediaPlayback />;
+
+  // Native YouTube: see the require block at the top for why this can't be a
+  // WebView pointed at embed.url.
+  if (embed.kind === 'youtube') {
+    return <YoutubePlayer height={height} videoId={embed.videoId} />;
+  }
+
+  return <RNWebView source={{ uri: embed.url }} style={styles.webView} scrollEnabled={false} allowsInlineMediaPlayback />;
 }
 
 const styles = StyleSheet.create({
