@@ -1,9 +1,15 @@
-import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useState } from 'react';
 
 import { bffClient } from '@/core/api/client';
 import type { components } from '@/core/api/generated/schema';
+import type { ProcessedImageAsset } from '@/shared/components/image-upload';
 import { toBffError } from '@/shared/api/errors';
+
+const EXTENSION_FOR_MIME_TYPE: Record<string, string> = {
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/jpeg': 'jpg',
+};
 
 export type UserProfile = components['schemas']['UserResponse'];
 
@@ -27,11 +33,12 @@ export function useAccountActions() {
     }
   }, []);
 
-  const uploadProfilePicture = useCallback(async (asset: ImagePicker.ImagePickerAsset): Promise<UserProfile> => {
+  /** Uploads an already-cropped/resized asset from ImageUploadDialog (see EditableAvatar.tsx). */
+  const uploadProfilePicture = useCallback(async (asset: ProcessedImageAsset): Promise<UserProfile> => {
     setSubmitting(true);
     try {
-      const extension = asset.uri.split('.').pop() ?? 'jpg';
-      const filename = asset.fileName ?? `profile-picture.${extension}`;
+      const extension = EXTENSION_FOR_MIME_TYPE[asset.mimeType] ?? 'jpg';
+      const filename = `profile-picture.${extension}`;
 
       // Appending { uri, name, type } directly to FormData is a React
       // Native-only convention (RN's native networking layer special-cases
@@ -54,38 +61,17 @@ export function useAccountActions() {
       const { data, error, response } = await bffClient.POST('/api/me/profile-picture', {
         body: form as unknown as { file: string },
       });
-      if (error) throw toBffError(error, response.status);
+      // openapi-fetch types `data` as optional even when `error` is falsy
+      // (e.g. an unexpected empty body) — silently returning it as-is would
+      // make EditableAvatar's `if (updated)` guard no-op the whole update,
+      // which looks exactly like "upload succeeded but the picture never
+      // changes" with no error shown anywhere.
+      if (error || !data) throw toBffError(error, response.status);
       return data;
     } finally {
       setSubmitting(false);
     }
   }, []);
-
-  /** Requests photo library permission, lets the user pick an image, and uploads it. Returns null if the user cancels. */
-  const pickAndUploadProfilePicture = useCallback(async (): Promise<UserProfile | null> => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      throw new Error('Photo library permission is required to change your profile picture.');
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
-    if (result.canceled || !result.assets?.length) {
-      return null;
-    }
-    return uploadProfilePicture(result.assets[0]);
-  }, [uploadProfilePicture]);
-
-  /** Requests camera permission, lets the user take a photo, and uploads it. Returns null if the user cancels. */
-  const takeAndUploadProfilePicture = useCallback(async (): Promise<UserProfile | null> => {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      throw new Error('Camera permission is required to take a new profile picture.');
-    }
-    const result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.8 });
-    if (result.canceled || !result.assets?.length) {
-      return null;
-    }
-    return uploadProfilePicture(result.assets[0]);
-  }, [uploadProfilePicture]);
 
   const changePassword = useCallback(async (newPassword: string): Promise<void> => {
     setSubmitting(true);
@@ -120,8 +106,7 @@ export function useAccountActions() {
   return {
     submitting,
     changeUsername,
-    pickAndUploadProfilePicture,
-    takeAndUploadProfilePicture,
+    uploadProfilePicture,
     changePassword,
     deactivateAccount,
     deleteAccount,

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 
 import { bffClient } from '@/core/api/client';
+import * as authStore from '@/core/auth/authStore';
 import type { components } from '@/core/api/generated/schema';
 import { toBffError } from '@/shared/api/errors';
 
@@ -42,6 +43,21 @@ function getState(): ProfileState {
   return state;
 }
 
+// Sign-out must drop the previous user's profile and let the next sign-in
+// fetch fresh — otherwise `hasLoadedOnce` (set by the very first mount ever,
+// see useProfile() below) stays true across a logout/login-as-someone-else
+// cycle, and every consumer (HomeHeader, podcast/settings headers) keeps
+// showing the old user's name/avatar until the app is restarted.
+let wasSignedIn = authStore.getState().status === 'signedIn';
+authStore.subscribe(() => {
+  const isSignedIn = authStore.getState().status === 'signedIn';
+  if (wasSignedIn && !isSignedIn) {
+    hasLoadedOnce = false;
+    setState({ profile: null, isLoading: false, error: null });
+  }
+  wasSignedIn = isSignedIn;
+});
+
 async function load(): Promise<void> {
   setState({ ...state, isLoading: true, error: null });
   try {
@@ -81,9 +97,11 @@ export function useProfile() {
 
   useEffect(() => {
     // Only the very first consumer to mount triggers the initial fetch —
-    // everyone after that just reads the shared state. (Does not re-fire on
-    // a different user signing in on the same device without an app
-    // restart; not a flow this app currently supports without a reload.)
+    // everyone after that just reads the shared state. `hasLoadedOnce` is
+    // reset on sign-out (see the authStore subscription above), so a
+    // different user signing in on the same device — which remounts every
+    // useProfile() consumer via app/_layout.tsx's Stack.Protected — fetches
+    // fresh instead of showing the previous user's cached profile.
     if (!hasLoadedOnce) {
       hasLoadedOnce = true;
       refresh();

@@ -1,19 +1,20 @@
 import { Image } from 'expo-image';
 import { Camera } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAccountActions } from '@/features/account/hooks/useAccountActions';
-import { setProfile, type UserProfile } from '@/features/account/hooks/useProfile';
+import { setProfile } from '@/features/account/hooks/useProfile';
 import { isBffError } from '@/shared/api/errors';
-import { ThemedText } from '@/shared/components/themed-text';
-import { ThemedView } from '@/shared/components/themed-view';
-import { RADII, Spacing } from '@/shared/constants/theme';
+import { ImageUploadDialog, type ProcessedImageAsset } from '@/shared/components/image-upload';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { showAlert } from '@/shared/utils/alert';
 
 const AVATAR_SIZE = 60;
 const BADGE_SIZE = 24;
+// Uploaded well above the 60pt on-screen size for retina displays and any
+// other place the picture renders larger (e.g. a future profile screen).
+const OUTPUT_SIZE = 512;
 
 type Props = {
   imageUrl: string | null;
@@ -23,15 +24,15 @@ type Props = {
 
 /**
  * Avatar + camera badge — the whole element is the upload control (no
- * separate "Profile picture" row). Tapping opens a chooser (Take photo /
- * Choose from library); there's no "Remove" option since the BFF only
- * exposes POST /api/me/profile-picture (upload/replace), not a delete.
+ * separate "Profile picture" row). Tapping opens ImageUploadDialog (source
+ * picker → square crop → upload); there's no "Remove" option since the BFF
+ * only exposes POST /api/me/profile-picture (upload/replace), not a delete.
  * See .docs/SETTINGS_REDESIGN_2.md §6/§7.
  */
 export function EditableAvatar({ imageUrl, initials, onUploaded }: Props) {
   const theme = useTheme();
-  const { pickAndUploadProfilePicture, takeAndUploadProfilePicture, submitting } = useAccountActions();
-  const [sheetVisible, setSheetVisible] = useState(false);
+  const { uploadProfilePicture, submitting } = useAccountActions();
+  const [dialogVisible, setDialogVisible] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
 
   // Reset once the URL itself changes (e.g. a fresh upload), so a past
@@ -42,17 +43,15 @@ export function EditableAvatar({ imageUrl, initials, onUploaded }: Props) {
 
   const showImage = !!imageUrl && !imageFailed;
 
-  const runAction = async (action: () => Promise<UserProfile | null>) => {
-    setSheetVisible(false);
+  const handleConfirm = async (asset: ProcessedImageAsset) => {
+    setDialogVisible(false);
     try {
-      const updated = await action();
-      if (updated) {
-        // Apply the upload's own response immediately (it already is the
-        // fresh profile) instead of waiting on a second /api/me round trip
-        // — updates every screen sharing useProfile()'s store right away.
-        setProfile(updated);
-        onUploaded();
-      }
+      const updated = await uploadProfilePicture(asset);
+      // Apply the upload's own response immediately (it already is the
+      // fresh profile) instead of waiting on a second /api/me round trip —
+      // updates every screen sharing useProfile()'s store right away.
+      setProfile(updated);
+      onUploaded();
     } catch (actionError) {
       showAlert('Could not update profile picture', isBffError(actionError) ? actionError.message : 'Try again.');
     }
@@ -61,7 +60,7 @@ export function EditableAvatar({ imageUrl, initials, onUploaded }: Props) {
   return (
     <>
       <Pressable
-        onPress={() => setSheetVisible(true)}
+        onPress={() => setDialogVisible(true)}
         disabled={submitting}
         style={styles.wrapper}
         accessibilityRole="button"
@@ -89,24 +88,13 @@ export function EditableAvatar({ imageUrl, initials, onUploaded }: Props) {
         </View>
       </Pressable>
 
-      <Modal animationType="slide" transparent visible={sheetVisible} onRequestClose={() => setSheetVisible(false)}>
-        <ThemedView style={styles.backdrop}>
-          <ThemedView type="surface" style={[styles.card, { borderColor: theme.border }]}>
-            <ThemedText type="subtitle">Profile picture</ThemedText>
-            <Pressable onPress={() => runAction(takeAndUploadProfilePicture)} style={styles.optionRow}>
-              <ThemedText type="smallBold">Take photo</ThemedText>
-            </Pressable>
-            <Pressable onPress={() => runAction(pickAndUploadProfilePicture)} style={styles.optionRow}>
-              <ThemedText type="smallBold">Choose from library</ThemedText>
-            </Pressable>
-            <Pressable onPress={() => setSheetVisible(false)} style={styles.cancelButton}>
-              <ThemedText type="smallBold" themeColor="primary">
-                Cancel
-              </ThemedText>
-            </Pressable>
-          </ThemedView>
-        </ThemedView>
-      </Modal>
+      <ImageUploadDialog
+        visible={dialogVisible}
+        title="Profile picture"
+        constraints={{ aspectRatio: 1, outputWidth: OUTPUT_SIZE, outputHeight: OUTPUT_SIZE }}
+        onCancel={() => setDialogVisible(false)}
+        onConfirm={handleConfirm}
+      />
     </>
   );
 }
@@ -148,26 +136,5 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  backdrop: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    padding: Spacing.four,
-  },
-  card: {
-    borderRadius: RADII.card,
-    borderWidth: 1,
-    gap: Spacing.one,
-    padding: Spacing.four,
-  },
-  optionRow: {
-    minHeight: 48,
-    justifyContent: 'center',
-  },
-  cancelButton: {
-    alignItems: 'center',
-    borderRadius: RADII.control,
-    paddingVertical: Spacing.three,
-    marginTop: Spacing.one,
   },
 });
