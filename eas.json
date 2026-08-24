@@ -17,7 +17,8 @@
       "env": {
         "EXPO_PUBLIC_KEYCLOAK_ISSUER": "https://keycloak-production-2f7a.up.railway.app/realms/skateboard-podcast",
         "EXPO_PUBLIC_KEYCLOAK_CLIENT_ID": "skateboard-mobile",
-        "EXPO_PUBLIC_BFF_BASE_URL": "https://skateboard-ui-backend-production.up.railway.app"
+        "EXPO_PUBLIC_BFF_BASE_URL": "https://skateboard-ui-backend-production.up.railway.app",
+        "EXPO_PUBLIC_USE_RN_FETCH": "1"
       }
     }
   },

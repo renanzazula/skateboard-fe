@@ -16,14 +16,21 @@ export function usePodcastPost(slug: string) {
 
   const load = useCallback(async () => {
     setState({ post: null, loading: true, error: null });
-    const { data, error, response } = await bffClient.GET('/api/podcast/{slug}', {
-      params: { path: { slug } },
-    });
-    if (error) {
-      setState({ post: null, loading: false, error: toBffError(error, response.status) });
-      return;
+    try {
+      const { data, error, response } = await bffClient.GET('/api/podcast/{slug}', {
+        params: { path: { slug } },
+      });
+      if (error || !data) {
+        setState({ post: null, loading: false, error: toBffError(error, response.status) });
+        return;
+      }
+      setState({ post: toPost(data), loading: false, error: null });
+    } catch (err) {
+      // A thrown network error (rather than openapi-fetch's {error} field)
+      // must still clear loading — otherwise this screen is stuck on its
+      // spinner forever with no way to retry. See useHomeVideos.ts.
+      setState({ post: null, loading: false, error: err instanceof Error ? err : new Error('Network error') });
     }
-    setState({ post: toPost(data), loading: false, error: null });
   }, [slug]);
 
   useEffect(() => {

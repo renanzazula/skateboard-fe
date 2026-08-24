@@ -21,12 +21,19 @@ export function useCategories() {
 
   const load = useCallback(async () => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
-    const { data, error, response } = await bffClient.GET('/api/categories');
-    if (error) {
-      setState({ categories: [], isLoading: false, error: toBffError(error, response.status) });
-      return;
+    try {
+      const { data, error, response } = await bffClient.GET('/api/categories');
+      if (error) {
+        setState({ categories: [], isLoading: false, error: toBffError(error, response.status) });
+        return;
+      }
+      setState({ categories: (data ?? []).map(toCategory), isLoading: false, error: null });
+    } catch (err) {
+      // A thrown network error (rather than openapi-fetch's {error} field)
+      // must still clear isLoading — otherwise the category rail is stuck
+      // on its spinner forever with no way to retry. See useHomeVideos.ts.
+      setState({ categories: [], isLoading: false, error: err instanceof Error ? err : new Error('Network error') });
     }
-    setState({ categories: (data ?? []).map(toCategory), isLoading: false, error: null });
   }, []);
 
   useEffect(() => {

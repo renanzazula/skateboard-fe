@@ -31,26 +31,34 @@ export function usePodcastFeed(categorySlug: string | undefined) {
     loadingRef.current = true;
     setState((prev) => ({ ...prev, isLoading: true, error: page === 0 ? null : prev.error }));
 
-    const { data, error, response } = await bffClient.GET('/api/categories/{slug}/posts', {
-      params: { path: { slug }, query: { page, size: PAGE_SIZE } },
-    });
+    try {
+      const { data, error, response } = await bffClient.GET('/api/categories/{slug}/posts', {
+        params: { path: { slug }, query: { page, size: PAGE_SIZE } },
+      });
 
-    if (error) {
-      const bffError = toBffError(error, response.status);
+      if (error || !data) {
+        const bffError = toBffError(error, response.status);
+        setState((prev) => (page === 0 ? { posts: [], total: 0, isLoading: false, error: bffError } : { ...prev, isLoading: false, error: bffError }));
+        return;
+      }
+
+      const newPosts = (data.posts ?? []).map(toPost);
+      pageRef.current = page;
+      setState((prev) => ({
+        posts: page === 0 ? newPosts : [...prev.posts, ...newPosts],
+        total: data.total ?? 0,
+        isLoading: false,
+        error: null,
+      }));
+    } catch (err) {
+      // A thrown network error (rather than openapi-fetch's {error} field)
+      // must still clear isLoading — otherwise this list is stuck on its
+      // spinner forever with no way to retry. See useHomeVideos.ts.
+      const bffError = err instanceof Error ? err : new Error('Network error');
       setState((prev) => (page === 0 ? { posts: [], total: 0, isLoading: false, error: bffError } : { ...prev, isLoading: false, error: bffError }));
+    } finally {
       loadingRef.current = false;
-      return;
     }
-
-    const newPosts = (data.posts ?? []).map(toPost);
-    pageRef.current = page;
-    setState((prev) => ({
-      posts: page === 0 ? newPosts : [...prev.posts, ...newPosts],
-      total: data.total ?? 0,
-      isLoading: false,
-      error: null,
-    }));
-    loadingRef.current = false;
   }, []);
 
   useEffect(() => {

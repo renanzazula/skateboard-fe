@@ -20,14 +20,19 @@ const authMiddleware: Middleware = {
 
   async onResponse({ request, response }) {
     if (response.status !== 401) {
-      return response;
+      // Returning the response unmodified (rather than passing it through)
+      // trips openapi-fetch's `result instanceof Response` check on React
+      // Native, where the global fetch/Response the runtime hands back
+      // isn't always the same Response class openapi-fetch itself sees —
+      // returning nothing tells it "unchanged", skipping that check.
+      return;
     }
     // The access token looked fresh but the BFF rejected it anyway (e.g.
     // clock skew, revoked session) — refresh once and retry, rather than
     // surfacing a 401 the proactive refresh in onRequest should have avoided.
     const accessToken = await refreshAccessToken();
     if (!accessToken) {
-      return response;
+      return;
     }
     const retryRequest = request.clone();
     retryRequest.headers.set('Authorization', `Bearer ${accessToken}`);
