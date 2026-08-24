@@ -80,12 +80,11 @@ function embedHeightFor(playbackType: string | undefined, width: number): number
  * Spotify/YouTube in its public shape.
  *
  * Carries the brand yellow rather than the neutral card recipe the rest of
- * the app uses: primary border over a primarySoft fill, with the icon and
- * chevron to match. Home stacks it directly above the masonry gallery, and
- * the accent is what marks it as the one featured thing on the screen. Note
- * the accent stops at the bar — once expanded, the embed below paints its
- * own chrome (Spotify green, YouTube red) inside the WebView, which isn't
- * ours to theme.
+ * the app uses — a solid primary fill with onPrimary text, so the bar reads
+ * as the one featured thing on a screen it shares with the masonry gallery
+ * beneath it. Note the accent stops at the bar: once expanded, the embed
+ * below paints its own chrome (Spotify green, YouTube red) inside the
+ * WebView, which isn't ours to theme.
  */
 export function MiniPodcastPlayer({ content }: Props) {
   const theme = useTheme();
@@ -104,7 +103,7 @@ export function MiniPodcastPlayer({ content }: Props) {
 
   return (
     <View
-      style={[styles.container, { backgroundColor: theme.primarySoft, borderColor: theme.primary }]}
+      style={[styles.container, { backgroundColor: theme.primary, borderColor: theme.primary }]}
       onLayout={(event) => handleLayout(event.nativeEvent.layout.width)}>
       <Pressable
         style={styles.bar}
@@ -120,18 +119,22 @@ export function MiniPodcastPlayer({ content }: Props) {
           )}
         </View>
 
+        {/* Text and chevron take onPrimary: on a solid primary fill the
+            normal textPrimary/textSecondary pair is near-invisible. The
+            subtitle leans on opacity rather than a second token, since the
+            palette has no "muted onPrimary". */}
         <View style={styles.text}>
-          <ThemedText type="smallBold" numberOfLines={1}>
+          <ThemedText type="smallBold" themeColor="onPrimary" numberOfLines={1}>
             {content.title}
           </ThemedText>
           {content.subtitle ? (
-            <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+            <ThemedText type="small" themeColor="onPrimary" style={styles.subtitle} numberOfLines={1}>
               {content.subtitle}
             </ThemedText>
           ) : null}
         </View>
 
-        {expanded ? <ChevronDown size={20} color={theme.primary} /> : <ChevronUp size={20} color={theme.primary} />}
+        {expanded ? <ChevronDown size={20} color={theme.onPrimary} /> : <ChevronUp size={20} color={theme.onPrimary} />}
       </Pressable>
 
       {expanded && embed ? (
@@ -218,6 +221,9 @@ const styles = StyleSheet.create({
   text: {
     flex: 1,
     gap: 2,
+  },
+  subtitle: {
+    opacity: 0.7,
   },
   // No height of its own — it wraps the sized embed. It used to carry the
   // embed height *and* this padding, and React Native's border-box sizing
