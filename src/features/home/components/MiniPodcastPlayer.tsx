@@ -21,11 +21,47 @@ if (Platform.OS !== 'web') {
   RNWebView = require('react-native-webview').WebView;
 }
 
-const EMBED_HEIGHT = 152;
+/**
+ * Spotify's episode embed is a fixed-height player, not an aspect-ratio one,
+ * and it swaps its own internal layout on the width it is given: a stacked
+ * player when narrow, a single row when wide. Pinning it to the narrow height
+ * at every width is what left a band of dead space under the player on wide
+ * screens — the iframe kept its 152px box and drew an 80px row inside it.
+ *
+ * The threshold is where Spotify's row layout takes over in practice; a phone
+ * (~360pt of card) stays comfortably below it and a tablet or the web build
+ * above. Erring high is the safe side: too tall only re-creates today's gap,
+ * while too short would clip Spotify's controls.
+ */
+const SPOTIFY_STACKED_HEIGHT = 152;
+const SPOTIFY_ROW_HEIGHT = 80;
+const SPOTIFY_ROW_MIN_WIDTH = 480;
+
+/** YouTube is a video: anything but 16:9 letterboxes or crops the frame. */
+const YOUTUBE_ASPECT_RATIO = 16 / 9;
+
+/**
+ * Kept next to the style that applies it — the embed's usable width is the
+ * card's measured width minus this border on both sides and the wrapper's
+ * padding, and the two must not drift apart.
+ */
+const CARD_BORDER_WIDTH = 1;
 
 type Props = {
   content: FeaturedPlayerContent;
 };
+
+/**
+ * Height the embed should occupy for `width` points of usable card width.
+ * Falls back to the stacked height before the first layout pass, so the embed
+ * never appears at zero height for a frame.
+ */
+function embedHeightFor(playbackType: string | undefined, width: number): number {
+  if (playbackType === 'YOUTUBE') {
+    return width > 0 ? Math.round(width / YOUTUBE_ASPECT_RATIO) : SPOTIFY_STACKED_HEIGHT;
+  }
+  return width >= SPOTIFY_ROW_MIN_WIDTH ? SPOTIFY_ROW_HEIGHT : SPOTIFY_STACKED_HEIGHT;
+}
 
 /**
  * README-home-featured-mini-player.md §15/§16: a reusable, source-agnostic
@@ -48,10 +84,22 @@ type Props = {
 export function MiniPodcastPlayer({ content }: Props) {
   const theme = useTheme();
   const [expanded, setExpanded] = useState(false);
+  const [embedWidth, setEmbedWidth] = useState(0);
   const embedUrl = resolveEmbedUrl(content);
+  const embedHeight = embedHeightFor(content.playback?.type, embedWidth);
+
+  // Measured on the card rather than on the embed itself: the card is laid
+  // out while still collapsed, so the embed has its final height on the very
+  // first frame it renders instead of resizing just after the user taps.
+  const handleLayout = (width: number) => {
+    const usable = width - 2 * CARD_BORDER_WIDTH - 2 * Spacing.two;
+    setEmbedWidth((current) => (current === usable ? current : usable));
+  };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.primarySoft, borderColor: theme.primary }]}>
+    <View
+      style={[styles.container, { backgroundColor: theme.primarySoft, borderColor: theme.primary }]}
+      onLayout={(event) => handleLayout(event.nativeEvent.layout.width)}>
       <Pressable
         style={styles.bar}
         onPress={() => setExpanded((v) => !v)}
@@ -80,7 +128,11 @@ export function MiniPodcastPlayer({ content }: Props) {
         {expanded ? <ChevronDown size={20} color={theme.primary} /> : <ChevronUp size={20} color={theme.primary} />}
       </Pressable>
 
-      {expanded && embedUrl ? <View style={styles.embedWrapper}>{renderEmbed(embedUrl)}</View> : null}
+      {expanded && embedUrl ? (
+        <View style={styles.embedWrapper}>
+          <View style={{ height: embedHeight }}>{renderEmbed(embedUrl)}</View>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -108,7 +160,9 @@ function renderEmbed(embedUrl: string) {
       // @ts-ignore web-only element
       <iframe
         src={embedUrl}
-        style={{ width: '100%', height: EMBED_HEIGHT, border: 'none', borderRadius: RADII.control }}
+        // Fills the sized box its parent computed, so native and web are
+        // driven by the same height rather than each carrying their own.
+        style={{ width: '100%', height: '100%', border: 'none', borderRadius: RADII.control }}
         allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
       />
     );
@@ -118,7 +172,7 @@ function renderEmbed(embedUrl: string) {
 
 const styles = StyleSheet.create({
   container: {
-    borderWidth: 1,
+    borderWidth: CARD_BORDER_WIDTH,
     borderRadius: RADII.card,
     overflow: 'hidden',
   },
@@ -140,8 +194,11 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  // No height of its own — it wraps the sized embed. It used to carry the
+  // embed height *and* this padding, and React Native's border-box sizing
+  // then subtracted the padding from it, handing the embed 8pt less than the
+  // height Spotify draws against.
   embedWrapper: {
-    height: EMBED_HEIGHT,
     paddingHorizontal: Spacing.two,
     paddingBottom: Spacing.two,
   },
