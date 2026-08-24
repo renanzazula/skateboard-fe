@@ -114,7 +114,9 @@ export default function HomeScreen() {
 
       {featuredContent && featuredContent.position === 'BOTTOM' ? (
         <View style={[styles.bottomPlayer, { bottom: BottomTabInset + Spacing.two }]} pointerEvents="box-none">
-          <MiniPodcastPlayer content={featuredContent} />
+          <View style={styles.bottomPlayerContent}>
+            <MiniPodcastPlayer content={featuredContent} />
+          </View>
         </View>
       ) : null}
     </ThemedView>
@@ -142,13 +144,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingTop: Spacing.two,
   },
+  // Spans the screen and centres its child, rather than being narrowed and
+  // centred itself. `alignSelf` has no effect on an absolutely positioned box
+  // that sets both `left` and `right`: the insets fix the box to both edges,
+  // `maxWidth` then clamps it, and it stays anchored to `left` — so on a wide
+  // viewport the player sat hard against the left edge while the gallery,
+  // which is not absolute, centred correctly.
   bottomPlayer: {
     position: 'absolute',
     left: 0,
     right: 0,
+    alignItems: 'center',
+    paddingHorizontal: Spacing.three,
+  },
+  bottomPlayerContent: {
     width: '100%',
     maxWidth: MAX_CONTENT_WIDTH,
-    alignSelf: 'center',
-    paddingHorizontal: Spacing.three,
   },
 });
