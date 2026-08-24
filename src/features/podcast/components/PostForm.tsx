@@ -31,6 +31,13 @@ interface PostFormProps {
   submitLabel: string;
   submitting: boolean;
   onSubmit: (values: PostFormValues) => void;
+  /**
+   * YouTube-sync metadata (shared/types/posts.ts's Post.description) — shown
+   * for context on a synced episode, but never part of PostFormValues: the
+   * BFF's Create/UpdatePostRequest has no field for it (podcast-be treats it
+   * as sync-owned, read-only), so there is nothing for onSubmit to send.
+   */
+  syncedDescription?: string | null;
 }
 
 type SocialLinkEditor = { url: string };
@@ -214,7 +221,7 @@ function BlockEditorRow({
   );
 }
 
-export function PostForm({ initialValues, submitLabel, submitting, onSubmit }: PostFormProps) {
+export function PostForm({ initialValues, submitLabel, submitting, onSubmit, syncedDescription }: PostFormProps) {
   const theme = useTheme();
   const { t } = useTranslation();
   const [title, setTitle] = useState(initialValues?.title ?? '');
@@ -300,6 +307,17 @@ export function PostForm({ initialValues, submitLabel, submitting, onSubmit }: P
         placeholderTextColor={theme.textMuted}
         style={[styles.input, { color: theme.textPrimary, borderColor: theme.border }]}
       />
+
+      {syncedDescription ? (
+        <>
+          <ThemedText type="small">{t('feed.syncedDescription')}</ThemedText>
+          <ThemedView type="surface" style={[styles.blockRow, { borderColor: theme.border }]}>
+            <ThemedText type="small" themeColor="textSecondary">
+              {syncedDescription}
+            </ThemedText>
+          </ThemedView>
+        </>
+      ) : null}
 
       <ThemedText type="small">{t('feed.coverImageUrl')}</ThemedText>
       <ThemedView style={styles.coverSourceRow}>

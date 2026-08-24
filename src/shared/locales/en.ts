@@ -43,6 +43,7 @@ export const en = {
     spotifyUrlPlaceholder: 'https://open.spotify.com/track/...',
     galleryImages: 'Gallery Images',
     status: 'Status',
+    syncedDescription: 'Description (synced from YouTube — read only)',
     socialMediaLinks: 'Social Media Links',
     socialUrl: 'URL',
     socialUrlPlaceholder: 'https://instagram.com/example',

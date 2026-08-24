@@ -50,6 +50,7 @@ export default function EditPodcastPostScreen() {
         blocks: post.blocks,
         socialMediaLinks: post.socialMediaLinks,
       }}
+      syncedDescription={post.description}
       submitLabel="Save changes"
       submitting={submitting}
       onSubmit={handleSubmit}
