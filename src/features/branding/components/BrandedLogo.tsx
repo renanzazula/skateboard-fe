@@ -2,6 +2,7 @@ import { Image, type ImageStyle } from 'expo-image';
 import type { StyleProp } from 'react-native';
 
 import { useAppConfig } from '@/core/config';
+import { warnImageUnreachable } from '@/features/branding/services/warnImageUnreachable';
 
 type Props = {
   style?: StyleProp<ImageStyle>;
@@ -31,6 +32,7 @@ export function BrandedLogo({ style }: Props) {
       style={style}
       contentFit="contain"
       cachePolicy="memory-disk"
+      onError={({ error }) => warnImageUnreachable('app logo', appLogoUrl, error)}
     />
   );
 }
