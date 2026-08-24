@@ -1,5 +1,6 @@
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { ExternalLink, Music, Quote, Video } from 'lucide-react-native';
+import { useState } from 'react';
+import { ExternalLink, ImageOff, Music, Quote, Video } from 'lucide-react-native';
 import { Image, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Block } from '@/shared/types/posts';
@@ -17,6 +18,42 @@ function NativeVideoBlock({ url }: { url: string }) {
   );
 }
 
+/**
+ * An image block, with the failure case drawn rather than left blank.
+ *
+ * The image reserves a fixed 240pt whether or not it loads, so a URL that
+ * 404s or blocks hotlinking used to leave a tall empty band with the caption
+ * stranded underneath — indistinguishable from a layout bug, and silent in
+ * the console. Authors paste third-party URLs into this field, so that is a
+ * routine outcome, not an edge case.
+ */
+function ImageBlockView({ url, caption }: { url: string; caption?: string }) {
+  const colors = useTheme();
+  const [failed, setFailed] = useState(false);
+
+  return (
+    <View style={styles.imageBlock}>
+      {failed ? (
+        <View style={[styles.imageFallback, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <ImageOff size={20} color={colors.textMuted} />
+          <Text style={[styles.caption, { color: colors.textMuted }]}>Image could not be loaded</Text>
+        </View>
+      ) : (
+        <Image
+          source={{ uri: url }}
+          style={styles.image}
+          resizeMode="cover"
+          onError={({ nativeEvent }) => {
+            console.warn(`[block] image failed to load from ${url}: ${nativeEvent?.error ?? 'unknown error'}`);
+            setFailed(true);
+          }}
+        />
+      )}
+      {caption ? <Text style={[styles.caption, { color: colors.textSecondary }]}>{caption}</Text> : null}
+    </View>
+  );
+}
+
 export function BlockRenderer({ block }: Props) {
   const colors = useTheme();
 
@@ -25,14 +62,7 @@ export function BlockRenderer({ block }: Props) {
       return <Text style={[styles.text, { color: colors.textPrimary }]}>{block.data.html.replace(/<[^>]+>/g, '')}</Text>;
 
     case 'image':
-      return (
-        <View style={styles.imageBlock}>
-          <Image source={{ uri: block.data.url }} style={styles.image} resizeMode="cover" />
-          {block.data.caption ? (
-            <Text style={[styles.caption, { color: colors.textSecondary }]}>{block.data.caption}</Text>
-          ) : null}
-        </View>
-      );
+      return <ImageBlockView url={block.data.url} caption={block.data.caption} />;
 
     case 'video':
       if (Platform.OS === 'web') {
@@ -156,6 +186,15 @@ const styles = StyleSheet.create({
   },
   imageBlock: {
     marginBottom: 16,
+  },
+  imageFallback: {
+    width: '100%',
+    height: 240,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
   image: {
     width: '100%',

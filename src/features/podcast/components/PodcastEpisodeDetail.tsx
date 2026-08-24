@@ -9,16 +9,17 @@ import { EpisodeVideoPlayer } from '@/features/podcast/components/EpisodeVideoPl
 import { InstagramIcon } from '@/features/podcast/components/icons/InstagramIcon';
 import {
   extractYoutubeIdFromUrl,
+  getConsumedBlocks,
   getDescription,
   getDuration,
-  getInstagramUrl,
+  getSocialLinks,
   getSpotifyEmbedUrl,
   getYoutubeId,
 } from '@/features/podcast/services/episodeMeta';
 import { Badge } from '@/shared/components/Badge';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
-import { MAX_CONTENT_WIDTH } from '@/shared/constants/theme';
+import { MAX_CONTENT_WIDTH, RADII } from '@/shared/constants/theme';
 import type { Post, VideoBlock } from '@/shared/types/posts';
 
 // Ported from rork-standard-app/expo's modules/feed/screens (via
@@ -72,7 +73,7 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
 
   const youtubeId = getYoutubeId(post);
   const spotifyEmbedUrl = getSpotifyEmbedUrl(post);
-  const instagramUrl = getInstagramUrl(post);
+  const socialLinks = getSocialLinks(post);
   const duration = getDuration(post);
   const description = getDescription(post);
 
@@ -100,9 +101,9 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
 
   // Blocks already surfaced by the redesigned layout (including whichever
   // video the hero player took over).
+  const consumedBlocks = getConsumedBlocks(post);
   const extraBlocks = post.blocks.filter((b) => {
-    if (b.type === 'text' || b.type === 'spotify') return false;
-    if (b.type === 'embed' && b.data.platform === 'youtube') return false;
+    if (consumedBlocks.has(b)) return false;
     if (b.type === 'video') {
       if (b === heroFileBlock) return false;
       if (youtubeId && b.data.url && extractYoutubeIdFromUrl(b.data.url) === youtubeId) return false;
@@ -151,12 +152,30 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
                 <Text style={[styles.metaText, { color: colors.textSecondary }]}>{duration}</Text>
               </>
             ) : null}
-            {instagramUrl ? (
-              <Pressable onPress={() => Linking.openURL(instagramUrl)} hitSlop={8} accessibilityLabel="Open Instagram" accessibilityRole="link">
-                <InstagramIcon size={16} color={colors.primary} />
-              </Pressable>
-            ) : null}
           </View>
+
+          {/* Every social link on the post, not just Instagram. Wraps rather
+              than sharing the meta row: the row is a fixed set of facts, and
+              an author can add any number of these. */}
+          {socialLinks.length > 0 ? (
+            <View style={styles.socialRow}>
+              {socialLinks.map((link) => (
+                <Pressable
+                  key={link.url}
+                  onPress={() => Linking.openURL(link.url)}
+                  hitSlop={6}
+                  accessibilityRole="link"
+                  accessibilityLabel={`Open ${link.label}`}
+                  style={({ pressed }) => [
+                    styles.socialChip,
+                    { borderColor: colors.border, backgroundColor: colors.surface, opacity: pressed ? 0.7 : 1 },
+                  ]}>
+                  {link.isInstagram ? <InstagramIcon size={14} color={colors.primary} /> : null}
+                  <Text style={[styles.socialLabel, { color: colors.textPrimary }]}>{link.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
 
           {spotifyEmbedUrl ? (
             <View style={styles.section}>
@@ -289,6 +308,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 7,
     marginBottom: 18,
+  },
+  // Wraps: an author can add any number of links, and on a phone three or
+  // four already overflow a single line.
+  socialRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 18,
+  },
+  socialChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: RADII.pill,
+    borderWidth: 1,
+  },
+  socialLabel: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   metaText: {
     fontSize: 13,
