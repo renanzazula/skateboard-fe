@@ -14,7 +14,7 @@ import { getEpisodeNumber } from '@/features/podcast/services/episodeMeta';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { ErrorBanner } from '@/shared/components/ErrorBanner';
 import { isBffError } from '@/shared/api/errors';
-import { BottomTabInset, MAX_CONTENT_WIDTH } from '@/shared/constants/theme';
+import { BottomTabInset, MAX_CONTENT_WIDTH, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import type { Category } from '@/shared/types/category';
@@ -124,7 +124,11 @@ export default function PodcastListScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingBottom: BottomTabInset }]}>
+    // No paddingBottom here: it would shrink the list's viewport rather than
+    // add scrollable room at its end, leaving a strip of background the list
+    // can never reach — a second, empty bar above the tab bar. The inset
+    // belongs on listContent below, the way Home applies it.
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <AppHeader title="Podcast" subtitle={profile?.username ? `@${profile.username}` : undefined} />
 
       {error ? (
@@ -170,7 +174,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     // No safe-area inset — AppHeader applies it above the list.
     paddingTop: 4,
-    paddingBottom: 100,
+    // Matches Home. Scrollable padding, so the last card clears the tab bar
+    // without stranding dead space when the list is short.
+    paddingBottom: BottomTabInset + Spacing.four,
     flexGrow: 1,
     width: '100%',
     maxWidth: MAX_CONTENT_WIDTH,
@@ -201,7 +207,10 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 24,
+    // Measured from the screen bottom now that the container no longer insets
+    // itself, which keeps the button where it already sat relative to the tab
+    // bar instead of dropping behind it.
+    bottom: BottomTabInset + Spacing.three,
     right: 24,
     width: 56,
     height: 56,
