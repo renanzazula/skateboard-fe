@@ -62,6 +62,105 @@ export function getInstagramUrl(post: Post): string | null {
   return post.socialMediaLinks?.find((l) => l.url.includes('instagram.com'))?.url ?? null;
 }
 
+/** Hosts we can name on sight; anything else falls back to its domain. */
+const SOCIAL_PLATFORMS: { pattern: RegExp; label: string }[] = [
+  { pattern: /(^|\.)instagram\.com/i, label: 'Instagram' },
+  { pattern: /(^|\.)(youtube\.com|youtu\.be)/i, label: 'YouTube' },
+  { pattern: /(^|\.)tiktok\.com/i, label: 'TikTok' },
+  { pattern: /(^|\.)(twitter\.com|x\.com)/i, label: 'X' },
+  { pattern: /(^|\.)facebook\.com/i, label: 'Facebook' },
+  { pattern: /(^|\.)spotify\.com/i, label: 'Spotify' },
+  { pattern: /(^|\.)threads\.(net|com)/i, label: 'Threads' },
+];
+
+export type ResolvedSocialLink = {
+  url: string;
+  /** Display name — a known platform, the stored platform, or the domain. */
+  label: string;
+  isInstagram: boolean;
+};
+
+/**
+ * Host of an absolute URL, minus `www.`. Not `new URL()`: React Native's is a
+ * partial implementation and doesn't expose `.hostname` reliably.
+ */
+function hostOf(url: string): string | null {
+  const match = /^[a-z]+:\/\/([^/?#]+)/i.exec(url.trim());
+  if (!match) return null;
+  return match[1].replace(/^[^@]*@/, '').split(':')[0].replace(/^www\./i, '') || null;
+}
+
+/**
+ * Every social link on the post, each with something to label it by.
+ *
+ * The detail screen used to render only Instagram, via getInstagramUrl — so a
+ * YouTube, TikTok or X link added in the editor saved fine and then appeared
+ * nowhere, which read as the editor silently dropping it. Lucide removed its
+ * brand icons, which is why the screen shows a labelled chip per link (plus
+ * the one hand-drawn Instagram mark this repo carries) instead of a row of
+ * indistinguishable generic glyphs.
+ */
+export function getSocialLinks(post: Post): ResolvedSocialLink[] {
+  return (post.socialMediaLinks ?? [])
+    .filter((link) => !!link.url?.trim())
+    .map((link) => {
+      const url = link.url.trim();
+      const host = hostOf(url);
+      const known = SOCIAL_PLATFORMS.find((platform) => host && platform.pattern.test(host));
+      return {
+        url,
+        label: known?.label ?? link.platform?.trim() ?? host ?? url,
+        isInstagram: known?.label === 'Instagram',
+      };
+    });
+}
+
+/**
+ * Blocks the detail layout already renders through its own chrome — the hero
+ * player, the Spotify section and the description — and which must therefore
+ * not be repeated by BlockRenderer below.
+ *
+ * Only the blocks actually consumed belong here. The filter this replaced
+ * excluded blocks by *type*, so a second YouTube embed, a second Spotify
+ * block, or a text block on a post that already had a description were
+ * dropped entirely: saved by the editor, then rendered nowhere.
+ */
+export function getConsumedBlocks(post: Post): Set<Post['blocks'][number]> {
+  const consumed = new Set<Post['blocks'][number]>();
+
+  // getYoutubeId only reaches the blocks when the post carries no YouTube
+  // field of its own, and then takes the first match — mirror both rules.
+  if (!post.youtubeVideoId && !post.youtubeUrl) {
+    const hero = post.blocks.find(
+      (block) =>
+        (block.type === 'embed' && block.data.platform === 'youtube') ||
+        (block.type === 'video' && !!block.data.url && !!extractYoutubeIdFromUrl(block.data.url)),
+    );
+    if (hero) consumed.add(hero);
+  }
+
+  // Same shape for getSpotifyEmbedUrl: platform link first, then the first
+  // spotify block.
+  if (!post.platforms?.some((platform) => platform.platform === 'SPOTIFY' && platform.externalUrl)) {
+    const spotify = post.blocks.find((block) => block.type === 'spotify');
+    if (spotify) consumed.add(spotify);
+  }
+
+  // Text blocks are matched against the description actually rendered, not
+  // against whether post.description exists. An imported post carries a
+  // description that repeats its first text block, so keying off the field
+  // alone would either drop every text block (today's bug) or print the
+  // first one twice.
+  const description = getDescription(post);
+  for (const block of post.blocks) {
+    if (block.type !== 'text') continue;
+    const text = textBlockContent(block.data.html);
+    if (text && description.includes(text)) consumed.add(block);
+  }
+
+  return consumed;
+}
+
 function formatDurationSeconds(totalSeconds: number): string {
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -82,16 +181,26 @@ export function getDuration(post: Post): string | null {
   return null;
 }
 
+/**
+ * A text block's rendered plain text. Shared with getConsumedBlocks so the
+ * two can't disagree about what a block's text is.
+ */
+export function textBlockContent(html: string): string {
+  return (
+    html
+      .replace(/<[^>]+>/g, '')
+      // drop the trailing "date · duration" metadata line if present
+      .replace(/\n*[^\n]*·[^\n]*\d{1,2}:\d{2}[^\n]*$/, '')
+      .trim()
+  );
+}
+
 export function getDescription(post: Post): string {
   if (post.description) return post.description;
   const parts: string[] = [];
   for (const block of post.blocks) {
     if (block.type !== 'text') continue;
-    const text = block.data.html
-      .replace(/<[^>]+>/g, '')
-      // drop the trailing "date · duration" metadata line if present
-      .replace(/\n*[^\n]*·[^\n]*\d{1,2}:\d{2}[^\n]*$/, '')
-      .trim();
+    const text = textBlockContent(block.data.html);
     if (text) parts.push(text);
   }
   return parts.join('\n\n');
