@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { bffClient } from '@/core/api/client';
 import type { components } from '@/core/api/generated/schema';
 import { toBffError } from '@/shared/api/errors';
+import { appendImageFile, imageFilename } from '@/shared/api/formDataImage';
 
 export type BrandingConfig = components['schemas']['BrandingConfigResponse'];
 export type BrandingAsset = components['schemas']['BrandingAssetResponse'];
@@ -11,19 +12,16 @@ export type BrandingAsset = components['schemas']['BrandingAssetResponse'];
 /**
  * Admin mutations for the Branding feature (Settings → Branding, gated by
  * FUNC_TAB_SETTINGS_BRANDING at the call site). Same submitting/toBffError
- * shape as usePodcastAdmin.ts; upload/replace calls reuse
- * useAccountActions.uploadProfilePicture's Blob-from-asset.uri pattern —
- * the RN `{uri,name,type}` FormData shape doesn't attach a real file part on
- * web (react-native-web just stringifies it).
+ * shape as usePodcastAdmin.ts. Upload/replace calls attach their file via
+ * shared/api/formDataImage, which picks the file-part shape each platform
+ * actually accepts — see that module for why one shape can't serve both.
  */
 export function useBrandingAdmin() {
   const [submitting, setSubmitting] = useState(false);
 
-  const assetToBlob = async (asset: ImagePicker.ImagePickerAsset) => {
-    const extension = asset.uri.split('.').pop() ?? 'jpg';
-    const filename = asset.fileName ?? `branding.${extension}`;
-    const blob = await (await fetch(asset.uri)).blob();
-    return { blob, filename };
+  const appendAsset = async (form: FormData, asset: ImagePicker.ImagePickerAsset) => {
+    const filename = asset.fileName ?? imageFilename('branding', asset.uri, asset.mimeType);
+    await appendImageFile(form, 'file', { uri: asset.uri, filename, mimeType: asset.mimeType });
   };
 
   const getBrandingConfig = useCallback(async (): Promise<BrandingConfig> => {
@@ -40,9 +38,8 @@ export function useBrandingAdmin() {
   const uploadLoginBackground = useCallback(async (asset: ImagePicker.ImagePickerAsset): Promise<BrandingConfig> => {
     setSubmitting(true);
     try {
-      const { blob, filename } = await assetToBlob(asset);
       const form = new FormData();
-      form.append('file', blob, filename);
+      await appendAsset(form, asset);
       const { data, error, response } = await bffClient.POST('/api/config/branding/login-background', {
         body: form as unknown as { file: string },
       });
@@ -80,9 +77,8 @@ export function useBrandingAdmin() {
   const uploadAppLogo = useCallback(async (asset: ImagePicker.ImagePickerAsset): Promise<BrandingConfig> => {
     setSubmitting(true);
     try {
-      const { blob, filename } = await assetToBlob(asset);
       const form = new FormData();
-      form.append('file', blob, filename);
+      await appendAsset(form, asset);
       const { data, error, response } = await bffClient.POST('/api/config/branding/app-logo', {
         body: form as unknown as { file: string },
       });
@@ -119,10 +115,9 @@ export function useBrandingAdmin() {
     async (name: string, asset: ImagePicker.ImagePickerAsset): Promise<BrandingAsset> => {
       setSubmitting(true);
       try {
-        const { blob, filename } = await assetToBlob(asset);
         const form = new FormData();
         form.append('name', name);
-        form.append('file', blob, filename);
+        await appendAsset(form, asset);
         const { data, error, response } = await bffClient.POST('/api/config/branding/assets', {
           body: form as unknown as { name: string; file: string },
         });
@@ -139,9 +134,8 @@ export function useBrandingAdmin() {
     async (assetId: string, asset: ImagePicker.ImagePickerAsset): Promise<BrandingAsset> => {
       setSubmitting(true);
       try {
-        const { blob, filename } = await assetToBlob(asset);
         const form = new FormData();
-        form.append('file', blob, filename);
+        await appendAsset(form, asset);
         const { data, error, response } = await bffClient.PUT('/api/config/branding/assets/{assetId}', {
           params: { path: { assetId } },
           body: form as unknown as { file: string },
