@@ -170,6 +170,21 @@ export async function loginWithPassword(username: string, password: string): Pro
 }
 
 /**
+ * Must match `expo.scheme` in app.json — this is what the OS routes back to
+ * the app after the browser hands control over.
+ */
+const APP_SCHEME = 'skateboardfe';
+
+/**
+ * Path on the redirect URI. Without one, makeRedirectUri returns a bare
+ * `skateboardfe://`, which Keycloak matches inconsistently against a
+ * `skateboardfe://*` entry — the wildcard expects something after the
+ * separator. An explicit segment makes the URI deterministic and matches that
+ * wildcard cleanly, so the value registered on the client is unambiguous.
+ */
+const OAUTH_REDIRECT_PATH = 'oauthredirect';
+
+/**
  * Federated sign-in via Keycloak's "google" identity provider (see
  * identityProviders in skateboard-podcast realm-export.json). Unlike
  * loginWithPassword(), this is a real Authorization Code + PKCE flow — Direct
@@ -179,7 +194,7 @@ export async function loginWithPassword(username: string, password: string): Pro
  */
 export async function loginWithGoogle(): Promise<void> {
   const discovery = await getDiscovery();
-  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'skateboardfe' });
+  const redirectUri = AuthSession.makeRedirectUri({ scheme: APP_SCHEME, path: OAUTH_REDIRECT_PATH });
   const request = new AuthSession.AuthRequest({
     clientId: env.keycloakClientId,
     redirectUri,
