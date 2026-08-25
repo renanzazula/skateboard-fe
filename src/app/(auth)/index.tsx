@@ -8,11 +8,14 @@ import { useAuth } from '@/core/auth';
 import { useAppConfig } from '@/core/config';
 import { BrandedLogo } from '@/features/branding/components/BrandedLogo';
 import { warnImageUnreachable } from '@/features/branding/services/warnImageUnreachable';
+import { GoogleIcon } from '@/shared/components/icons/GoogleIcon';
 import { PrimaryButton } from '@/shared/components/PrimaryButton';
+import { SecondaryButton } from '@/shared/components/SecondaryButton';
 import { TextField } from '@/shared/components/TextField';
 import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
 import { MAX_FORM_WIDTH, Spacing } from '@/shared/constants/theme';
+import { useTheme } from '@/shared/hooks/use-theme';
 
 // Mirrors CSS clamp(min, vh-fraction, max) so the title/logo areas scale
 // with viewport height the same way across native and web without needing
@@ -28,15 +31,17 @@ const COMPACT_LOGO_AREA_PADDING_TOP = 40;
 const COMPACT_LOGO_AREA_HEIGHT = 240;
 
 export default function LoginScreen() {
-  const { loginWithPassword } = useAuth();
+  const { loginWithPassword, loginWithGoogle } = useAuth();
   const { loginBackgroundUrl, loginTitle, loginMessage } = useAppConfig();
+  const theme = useTheme();
   const { height: windowHeight } = useWindowDimensions();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [signingIn, setSigningIn] = useState(false);
+  const [signingInWithGoogle, setSigningInWithGoogle] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canSubmit = username.trim().length > 0 && password.length > 0 && !signingIn;
+  const canSubmit = username.trim().length > 0 && password.length > 0 && !signingIn && !signingInWithGoogle;
   const isCompactHeight = windowHeight <= COMPACT_HEIGHT_BREAKPOINT;
   // Reserved logo area height stays within this range regardless of the
   // logo's real dimensions — BrandedLogo scales to fit inside it (contain),
@@ -57,6 +62,18 @@ export default function LoginScreen() {
       }
     } finally {
       setSigningIn(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setSigningInWithGoogle(true);
+    setError(null);
+    try {
+      await loginWithGoogle();
+    } catch {
+      setError('Could not sign in with Google. Please try again.');
+    } finally {
+      setSigningInWithGoogle(false);
     }
   };
 
@@ -131,6 +148,22 @@ export default function LoginScreen() {
                     {error}
                   </ThemedText>
                 )}
+
+                <View style={styles.dividerRow}>
+                  <View style={[styles.dividerLine, { backgroundColor: theme.borderDivider }]} />
+                  <ThemedText type="small" themeColor="textSecondary">
+                    or
+                  </ThemedText>
+                  <View style={[styles.dividerLine, { backgroundColor: theme.borderDivider }]} />
+                </View>
+
+                <SecondaryButton
+                  title="Continue with Google"
+                  icon={<GoogleIcon size={18} />}
+                  onPress={handleGoogleLogin}
+                  disabled={signingIn || signingInWithGoogle}
+                  loading={signingInWithGoogle}
+                />
               </View>
             </View>
           </ScrollView>
@@ -190,5 +223,14 @@ const styles = StyleSheet.create({
   },
   error: {
     textAlign: 'center',
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  dividerLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
   },
 });

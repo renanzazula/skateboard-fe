@@ -1,9 +1,15 @@
 import * as AuthSession from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
 import { jwtDecode } from 'jwt-decode';
 
 import { env } from '@/core/config/env';
 import { secureStorage } from '@/core/storage/secureStorage';
 import { withTimeout } from '@/shared/utils/withTimeout';
+
+// Required once at module load so the in-app browser sheet closes itself and
+// resolves the pending promptAsync() promise when Keycloak redirects back —
+// see loginWithGoogle() below. No-op on native, needed on web.
+WebBrowser.maybeCompleteAuthSession();
 
 const REFRESH_TOKEN_KEY = 'skateboard.refreshToken';
 // Refresh a little before the access token's real expiry so a request that
@@ -159,6 +165,50 @@ export async function loginWithPassword(username: string, password: string): Pro
     request.performAsync(discovery),
     KEYCLOAK_REQUEST_TIMEOUT_MS,
     'Keycloak login'
+  );
+  applyTokenResponse(tokenResponse);
+}
+
+/**
+ * Federated sign-in via Keycloak's "google" identity provider (see
+ * identityProviders in skateboard-podcast realm-export.json). Unlike
+ * loginWithPassword(), this is a real Authorization Code + PKCE flow — Direct
+ * Access Grant has no way to hand off to an external IdP — so it opens a
+ * browser tab/sheet on Keycloak's authorize endpoint with kc_idp_hint=google
+ * to skip straight past Keycloak's own login form into Google's.
+ */
+export async function loginWithGoogle(): Promise<void> {
+  const discovery = await getDiscovery();
+  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'skateboardfe' });
+  const request = new AuthSession.AuthRequest({
+    clientId: env.keycloakClientId,
+    redirectUri,
+    responseType: AuthSession.ResponseType.Code,
+    usePKCE: true,
+    scopes: ['openid', 'profile', 'email'],
+    extraParams: { kc_idp_hint: 'google' },
+  });
+
+  const result = await request.promptAsync(discovery);
+  if (result.type === 'error') {
+    throw new Error(result.params.error_description || result.error?.message || 'Google sign-in failed');
+  }
+  if (result.type !== 'success') {
+    return; // user cancelled/dismissed the browser — not an error
+  }
+
+  const tokenResponse = await withTimeout(
+    AuthSession.exchangeCodeAsync(
+      {
+        clientId: env.keycloakClientId,
+        code: result.params.code,
+        redirectUri,
+        extraParams: { code_verifier: request.codeVerifier ?? '' },
+      },
+      discovery
+    ),
+    KEYCLOAK_REQUEST_TIMEOUT_MS,
+    'Keycloak Google token exchange'
   );
   applyTokenResponse(tokenResponse);
 }

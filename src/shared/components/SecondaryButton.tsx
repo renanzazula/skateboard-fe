@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, type PressableProps } from 'react-native';
+import type { ReactNode } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, View, type PressableProps } from 'react-native';
 
 import { ThemedText } from '@/shared/components/themed-text';
 import { RADII, Spacing } from '@/shared/constants/theme';
@@ -6,27 +7,37 @@ import { useTheme } from '@/shared/hooks/use-theme';
 
 type Props = Omit<PressableProps, 'style'> & {
   title: string;
+  icon?: ReactNode;
+  loading?: boolean;
   disabled?: boolean;
 };
 
 /** Secondary action — surface bg / border, per doc §8. */
-export function SecondaryButton({ title, disabled, ...rest }: Props) {
+export function SecondaryButton({ title, icon, loading, disabled, ...rest }: Props) {
   const theme = useTheme();
+  const isDisabled = disabled || loading;
 
   return (
     <Pressable
-      disabled={disabled}
+      disabled={isDisabled}
       accessibilityRole="button"
-      accessibilityState={{ disabled }}
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
       style={({ pressed }) => [
         styles.button,
         { backgroundColor: theme.surface, borderColor: theme.border },
-        pressed && !disabled && styles.pressed,
+        pressed && !isDisabled && styles.pressed,
       ]}
       {...rest}>
-      <ThemedText type="smallBold" themeColor={disabled ? 'textDisabled' : 'textPrimary'}>
-        {title}
-      </ThemedText>
+      {loading ? (
+        <ActivityIndicator color={theme.textSecondary} />
+      ) : (
+        <View style={styles.content}>
+          {icon}
+          <ThemedText type="smallBold" themeColor={isDisabled ? 'textDisabled' : 'textPrimary'}>
+            {title}
+          </ThemedText>
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -40,6 +51,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.three,
+  },
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
   },
   pressed: {
     opacity: 0.75,
