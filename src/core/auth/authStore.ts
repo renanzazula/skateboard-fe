@@ -1,6 +1,7 @@
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { jwtDecode } from 'jwt-decode';
+import { Platform } from 'react-native';
 
 import { env } from '@/core/config/env';
 import { secureStorage } from '@/core/storage/secureStorage';
@@ -194,7 +195,14 @@ const OAUTH_REDIRECT_PATH = 'oauthredirect';
  */
 export async function loginWithGoogle(): Promise<void> {
   const discovery = await getDiscovery();
-  const redirectUri = AuthSession.makeRedirectUri({ scheme: APP_SCHEME, path: OAUTH_REDIRECT_PATH });
+  // Native only. On web makeRedirectUri returns the current origin, which is
+  // already a valid absolute URL and is what the web client has registered;
+  // adding a path there would send the browser back to /oauthredirect, a
+  // route this app does not define.
+  const redirectUri =
+    Platform.OS === 'web'
+      ? AuthSession.makeRedirectUri()
+      : AuthSession.makeRedirectUri({ scheme: APP_SCHEME, path: OAUTH_REDIRECT_PATH });
   const request = new AuthSession.AuthRequest({
     clientId: env.keycloakClientId,
     redirectUri,
