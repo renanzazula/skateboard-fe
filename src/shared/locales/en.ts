@@ -193,6 +193,10 @@ export const en = {
     validationCoverRequired: 'Cover image URL is required',
     validationBlockRequired: 'At least one content block is required',
     validationInvalidUrl: 'Invalid URL. Must start with http:// or https://',
+    createPost: 'Create post',
+    saveChanges: 'Save changes',
+    createPostError: 'Could not create post',
+    saveChangesError: 'Could not save changes',
   },
   podcast: {
     watch: 'Watch',
@@ -221,6 +225,11 @@ export const en = {
     imageLoadFailed: 'Image could not be loaded',
     imageSelected: 'Image selected ✓',
     oneUrlPerLine: 'one URL per line',
+    createEpisode: 'Create new episode',
+    syncTitle: 'Podcast sync',
+    syncSubtitle: 'Import new episodes and playlists from YouTube',
+    manageCategoriesSubtitle: 'Rename, reorder & pick the default category',
+    adminActions: 'Administrative actions for the Podcast tab.',
   },
 };
 

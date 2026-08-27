@@ -194,6 +194,10 @@ export const es: TranslationKeys = {
     validationCoverRequired: 'La URL de la imagen de portada es obligatoria',
     validationBlockRequired: 'Se requiere al menos un bloque de contenido',
     validationInvalidUrl: 'URL no válida. Debe comenzar con http:// o https://',
+    createPost: 'Crear publicación',
+    saveChanges: 'Guardar cambios',
+    createPostError: 'No se pudo crear la publicación',
+    saveChangesError: 'No se pudieron guardar los cambios',
   },
   podcast: {
     watch: 'Ver',
@@ -222,5 +226,10 @@ export const es: TranslationKeys = {
     imageLoadFailed: 'No se pudo cargar la imagen',
     imageSelected: 'Imagen seleccionada ✓',
     oneUrlPerLine: 'una URL por línea',
+    createEpisode: 'Crear nuevo episodio',
+    syncTitle: 'Sincronización de podcast',
+    syncSubtitle: 'Importa nuevos episodios y listas de reproducción de YouTube',
+    manageCategoriesSubtitle: 'Renombra, reordena y elige la categoría predeterminada',
+    adminActions: 'Acciones administrativas para la pestaña Podcast.',
   },
 };

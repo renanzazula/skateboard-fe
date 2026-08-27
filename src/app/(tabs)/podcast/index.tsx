@@ -129,7 +129,7 @@ export default function PodcastListScreen() {
     // can never reach — a second, empty bar above the tab bar. The inset
     // belongs on listContent below, the way Home applies it.
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <AppHeader title="Podcast" subtitle={profile?.username ? `@${profile.username}` : undefined} />
+      <AppHeader title={t('tabs.podcast')} subtitle={profile?.username ? `@${profile.username}` : undefined} />
 
       {error ? (
         <ErrorBanner message={isBffError(error) ? error.message : t('podcast.couldNotLoadVideos')} onRetry={refreshPosts} />
@@ -158,7 +158,7 @@ export default function PodcastListScreen() {
         <Pressable
           style={[styles.fab, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
           onPress={handleCreatePress}
-          accessibilityLabel="Create new episode">
+          accessibilityLabel={t('podcast.createEpisode')}>
           <Plus size={28} color={colors.onPrimary} />
         </Pressable>
       ) : null}
