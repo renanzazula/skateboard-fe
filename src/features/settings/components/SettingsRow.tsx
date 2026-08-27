@@ -18,7 +18,12 @@ export type SettingsRowTrailing =
   | { type: 'none' };
 
 type Props = {
-  icon: LucideIcon;
+  /**
+   * Optional: a row that is purely a labelled value (Settings → Your account)
+   * carries no icon, and reserving the column for it would leave every label
+   * indented past nothing.
+   */
+  icon?: LucideIcon;
   title: string;
   subtitle?: string;
   trailing?: SettingsRowTrailing;
@@ -63,11 +68,13 @@ export function SettingsRow({ icon: Icon, title, subtitle, trailing = { type: 'n
         pressed && isPressable && { backgroundColor: theme.surfacePressed },
         disabled && styles.disabled,
       ]}>
-      <View style={styles.iconColumn}>
-        <Icon color={destructive ? theme.destructive : theme.textSecondary} size={20} strokeWidth={2} />
-      </View>
+      {Icon ? (
+        <View style={styles.iconColumn}>
+          <Icon color={destructive ? theme.destructive : theme.textSecondary} size={20} strokeWidth={2} />
+        </View>
+      ) : null}
 
-      <View style={styles.textStack}>
+      <View style={[styles.textStack, Icon ? null : styles.textStackFlush]}>
         <Text style={[styles.title, { color: destructive ? theme.destructive : theme.textPrimary }]} numberOfLines={1}>
           {title}
         </Text>
@@ -144,6 +151,11 @@ const styles = StyleSheet.create({
   iconColumn: {
     width: 24,
     alignItems: 'center',
+  },
+  // Without an icon there is no column to clear, so the label starts at the
+  // row's own padding.
+  textStackFlush: {
+    marginLeft: 0,
   },
   textStack: {
     flex: 1,
