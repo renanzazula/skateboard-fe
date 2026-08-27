@@ -8,6 +8,12 @@ import { useTheme } from '@/shared/hooks/use-theme';
 type Props = {
   label?: string;
   tone?: 'default' | 'danger';
+  /**
+   * Where the hairline between rows starts. 'icon' clears the icon column;
+   * 'edge' is for sections whose rows carry no icon, where that indent would
+   * be measured against nothing.
+   */
+  dividerInset?: 'icon' | 'edge';
   /** One row or many — a section of a single row is a normal case. */
   children: ReactNode | ReactNode[];
 };
@@ -24,7 +30,7 @@ type Props = {
  *
  * Rows carry their own horizontal padding, so the card holds none.
  */
-export function SettingsSection({ label, tone = 'default', children }: Props) {
+export function SettingsSection({ label, tone = 'default', dividerInset = 'icon', children }: Props) {
   const theme = useTheme();
   // Falsy children are dropped before the dividers are worked out: screens
   // gate rows on permissions with `{cond ? <SettingsRow/> : null}`, and a null
@@ -53,6 +59,7 @@ export function SettingsSection({ label, tone = 'default', children }: Props) {
               <View
                 style={[
                   styles.divider,
+                  dividerInset === 'edge' ? styles.dividerEdge : null,
                   { backgroundColor: danger ? theme.destructiveBorder : theme.borderDivider },
                 ]}
               />
@@ -81,5 +88,9 @@ const styles = StyleSheet.create({
   divider: {
     height: StyleSheet.hairlineWidth,
     marginLeft: 16 + 24 + 16,
+  },
+  // Only the row's own horizontal padding.
+  dividerEdge: {
+    marginLeft: 16,
   },
 });
