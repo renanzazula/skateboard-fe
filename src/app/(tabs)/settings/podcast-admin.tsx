@@ -35,10 +35,7 @@ export default function PodcastAdminScreen() {
     if (syncing) return;
     try {
       const result = await triggerSync();
-      showAlert(
-        t('common.success'),
-        t('podcast.syncSuccess').replace('{created}', String(result.created ?? 0))
-      );
+      showAlert(t('common.success'), t('podcast.syncSuccess', { created: result.created ?? 0 }));
     } catch (syncError) {
       showAlert(t('common.error'), isBffError(syncError) ? syncError.message : t('podcast.syncFailed'));
     }

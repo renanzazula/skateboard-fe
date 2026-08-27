@@ -1,24 +1,17 @@
 import * as FileSystem from 'expo-file-system/legacy';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 
+import { getLanguage, setLanguage, subscribe as subscribeLanguage } from '@/core/i18n';
 import { secureStorage } from '@/core/storage/secureStorage';
+import { LANGUAGE_LABELS, LANGUAGES, type Language } from '@/shared/locales';
 import { showAlert } from '@/shared/utils/alert';
 
-export type LanguageCode = 'en' | 'es' | 'pt';
+// Language now lives in core/i18n's store (so useTranslation can read it too);
+// re-exported here since the Settings screen imports these from this hook.
+export type LanguageCode = Language;
+export { LANGUAGE_LABELS, LANGUAGES };
 
-const LANGUAGE_STORAGE_KEY = 'skateboard.settings.language';
 const WIFI_ONLY_STORAGE_KEY = 'skateboard.settings.downloadWifiOnly';
-
-export const LANGUAGES: LanguageCode[] = ['en', 'es', 'pt'];
-export const LANGUAGE_LABELS: Record<LanguageCode, string> = {
-  en: 'English',
-  es: 'Español',
-  pt: 'Português',
-};
-
-function isLanguageCode(value: string | null): value is LanguageCode {
-  return value === 'en' || value === 'es' || value === 'pt';
-}
 
 function formatBytes(bytes: number) {
   if (bytes < 1024) {
@@ -52,7 +45,7 @@ async function directorySize(uri: string): Promise<number> {
 
 /** Language / cache / Wi-Fi-only / storage-usage local preferences — shared by Settings home (Language row) and Data & storage. */
 export function useLocalSettings() {
-  const [language, setLanguage] = useState<LanguageCode>('en');
+  const language = useSyncExternalStore(subscribeLanguage, getLanguage, getLanguage);
   const [downloadWifiOnly, setDownloadWifiOnly] = useState(false);
   const [storageUsage, setStorageUsage] = useState('0 B');
   const [isCalculatingStorage, setIsCalculatingStorage] = useState(true);
@@ -67,22 +60,15 @@ export function useLocalSettings() {
 
   useEffect(() => {
     (async () => {
-      const [storedLanguage, storedDownloadWifiOnly] = await Promise.all([
-        secureStorage.getItem(LANGUAGE_STORAGE_KEY),
-        secureStorage.getItem(WIFI_ONLY_STORAGE_KEY),
-      ]);
-
-      if (isLanguageCode(storedLanguage)) {
-        setLanguage(storedLanguage);
-      }
+      const storedDownloadWifiOnly = await secureStorage.getItem(WIFI_ONLY_STORAGE_KEY);
       setDownloadWifiOnly(storedDownloadWifiOnly === 'true');
       await refreshStorageUsage();
     })();
   }, [refreshStorageUsage]);
 
+  // Persistence + subscriber fan-out both happen in the i18n store.
   const selectLanguage = useCallback((next: LanguageCode) => {
     setLanguage(next);
-    secureStorage.setItem(LANGUAGE_STORAGE_KEY, next).catch(() => {});
   }, []);
 
   const toggleDownloadWifiOnly = useCallback((next: boolean) => {

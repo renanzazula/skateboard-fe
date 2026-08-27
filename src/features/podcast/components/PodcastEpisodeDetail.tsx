@@ -226,7 +226,7 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
           ) : null}
 
           <Text style={[styles.footerCaption, { color: colors.textMuted }]}>
-            {t('podcast.recordedOn').replace('{date}', publishDate)}
+            {t('podcast.recordedOn', { date: publishDate })}
           </Text>
         </View>
       </ScrollView>

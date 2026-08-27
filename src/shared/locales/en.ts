@@ -1,6 +1,10 @@
-// Trimmed to the podcast.* / feed.* / common.* keys actually used by
-// src/features/podcast — the rest of this app still uses hardcoded English
-// text. Ported verbatim from rork-standard-app/expo's shared/locales/en.ts.
+// Source locale. Every other locale file (es.ts, pt.ts) is typed as
+// `TranslationKeys`, so adding a key here without adding it there is a
+// compile error — that's what keeps the three files in sync.
+//
+// Coverage today is the podcast.* / feed.* / common.* keys used by
+// src/features/podcast; the rest of the app still uses hardcoded English and
+// is migrated section by section (Phase 2).
 export const en = {
   common: {
     save: 'Save',
@@ -71,6 +75,8 @@ export const en = {
     noVideosInCategory: 'No videos available in this category yet.',
     couldNotLoadVideos: 'Could not load videos.',
   },
-} as const;
+};
 
+// No `as const`: leaf values widen to `string`, so es.ts / pt.ts can be
+// declared `TranslationKeys` and checked for structural parity.
 export type TranslationKeys = typeof en;

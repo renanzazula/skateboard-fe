@@ -109,8 +109,8 @@ export default function PodcastListScreen() {
       <View>
         <Text style={[styles.footerText, { color: colors.textSecondary }]}>
           {hasMore
-            ? t('podcast.showingPosts').replace('{current}', String(posts.length)).replace('{total}', String(total))
-            : t('podcast.allPostsLoaded').replace('{total}', String(total))}
+            ? t('podcast.showingPosts', { current: posts.length, total })
+            : t('podcast.allPostsLoaded', { total })}
         </Text>
         {hasMore ? (
           <Pressable
