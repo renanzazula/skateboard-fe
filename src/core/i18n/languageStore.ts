@@ -12,10 +12,24 @@ import { DEFAULT_LANGUAGE, isLanguage, type Language } from '@/shared/locales';
 const LANGUAGE_STORAGE_KEY = 'skateboard.settings.language';
 
 let current: Language = DEFAULT_LANGUAGE;
+let ready = false;
 const listeners = new Set<() => void>();
+
+function emit(): void {
+  listeners.forEach((listener) => listener());
+}
 
 export function getLanguage(): Language {
   return current;
+}
+
+/**
+ * False until bootstrapLanguage() has read storage. The root layout holds the
+ * splash screen until this flips, so the first painted frame is already in the
+ * user's language — no English flash.
+ */
+export function isLanguageReady(): boolean {
+  return ready;
 }
 
 /** For React's useSyncExternalStore — see core/i18n/useLanguage.ts. */
@@ -29,34 +43,36 @@ function setCurrent(next: Language): void {
     return;
   }
   current = next;
-  listeners.forEach((listener) => listener());
+  emit();
 }
 
 /** User picked a language in Settings — updates every subscriber and persists. */
 export function setLanguage(next: Language): void {
+  if (next === current) {
+    return;
+  }
   setCurrent(next);
   secureStorage.setItem(LANGUAGE_STORAGE_KEY, next).catch(() => {});
 }
 
 let bootstrapPromise: Promise<void> | null = null;
 
-/**
- * Loads the persisted language once at app start (see core/i18n/I18nProvider).
- * Until it resolves, the app renders in DEFAULT_LANGUAGE; the only `t()`
- * consumers today (podcast screens) are behind auth and a data fetch, so the
- * switch happens before their first meaningful paint.
- */
+/** Loads the persisted language once at app start (see core/i18n/I18nProvider). */
 export function bootstrapLanguage(): Promise<void> {
   if (!bootstrapPromise) {
     bootstrapPromise = secureStorage
       .getItem(LANGUAGE_STORAGE_KEY)
       .then((stored) => {
         if (isLanguage(stored)) {
-          setCurrent(stored);
+          current = stored;
         }
       })
       .catch(() => {
         // A failed read just leaves DEFAULT_LANGUAGE in place — not fatal.
+      })
+      .finally(() => {
+        ready = true;
+        emit();
       });
   }
   return bootstrapPromise;

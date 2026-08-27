@@ -1,7 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 
-import { getLanguage, setLanguage, subscribe as subscribeLanguage } from '@/core/i18n';
+import { getLanguage, setLanguage, subscribe as subscribeLanguage } from '@/core/i18n/languageStore';
 import { secureStorage } from '@/core/storage/secureStorage';
 import { LANGUAGE_LABELS, LANGUAGES, type Language } from '@/shared/locales';
 import { showAlert } from '@/shared/utils/alert';

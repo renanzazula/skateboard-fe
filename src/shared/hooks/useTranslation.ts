@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-import { useLanguage } from '@/core/i18n';
+import { useLanguage } from '@/core/i18n/useLanguage';
 import { translations, type TranslationKeys } from '@/shared/locales';
 
 // Ported from rork-standard-app/expo's shared/hooks/useTranslation.ts, then

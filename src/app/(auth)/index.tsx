@@ -16,6 +16,7 @@ import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
 import { MAX_FORM_WIDTH, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 
 // Mirrors CSS clamp(min, vh-fraction, max) so the title/logo areas scale
 // with viewport height the same way across native and web without needing
@@ -33,6 +34,7 @@ const COMPACT_LOGO_AREA_HEIGHT = 240;
 export default function LoginScreen() {
   const { loginWithPassword, loginWithGoogle } = useAuth();
   const { loginBackgroundUrl, loginTitle, loginMessage } = useAppConfig();
+  const { t } = useTranslation();
   const theme = useTheme();
   const { height: windowHeight } = useWindowDimensions();
   const [username, setUsername] = useState('');
@@ -56,9 +58,9 @@ export default function LoginScreen() {
       await loginWithPassword(username.trim(), password);
     } catch (err) {
       if (err instanceof AuthSession.TokenError && err.code === 'invalid_grant') {
-        setError('Invalid username or password.');
+        setError(t('auth.invalidCredentials'));
       } else {
-        setError('Could not reach Keycloak. Check your connection and try again.');
+        setError(t('auth.connectionError'));
       }
     } finally {
       setSigningIn(false);
@@ -71,7 +73,7 @@ export default function LoginScreen() {
     try {
       await loginWithGoogle();
     } catch {
-      setError('Could not sign in with Google. Please try again.');
+      setError(t('auth.googleSignInError'));
     } finally {
       setSigningInWithGoogle(false);
     }
@@ -121,7 +123,7 @@ export default function LoginScreen() {
 
               {/* 3. Message, directly below the title. */}
               <ThemedText type="default" themeColor="textSecondary" style={styles.message}>
-                {loginMessage || 'Sign in to continue'}
+                {loginMessage || t('auth.signInToContinue')}
               </ThemedText>
 
               {/* 4-6. Username, password, login button. */}
@@ -129,15 +131,20 @@ export default function LoginScreen() {
                 <TextField
                   value={username}
                   onChangeText={setUsername}
-                  placeholder="Username or email"
+                  placeholder={t('auth.usernameOrEmail')}
                   autoCapitalize="none"
                   autoCorrect={false}
                   keyboardType="email-address"
                 />
-                <TextField value={password} onChangeText={setPassword} placeholder="Password" secureTextEntry />
+                <TextField
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder={t('auth.password')}
+                  secureTextEntry
+                />
 
                 <PrimaryButton
-                  title={signingIn ? 'Signing in…' : 'Log in'}
+                  title={signingIn ? t('auth.signingIn') : t('auth.logIn')}
                   onPress={handleLogin}
                   disabled={!canSubmit}
                   loading={signingIn}
@@ -152,13 +159,13 @@ export default function LoginScreen() {
                 <View style={styles.dividerRow}>
                   <View style={[styles.dividerLine, { backgroundColor: theme.borderDivider }]} />
                   <ThemedText type="small" themeColor="textSecondary">
-                    or
+                    {t('auth.or')}
                   </ThemedText>
                   <View style={[styles.dividerLine, { backgroundColor: theme.borderDivider }]} />
                 </View>
 
                 <SecondaryButton
-                  title="Continue with Google"
+                  title={t('auth.continueWithGoogle')}
                   icon={<GoogleIcon size={18} />}
                   onPress={handleGoogleLogin}
                   disabled={signingIn || signingInWithGoogle}
