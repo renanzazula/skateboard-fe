@@ -7,6 +7,7 @@ import { useAuth } from '@/core/auth';
 import { useAccountActions } from '@/features/account/hooks/useAccountActions';
 import { useProfile } from '@/features/account/hooks/useProfile';
 import { DeleteAccountDialog } from '@/features/settings/components/DeleteAccountDialog';
+import { ProfileCard } from '@/features/settings/components/ProfileCard';
 import { SettingsHeader } from '@/features/settings/components/SettingsHeader';
 import { SettingsRow } from '@/features/settings/components/SettingsRow';
 import { SettingsSection } from '@/features/settings/components/SettingsSection';
@@ -57,6 +58,11 @@ export default function AccountScreen() {
     <ThemedView style={styles.container}>
       <SettingsHeader title="Your account" handle={profile?.username ? `@${profile.username}` : undefined} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Identity first: this is the screen called "Your account", so the
+            values it is about belong at the top of it, above the actions
+            performed on them. */}
+        <ProfileCard style={styles.profile} />
+
         <SettingsSection label="Security">
           <SettingsRow
             icon={KeyRound}
@@ -107,5 +113,11 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: Spacing.three,
     paddingBottom: Spacing.four,
+  },
+  // The card carries its own screen margins for the Settings home; this
+  // screen already pads its scroll content, so drop them rather than inset
+  // the card twice.
+  profile: {
+    marginHorizontal: 0,
   },
 });
