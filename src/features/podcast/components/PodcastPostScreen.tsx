@@ -10,6 +10,7 @@ import { getEpisodeNumber } from '@/features/podcast/services/episodeMeta';
 import { isBffError } from '@/shared/api/errors';
 import { ErrorBanner } from '@/shared/components/ErrorBanner';
 import { Spacing } from '@/shared/constants/theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 import { showAlert } from '@/shared/utils/alert';
 
 /**
@@ -22,6 +23,7 @@ import { showAlert } from '@/shared/utils/alert';
  */
 export function PodcastPostScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
+  const { t } = useTranslation();
   const { hasAuthority } = useAuth();
   const { post, loading, error, refetch } = usePodcastPost(slug);
   const { deletePost, submitting } = usePodcastAdmin();
@@ -58,17 +60,17 @@ export function PodcastPostScreen() {
     if (!post || submitting) return;
     // showAlert, not Alert.alert — the latter is a silent no-op on web, which
     // made this button appear dead in the browser build.
-    showAlert('Delete post', `Delete "${post.title}"? This can't be undone.`, [
-      { text: 'Cancel', style: 'cancel' },
+    showAlert(t('podcast.deletePost'), t('podcast.deletePostConfirm', { title: post.title }), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: async () => {
           try {
             await deletePost(post.id);
             goBack();
           } catch (deleteError) {
-            showAlert('Could not delete post', isBffError(deleteError) ? deleteError.message : 'Try again.');
+            showAlert(t('podcast.deletePostError'), isBffError(deleteError) ? deleteError.message : t('common.tryAgain'));
           }
         },
       },
@@ -80,7 +82,7 @@ export function PodcastPostScreen() {
   }
 
   if (error || !post) {
-    return <ErrorBanner message={isBffError(error) ? error.message : 'Post not found.'} onRetry={refetch} />;
+    return <ErrorBanner message={isBffError(error) ? error.message : t('podcast.postNotFound')} onRetry={refetch} />;
   }
 
   return (

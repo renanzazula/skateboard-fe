@@ -232,17 +232,17 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
       </ScrollView>
 
       <View style={[styles.floatingBar, { top: insets.top + 8 }]}>
-        <FloatingButton onPress={onBack} label="Back">
+        <FloatingButton onPress={onBack} label={t('podcast.back')}>
           <ArrowLeft size={20} color={OVERLAY.white} />
         </FloatingButton>
         <View style={styles.floatingActions}>
           {canEdit ? (
-            <FloatingButton onPress={onEdit} label="Edit episode">
+            <FloatingButton onPress={onEdit} label={t('podcast.editEpisode')}>
               <Pencil size={18} color={OVERLAY.white} />
             </FloatingButton>
           ) : null}
           {canDelete ? (
-            <FloatingButton onPress={onDelete} label="Delete episode">
+            <FloatingButton onPress={onDelete} label={t('podcast.deleteEpisode')}>
               <Trash2 size={18} color={colors.destructive} />
             </FloatingButton>
           ) : null}

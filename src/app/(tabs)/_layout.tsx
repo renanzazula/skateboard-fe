@@ -5,6 +5,7 @@ import type { ColorValue } from 'react-native';
 import { useAuth } from '@/core/auth';
 import { triggerHomeReload } from '@/features/home/homeReloadRegistry';
 import { useTheme } from '@/shared/hooks/use-theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 
 function tabIcon(name: SymbolViewProps['name']) {
   return ({ color, size }: { focused: boolean; color: ColorValue; size: number }) => (
@@ -21,6 +22,7 @@ function tabIcon(name: SymbolViewProps['name']) {
 export default function TabsLayout() {
   const { hasAuthority } = useAuth();
   const theme = useTheme();
+  const { t } = useTranslation();
 
   const gate = (authority: string) => (hasAuthority(authority) ? undefined : null);
 
@@ -35,7 +37,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: t('tabs.home'),
           href: gate('FUNC_TAB_HOME'),
           tabBarIcon: tabIcon({ ios: 'house.fill', android: 'home', web: 'home' }),
         }}
@@ -53,7 +55,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="podcast"
         options={{
-          title: 'Podcast',
+          title: t('tabs.podcast'),
           href: gate('FUNC_TAB_PODCAST'),
           tabBarIcon: tabIcon({ ios: 'mic.fill', android: 'mic', web: 'mic' }),
         }}
@@ -61,7 +63,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Settings',
+          title: t('tabs.settings'),
           href: gate('FUNC_TAB_SETTINGS'),
           tabBarIcon: tabIcon({ ios: 'gearshape.fill', android: 'settings', web: 'settings' }),
         }}

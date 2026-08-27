@@ -17,6 +17,7 @@ import { ErrorBanner } from '@/shared/components/ErrorBanner';
 import { ThemedView } from '@/shared/components/themed-view';
 import { BottomTabInset, MAX_CONTENT_WIDTH, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 import type { Video } from '@/shared/types/video';
 
 // README_HOME_DASHBOARD.md: random visual wall of video thumbnails — the
@@ -27,6 +28,7 @@ import type { Video } from '@/shared/types/video';
 // pull-to-refresh — never on refocus.
 export default function HomeScreen() {
   const theme = useTheme();
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const listRef = useRef<FlashListRef<Video>>(null);
@@ -71,7 +73,7 @@ export default function HomeScreen() {
 
       {error ? (
         <ErrorBanner
-          message={isBffError(error) ? error.message : 'We couldn’t load the videos.'}
+          message={isBffError(error) ? error.message : t('home.loadError')}
           detail={isBffError(error) ? undefined : error.message}
           onRetry={refresh}
         />
@@ -106,7 +108,7 @@ export default function HomeScreen() {
           onRefresh={handleRefresh}
           ListEmptyComponent={
             !isLoading && !error ? (
-              <EmptyState icon={Film} title="No videos available yet." actionLabel="Refresh" onAction={refresh} />
+              <EmptyState icon={Film} title={t('home.empty')} actionLabel={t('home.refresh')} onAction={refresh} />
             ) : null
           }
         />

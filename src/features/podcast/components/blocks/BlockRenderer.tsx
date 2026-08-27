@@ -5,6 +5,7 @@ import { Image, Linking, Platform, Pressable, StyleSheet, Text, View } from 'rea
 
 import type { Block } from '@/shared/types/posts';
 import { useTheme } from '@/shared/hooks/use-theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 
 // Ported from rork-standard-app/expo's modules/feed/components/BlockRenderer.tsx.
 type Props = { block: Block };
@@ -29,6 +30,7 @@ function NativeVideoBlock({ url }: { url: string }) {
  */
 function ImageBlockView({ url, caption }: { url: string; caption?: string }) {
   const colors = useTheme();
+  const { t } = useTranslation();
   const [failed, setFailed] = useState(false);
 
   return (
@@ -36,7 +38,7 @@ function ImageBlockView({ url, caption }: { url: string; caption?: string }) {
       {failed ? (
         <View style={[styles.imageFallback, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <ImageOff size={20} color={colors.textMuted} />
-          <Text style={[styles.caption, { color: colors.textMuted }]}>Image could not be loaded</Text>
+          <Text style={[styles.caption, { color: colors.textMuted }]}>{t('podcast.imageLoadFailed')}</Text>
         </View>
       ) : (
         <Image
