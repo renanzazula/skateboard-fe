@@ -13,52 +13,55 @@ import { SettingsSection } from '@/features/settings/components/SettingsSection'
 import { isBffError } from '@/shared/api/errors';
 import { ThemedView } from '@/shared/components/themed-view';
 import { Spacing } from '@/shared/constants/theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 import { showAlert } from '@/shared/utils/alert';
 
-/** Month and year, or null when the API sent nothing parseable. */
-function formatMemberSince(createdAt: string | undefined): string | null {
+/** Month and year in the given locale, or null when the API sent nothing parseable. */
+function formatMemberSince(createdAt: string | undefined, locale: string): string | null {
   if (!createdAt) return null;
   const date = new Date(createdAt);
   if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long' });
+  return date.toLocaleDateString(locale, { year: 'numeric', month: 'long' });
 }
 
 export default function AccountScreen() {
   const { logout, email } = useAuth();
   const { profile, isLoading } = useProfile();
   const { deactivateAccount, deleteAccount, submitting } = useAccountActions();
+  const { t, language } = useTranslation();
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
 
-  const memberSince = formatMemberSince(profile?.createdAt);
+  const memberSince = formatMemberSince(profile?.createdAt, language);
   // Only worth a row when it isn't the normal case: printing "Active" to
   // everyone is noise, while saying nothing on a deactivated account hides
   // the one thing that matters.
   const accountStatus =
-    profile?.status && profile.status !== 'ACTIVE'
-      ? profile.status.charAt(0) + profile.status.slice(1).toLowerCase()
-      : null;
+    profile?.status === 'DEACTIVATED'
+      ? t('settings.statusDeactivated')
+      : profile?.status === 'DELETED'
+        ? t('settings.statusDeleted')
+        : null;
 
   const handleDeactivate = useCallback(() => {
-    showAlert(
-      'Deactivate account',
-      'Deactivation will temporarily disable your account and sign you out. You can contact support to reactivate it.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Deactivate',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deactivateAccount();
-              await logout();
-            } catch (deactivateError) {
-              showAlert('Could not deactivate account', isBffError(deactivateError) ? deactivateError.message : 'Try again.');
-            }
-          },
+    showAlert(t('settings.deactivateAccount'), t('settings.deactivateConfirmMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('settings.deactivate'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deactivateAccount();
+            await logout();
+          } catch (deactivateError) {
+            showAlert(
+              t('settings.deactivateError'),
+              isBffError(deactivateError) ? deactivateError.message : t('common.tryAgain')
+            );
+          }
         },
-      ]
-    );
-  }, [deactivateAccount, logout]);
+      },
+    ]);
+  }, [deactivateAccount, logout, t]);
 
   const handleConfirmDelete = useCallback(async () => {
     try {
@@ -66,56 +69,66 @@ export default function AccountScreen() {
       setDeleteDialogVisible(false);
       await logout();
     } catch (deleteError) {
-      showAlert('Could not delete account', isBffError(deleteError) ? deleteError.message : 'Try again.');
+      showAlert(t('settings.deleteError'), isBffError(deleteError) ? deleteError.message : t('common.tryAgain'));
     }
-  }, [deleteAccount, logout]);
+  }, [deleteAccount, logout, t]);
 
   return (
     <ThemedView style={styles.container}>
-      <SettingsHeader title="Your account" handle={profile?.username ? `@${profile.username}` : undefined} />
+      <SettingsHeader title={t('settings.yourAccount')} handle={profile?.username ? `@${profile.username}` : undefined} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* One value per row, tap to change. Email and Member since carry no
             chevron: neither can be changed here — email comes from the
             identity provider and no endpoint touches it — and a chevron onto a
             dead end is a small lie. */}
-        <SettingsSection label="Profile" dividerInset="edge">
+        <SettingsSection label={t('settings.profile')} dividerInset="edge">
           <SettingsRow
             key="username"
-            title="Username"
+            title={t('settings.username')}
             onPress={() => router.push('/settings/username')}
-            trailing={{ type: 'value', text: profile?.username ? `@${profile.username}` : 'Add', chevron: true, loading: isLoading }}
+            trailing={{
+              type: 'value',
+              text: profile?.username ? `@${profile.username}` : t('common.add'),
+              chevron: true,
+              loading: isLoading,
+            }}
           />
           <SettingsRow
             key="display-name"
-            title="Display name"
+            title={t('settings.displayName')}
             onPress={() => router.push('/settings/display-name')}
-            trailing={{ type: 'value', text: profile?.displayName || 'Add', chevron: true, loading: isLoading }}
+            trailing={{ type: 'value', text: profile?.displayName || t('common.add'), chevron: true, loading: isLoading }}
           />
-          <SettingsRow key="email" title="Email" trailing={{ type: 'value', text: email ?? 'None' }} />
+          <SettingsRow key="email" title={t('settings.email')} trailing={{ type: 'value', text: email ?? t('settings.none') }} />
           {memberSince ? (
-            <SettingsRow key="since" title="Member since" trailing={{ type: 'value', text: memberSince }} />
+            <SettingsRow key="since" title={t('settings.memberSince')} trailing={{ type: 'value', text: memberSince }} />
           ) : null}
           {accountStatus ? (
-            <SettingsRow key="status" title="Status" variant="destructive" trailing={{ type: 'value', text: accountStatus }} />
+            <SettingsRow
+              key="status"
+              title={t('settings.status')}
+              variant="destructive"
+              trailing={{ type: 'value', text: accountStatus }}
+            />
           ) : null}
         </SettingsSection>
 
-        <SettingsSection label="Security">
+        <SettingsSection label={t('settings.security')}>
           <SettingsRow
             icon={KeyRound}
-            title="Change password"
-            subtitle="Manage your account password"
+            title={t('settings.changePassword')}
+            subtitle={t('settings.changePasswordSubtitle')}
             onPress={() => router.push('/settings/change-password')}
             trailing={{ type: 'chevron' }}
           />
         </SettingsSection>
 
-        <SettingsSection label="Danger zone" tone="danger">
+        <SettingsSection label={t('settings.dangerZone')} tone="danger">
           <SettingsRow
             key="deactivate"
             icon={AlertCircle}
-            title="Deactivate account"
-            subtitle="Temporarily disable your account"
+            title={t('settings.deactivateAccount')}
+            subtitle={t('settings.deactivateAccountSubtitle')}
             onPress={handleDeactivate}
             variant="destructive"
             trailing={{ type: 'chevron' }}
@@ -123,8 +136,8 @@ export default function AccountScreen() {
           <SettingsRow
             key="delete"
             icon={Trash2}
-            title="Delete account"
-            subtitle="Permanently delete your account"
+            title={t('settings.deleteAccount')}
+            subtitle={t('settings.deleteAccountSubtitle')}
             onPress={() => setDeleteDialogVisible(true)}
             variant="destructive"
             trailing={{ type: 'chevron' }}

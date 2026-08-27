@@ -13,6 +13,7 @@ import { LANGUAGE_LABELS, LANGUAGES, useLocalSettings, type LanguageCode } from 
 import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
 import { RADII, Spacing } from '@/shared/constants/theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 import { showAlert } from '@/shared/utils/alert';
 
 type HomeRow = {
@@ -43,11 +44,12 @@ function LanguageModal({
   onClose: () => void;
   onSelect: (language: LanguageCode) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose}>
       <ThemedView style={styles.modalBackdrop}>
         <ThemedView type="surface" style={styles.modalCard}>
-          <ThemedText type="subtitle">Language</ThemedText>
+          <ThemedText type="subtitle">{t('settings.language')}</ThemedText>
           {LANGUAGES.map((option) => (
             <Pressable key={option} onPress={() => onSelect(option)} style={styles.optionRow}>
               <ThemedText type="smallBold" themeColor={language === option ? 'primary' : 'textPrimary'}>
@@ -58,7 +60,7 @@ function LanguageModal({
           ))}
           <Pressable onPress={onClose} style={styles.closeButton}>
             <ThemedText type="smallBold" themeColor="primary">
-              Close
+              {t('common.close')}
             </ThemedText>
           </Pressable>
         </ThemedView>
@@ -71,6 +73,7 @@ export default function SettingsScreen() {
   const { logout, hasAuthority } = useAuth();
   const { profile } = useProfile();
   const { language, selectLanguage } = useLocalSettings();
+  const { t } = useTranslation();
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
 
   const canAccessAdministration =
@@ -88,47 +91,47 @@ export default function SettingsScreen() {
   );
 
   const handleLogout = useCallback(() => {
-    showAlert('Log out', 'You can log back in anytime.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Log out', style: 'destructive', onPress: logout },
+    showAlert(t('settings.logOut'), t('settings.logOutConfirmMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('settings.logOut'), style: 'destructive', onPress: logout },
     ]);
-  }, [logout]);
+  }, [logout, t]);
 
   // Grouped rather than one flat list: each group is its own card, so the
   // screen reads as sections instead of an undifferentiated run of rows.
   const sections: HomeSection[] = [
     {
       key: 'account',
-      label: 'Account',
+      label: t('settings.sectionAccount'),
       rows: [
         {
           key: 'account',
           icon: User,
-          title: 'Your account',
-          subtitle: 'Password, deactivate, delete',
+          title: t('settings.yourAccount'),
+          subtitle: t('settings.yourAccountSubtitle'),
           onPress: () => router.push('/settings/account'),
           trailing: { type: 'chevron' },
         },
         {
           key: 'notifications',
           icon: Bell,
-          title: 'Notifications',
-          subtitle: 'Push & new podcast alerts',
+          title: t('settings.notifications'),
+          subtitle: t('settings.notificationsSubtitle'),
           onPress: () => router.push('/settings/notifications'),
           trailing: { type: 'chevron' },
         },
         {
           key: 'data-storage',
           icon: Database,
-          title: 'Data & storage',
-          subtitle: 'Cache, downloads, usage',
+          title: t('settings.dataStorage'),
+          subtitle: t('settings.dataStorageSubtitle'),
           onPress: () => router.push('/settings/data-storage'),
           trailing: { type: 'chevron' },
         },
         {
           key: 'language',
           icon: Globe,
-          title: 'Language',
+          title: t('settings.language'),
           onPress: () => setLanguageModalVisible(true),
           trailing: { type: 'value', text: LANGUAGE_LABELS[language], tone: 'accent', chevron: true },
         },
@@ -138,13 +141,13 @@ export default function SettingsScreen() {
       ? [
           {
             key: 'admin',
-            label: 'Admin configuration',
+            label: t('settings.sectionAdmin'),
             rows: [
               {
                 key: 'administration',
                 icon: Shield,
-                title: 'Administration',
-                subtitle: 'Branding, categories, sync',
+                title: t('settings.administration'),
+                subtitle: t('settings.administrationSubtitle'),
                 onPress: () => router.push('/settings/administration'),
                 trailing: { type: 'chevron' as const },
               },
@@ -154,13 +157,13 @@ export default function SettingsScreen() {
       : []),
     {
       key: 'about',
-      label: 'About',
+      label: t('settings.sectionAbout'),
       rows: [
         {
           key: 'about',
           icon: Info,
-          title: 'About',
-          subtitle: 'Version, legal, support',
+          title: t('settings.about'),
+          subtitle: t('settings.aboutSubtitle'),
           onPress: () => router.push('/settings/about'),
           trailing: { type: 'chevron' },
         },
@@ -173,7 +176,7 @@ export default function SettingsScreen() {
         {
           key: 'log-out',
           icon: LogOut,
-          title: 'Log out',
+          title: t('settings.logOut'),
           onPress: handleLogout,
           variant: 'destructive',
           trailing: { type: 'none' },
@@ -184,7 +187,7 @@ export default function SettingsScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <SettingsHeader title="Settings" handle={profile?.username ? `@${profile.username}` : undefined} showBack={false} />
+      <SettingsHeader title={t('settings.title')} handle={profile?.username ? `@${profile.username}` : undefined} showBack={false} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <ProfileCard />
 

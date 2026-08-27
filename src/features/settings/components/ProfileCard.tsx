@@ -8,6 +8,7 @@ import { InlineEditField } from '@/features/settings/components/InlineEditField'
 import { Badge } from '@/shared/components/Badge';
 import { Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 
 // Any of the authorities that unlock the Administration sub-screen counts as
 // "admin" for the pill — see settings/administration.tsx and (tabs)/settings
@@ -28,16 +29,17 @@ function initials(name: string): string {
  */
 export function ProfileCard() {
   const theme = useTheme();
+  const { t } = useTranslation();
   const { email, hasAuthority } = useAuth();
   const { profile, isLoading, refresh } = useProfile();
   const { changeUsername } = useAccountActions();
 
-  const displayName = profile?.displayName || profile?.username || 'Skater';
+  const displayName = profile?.displayName || profile?.username || t('settings.skater');
   const isAdmin = ADMIN_AUTHORITIES.some(hasAuthority);
 
   const handleSaveUsername = async (next: string) => {
     if (next.length < 3) {
-      throw new Error('Usernames must be at least 3 characters.');
+      throw new Error(t('settings.usernameMinLength', { min: 3 }));
     }
     await changeUsername(next);
     await refresh();
@@ -49,15 +51,20 @@ export function ProfileCard() {
         <EditableAvatar imageUrl={profile?.profilePictureUrl ?? null} initials={isLoading ? '' : initials(displayName)} onUploaded={refresh} />
 
         <View style={styles.info}>
-          <InlineEditField label="Username" value={profile?.username ?? ''} placeholder="username" onSave={handleSaveUsername} />
+          <InlineEditField
+            label={t('settings.username')}
+            value={profile?.username ?? ''}
+            placeholder={t('settings.usernamePlaceholder')}
+            onSave={handleSaveUsername}
+          />
         </View>
       </View>
 
       <View style={styles.metaRow}>
         <Text style={[styles.email, { color: theme.textSecondary }]} numberOfLines={1}>
-          {email ?? 'No email on file'}
+          {email ?? t('settings.noEmail')}
         </Text>
-        <Badge label={isAdmin ? 'ADMIN' : 'MEMBER'} />
+        <Badge label={isAdmin ? t('settings.adminBadge') : t('settings.memberBadge')} />
       </View>
     </View>
   );

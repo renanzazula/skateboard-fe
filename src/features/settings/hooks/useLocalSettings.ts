@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 
 import { getLanguage, setLanguage, subscribe as subscribeLanguage } from '@/core/i18n/languageStore';
 import { secureStorage } from '@/core/storage/secureStorage';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 import { LANGUAGE_LABELS, LANGUAGES, type Language } from '@/shared/locales';
 import { showAlert } from '@/shared/utils/alert';
 
@@ -45,6 +46,7 @@ async function directorySize(uri: string): Promise<number> {
 
 /** Language / cache / Wi-Fi-only / storage-usage local preferences — shared by Settings home (Language row) and Data & storage. */
 export function useLocalSettings() {
+  const { t } = useTranslation();
   const language = useSyncExternalStore(subscribeLanguage, getLanguage, getLanguage);
   const [downloadWifiOnly, setDownloadWifiOnly] = useState(false);
   const [storageUsage, setStorageUsage] = useState('0 B');
@@ -78,14 +80,14 @@ export function useLocalSettings() {
 
   const clearCache = useCallback(async () => {
     if (!FileSystem.cacheDirectory) {
-      showAlert('Clear cache', 'No cache directory is available on this platform.');
+      showAlert(t('settings.clearCache'), t('settings.clearCacheNoDir'));
       return;
     }
 
-    showAlert('Clear cache', 'Clear local cached files? Backend user data will not be changed.', [
-      { text: 'Cancel', style: 'cancel' },
+    showAlert(t('settings.clearCache'), t('settings.clearCacheMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Clear',
+        text: t('settings.clear'),
         style: 'destructive',
         onPress: async () => {
           const entries = await FileSystem.readDirectoryAsync(FileSystem.cacheDirectory!).catch(() => []);
@@ -98,7 +100,7 @@ export function useLocalSettings() {
         },
       },
     ]);
-  }, [refreshStorageUsage]);
+  }, [refreshStorageUsage, t]);
 
   return {
     language,

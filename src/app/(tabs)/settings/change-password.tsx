@@ -9,51 +9,55 @@ import { PrimaryButton } from '@/shared/components/PrimaryButton';
 import { TextField } from '@/shared/components/TextField';
 import { ThemedView } from '@/shared/components/themed-view';
 import { MAX_FORM_WIDTH, Spacing } from '@/shared/constants/theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 import { showAlert } from '@/shared/utils/alert';
 
 export default function ChangePasswordScreen() {
   const { changePassword, submitting } = useAccountActions();
+  const { t } = useTranslation();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleSave = async () => {
     if (newPassword.length < 8) {
-      showAlert('Password too short', 'Your new password must be at least 8 characters.');
+      showAlert(t('settings.passwordTooShortTitle'), t('settings.passwordTooShortMessage'));
       return;
     }
     if (newPassword !== confirmPassword) {
-      showAlert('Passwords do not match', 'Re-enter your new password to confirm.');
+      showAlert(t('settings.passwordMismatchTitle'), t('settings.passwordMismatchMessage'));
       return;
     }
     try {
       await changePassword(newPassword);
-      showAlert('Password changed', 'Your password has been updated.', [{ text: 'OK', onPress: () => router.back() }]);
+      showAlert(t('settings.passwordChangedTitle'), t('settings.passwordChangedMessage'), [
+        { text: t('common.ok'), onPress: () => router.back() },
+      ]);
     } catch (submitError) {
-      showAlert('Could not change password', isBffError(submitError) ? submitError.message : 'Try again.');
+      showAlert(t('settings.passwordChangeError'), isBffError(submitError) ? submitError.message : t('common.tryAgain'));
     }
   };
 
   return (
     <ThemedView style={styles.screen}>
-      <SettingsHeader title="Change password" />
+      <SettingsHeader title={t('settings.changePassword')} />
       <ThemedView style={styles.container}>
         <TextField
-          label="New password"
+          label={t('settings.newPassword')}
           value={newPassword}
           onChangeText={setNewPassword}
-          placeholder="At least 8 characters"
+          placeholder={t('settings.newPasswordPlaceholder')}
           secureTextEntry
         />
         <TextField
-          label="Confirm new password"
+          label={t('settings.confirmNewPassword')}
           value={confirmPassword}
           onChangeText={setConfirmPassword}
-          placeholder="Re-enter your new password"
+          placeholder={t('settings.confirmPasswordPlaceholder')}
           secureTextEntry
         />
 
         <PrimaryButton
-          title={submitting ? 'Saving…' : 'Change password'}
+          title={submitting ? t('common.saving') : t('settings.changePassword')}
           onPress={handleSave}
           loading={submitting}
           disabled={submitting}

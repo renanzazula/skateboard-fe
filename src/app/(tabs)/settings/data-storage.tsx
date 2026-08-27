@@ -8,30 +8,37 @@ import { SettingsSection } from '@/features/settings/components/SettingsSection'
 import { useLocalSettings } from '@/features/settings/hooks/useLocalSettings';
 import { ThemedView } from '@/shared/components/themed-view';
 import { Spacing } from '@/shared/constants/theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 
 export default function DataStorageScreen() {
   const { profile } = useProfile();
   const { downloadWifiOnly, storageUsage, isCalculatingStorage, toggleDownloadWifiOnly, clearCache } = useLocalSettings();
+  const { t } = useTranslation();
 
   return (
     <ThemedView style={styles.container}>
-      <SettingsHeader title="Data & storage" handle={profile?.username ? `@${profile.username}` : undefined} />
+      <SettingsHeader title={t('settings.dataStorage')} handle={profile?.username ? `@${profile.username}` : undefined} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <SettingsSection label="Storage">
+        <SettingsSection label={t('settings.storage')}>
           <SettingsRow
             icon={Trash2}
-            title="Clear cache"
+            title={t('settings.clearCache')}
             onPress={clearCache}
-            trailing={{ type: 'value', text: `Free ${storageUsage}`, loading: isCalculatingStorage, chevron: true }}
+            trailing={{
+              type: 'value',
+              text: t('settings.freeSpace', { size: storageUsage }),
+              loading: isCalculatingStorage,
+              chevron: true,
+            }}
           />
           <SettingsRow
             icon={Wifi}
-            title="Download over Wi‑Fi only"
+            title={t('settings.downloadWifiOnly')}
             trailing={{ type: 'switch', value: downloadWifiOnly, onChange: toggleDownloadWifiOnly }}
           />
           <SettingsRow
             icon={Database}
-            title="Storage usage"
+            title={t('settings.storageUsage')}
             trailing={{ type: 'value', text: storageUsage, loading: isCalculatingStorage }}
           />
         </SettingsSection>

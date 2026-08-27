@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useTheme } from '@/shared/hooks/use-theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 import { showAlert } from '@/shared/utils/alert';
 
 type Props = {
@@ -15,6 +16,7 @@ type Props = {
 /** Resting: label + value + gold pencil. Tapping swaps the value for a gold-bordered TextInput with Save/Cancel. See .docs/SETTINGS_REDESIGN_2.md §6/§7. */
 export function InlineEditField({ label, value, placeholder, onSave }: Props) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
   const [saving, setSaving] = useState(false);
@@ -39,7 +41,7 @@ export function InlineEditField({ label, value, placeholder, onSave }: Props) {
       await onSave(trimmed);
       setEditing(false);
     } catch (saveError) {
-      showAlert('Could not save', saveError instanceof Error ? saveError.message : 'Try again.');
+      showAlert(t('settings.couldNotSave'), saveError instanceof Error ? saveError.message : t('common.tryAgain'));
     } finally {
       setSaving(false);
     }
@@ -51,7 +53,7 @@ export function InlineEditField({ label, value, placeholder, onSave }: Props) {
         onPress={() => setEditing(true)}
         style={styles.row}
         accessibilityRole="button"
-        accessibilityLabel={`Edit ${label}`}>
+        accessibilityLabel={t('settings.editField', { field: label })}>
         <View style={styles.textStack}>
           <Text style={[styles.label, { color: theme.textSecondary }]}>{label}</Text>
           <Text style={[styles.value, { color: theme.textPrimary }]} numberOfLines={1}>
@@ -78,10 +80,10 @@ export function InlineEditField({ label, value, placeholder, onSave }: Props) {
       />
       <View style={styles.actions}>
         <Pressable onPress={cancel} disabled={saving} hitSlop={8}>
-          <Text style={[styles.actionText, { color: theme.textSecondary }]}>Cancel</Text>
+          <Text style={[styles.actionText, { color: theme.textSecondary }]}>{t('common.cancel')}</Text>
         </Pressable>
         <Pressable onPress={save} disabled={saving} hitSlop={8}>
-          <Text style={[styles.actionText, { color: theme.primary }]}>{saving ? 'Saving…' : 'Save'}</Text>
+          <Text style={[styles.actionText, { color: theme.primary }]}>{saving ? t('common.saving') : t('common.save')}</Text>
         </Pressable>
       </View>
     </View>

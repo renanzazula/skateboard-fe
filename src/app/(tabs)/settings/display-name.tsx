@@ -9,6 +9,7 @@ import { PrimaryButton } from '@/shared/components/PrimaryButton';
 import { TextField } from '@/shared/components/TextField';
 import { ThemedView } from '@/shared/components/themed-view';
 import { MAX_FORM_WIDTH, Spacing } from '@/shared/constants/theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 import { showAlert } from '@/shared/utils/alert';
 
 /**
@@ -21,6 +22,7 @@ import { showAlert } from '@/shared/utils/alert';
  */
 export default function DisplayNameScreen() {
   const { profile, refresh, updateDisplayName } = useProfile();
+  const { t } = useTranslation();
   const [displayName, setDisplayName] = useState(profile?.displayName ?? '');
   const [saving, setSaving] = useState(false);
 
@@ -34,7 +36,7 @@ export default function DisplayNameScreen() {
       await refresh();
       router.back();
     } catch (submitError) {
-      showAlert('Could not save display name', isBffError(submitError) ? submitError.message : 'Try again.');
+      showAlert(t('settings.displayNameError'), isBffError(submitError) ? submitError.message : t('common.tryAgain'));
     } finally {
       setSaving(false);
     }
@@ -42,17 +44,17 @@ export default function DisplayNameScreen() {
 
   return (
     <ThemedView style={styles.screen}>
-      <SettingsHeader title="Display name" />
+      <SettingsHeader title={t('settings.displayName')} />
       <ThemedView style={styles.container}>
         <TextField
-          label="Display name"
+          label={t('settings.displayName')}
           value={displayName}
           onChangeText={setDisplayName}
-          placeholder="How your name appears in the app"
+          placeholder={t('settings.displayNamePlaceholder')}
           autoCapitalize="words"
         />
         <PrimaryButton
-          title={saving ? 'Saving…' : 'Save'}
+          title={saving ? t('common.saving') : t('common.save')}
           onPress={handleSave}
           loading={saving}
           disabled={saving || unchanged}

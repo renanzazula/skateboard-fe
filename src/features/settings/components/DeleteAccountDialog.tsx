@@ -6,6 +6,7 @@ import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
 import { RADII, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 
 type Props = {
   visible: boolean;
@@ -22,6 +23,7 @@ type Props = {
  */
 export function DeleteAccountDialog({ visible, username, submitting, onCancel, onConfirm }: Props) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const [typed, setTyped] = useState('');
 
   const canConfirm = Boolean(username) && typed === username && !submitting;
@@ -36,15 +38,15 @@ export function DeleteAccountDialog({ visible, username, submitting, onCancel, o
       <ThemedView style={styles.backdrop}>
         <ThemedView type="surface" style={[styles.card, { borderColor: theme.destructiveBorder }]}>
           <ThemedText type="subtitle" themeColor="destructive">
-            Delete account
+            {t('settings.deleteAccount')}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            This permanently erases your account and can&apos;t be undone.
+            {t('settings.deleteDialogWarning')}
           </ThemedText>
 
           {username ? (
             <TextField
-              label={`Type "${username}" to confirm`}
+              label={t('settings.deleteDialogConfirmLabel', { username })}
               value={typed}
               onChangeText={setTyped}
               autoCapitalize="none"
@@ -56,7 +58,7 @@ export function DeleteAccountDialog({ visible, username, submitting, onCancel, o
           <View style={styles.actions}>
             <Pressable onPress={handleClose} style={styles.cancelButton}>
               <ThemedText type="smallBold" themeColor="textPrimary">
-                Cancel
+                {t('common.cancel')}
               </ThemedText>
             </Pressable>
             <Pressable
@@ -67,7 +69,7 @@ export function DeleteAccountDialog({ visible, username, submitting, onCancel, o
                 { backgroundColor: canConfirm ? theme.destructive : theme.surfaceElevated },
               ]}>
               <ThemedText type="smallBold" themeColor={canConfirm ? 'textPrimary' : 'textDisabled'}>
-                {submitting ? 'Deleting…' : 'Delete my account'}
+                {submitting ? t('settings.deleting') : t('settings.deleteDialogButton')}
               </ThemedText>
             </Pressable>
           </View>
