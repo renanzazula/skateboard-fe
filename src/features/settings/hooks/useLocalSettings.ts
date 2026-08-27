@@ -1,7 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
-import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
-import { getLanguage, setLanguage, subscribe as subscribeLanguage } from '@/core/i18n/languageStore';
+import { setLanguage } from '@/core/i18n/languageStore';
 import { secureStorage } from '@/core/storage/secureStorage';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import { LANGUAGE_LABELS, LANGUAGES, type Language } from '@/shared/locales';
@@ -46,8 +46,7 @@ async function directorySize(uri: string): Promise<number> {
 
 /** Language / cache / Wi-Fi-only / storage-usage local preferences — shared by Settings home (Language row) and Data & storage. */
 export function useLocalSettings() {
-  const { t } = useTranslation();
-  const language = useSyncExternalStore(subscribeLanguage, getLanguage, getLanguage);
+  const { t, language } = useTranslation();
   const [downloadWifiOnly, setDownloadWifiOnly] = useState(false);
   const [storageUsage, setStorageUsage] = useState('0 B');
   const [isCalculatingStorage, setIsCalculatingStorage] = useState(true);
