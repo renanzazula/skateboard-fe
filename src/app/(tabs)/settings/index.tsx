@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { Bell, Database, Globe, Info, LogOut, Shield, User, type LucideIcon } from 'lucide-react-native';
-import { useCallback, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { useCallback } from 'react';
+import { ScrollView, StyleSheet } from 'react-native';
 
 import { useAuth } from '@/core/auth';
 import { useProfile } from '@/features/account/hooks/useProfile';
@@ -9,10 +9,9 @@ import { ProfileCard } from '@/features/settings/components/ProfileCard';
 import { SettingsHeader } from '@/features/settings/components/SettingsHeader';
 import { SettingsRow, type SettingsRowTrailing } from '@/features/settings/components/SettingsRow';
 import { SettingsSection } from '@/features/settings/components/SettingsSection';
-import { LANGUAGE_FLAGS, LANGUAGE_LABELS, LANGUAGES, useLocalSettings, type LanguageCode } from '@/features/settings/hooks/useLocalSettings';
-import { ThemedText } from '@/shared/components/themed-text';
+import { LANGUAGE_FLAGS, LANGUAGE_LABELS, useLocalSettings } from '@/features/settings/hooks/useLocalSettings';
 import { ThemedView } from '@/shared/components/themed-view';
-import { RADII, Spacing } from '@/shared/constants/theme';
+import { Spacing } from '@/shared/constants/theme';
 import { showAlert } from '@/shared/utils/alert';
 
 type HomeRow = {
@@ -32,46 +31,10 @@ type HomeSection = {
   rows: HomeRow[];
 };
 
-function LanguageModal({
-  visible,
-  language,
-  onClose,
-  onSelect,
-}: {
-  visible: boolean;
-  language: LanguageCode;
-  onClose: () => void;
-  onSelect: (language: LanguageCode) => void;
-}) {
-  return (
-    <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose}>
-      <ThemedView style={styles.modalBackdrop}>
-        <ThemedView type="surface" style={styles.modalCard}>
-          <ThemedText type="subtitle">Language</ThemedText>
-          {LANGUAGES.map((option) => (
-            <Pressable key={option} onPress={() => onSelect(option)} style={styles.optionRow}>
-              <ThemedText type="smallBold" themeColor={language === option ? 'primary' : 'textPrimary'}>
-                {language === option ? '✓ ' : '   '}
-                {LANGUAGE_FLAGS[option]}  {LANGUAGE_LABELS[option]}
-              </ThemedText>
-            </Pressable>
-          ))}
-          <Pressable onPress={onClose} style={styles.closeButton}>
-            <ThemedText type="smallBold" themeColor="primary">
-              Close
-            </ThemedText>
-          </Pressable>
-        </ThemedView>
-      </ThemedView>
-    </Modal>
-  );
-}
-
 export default function SettingsScreen() {
   const { logout, hasAuthority } = useAuth();
   const { profile } = useProfile();
   const { language, selectLanguage } = useLocalSettings();
-  const [languageModalVisible, setLanguageModalVisible] = useState(false);
 
   const canAccessAdministration =
     hasAuthority('FUNC_TAB_SETTINGS_BRANDING') ||
@@ -79,13 +42,6 @@ export default function SettingsScreen() {
     hasAuthority('FUNC_PODCAST_IMPORT_JSON') ||
     hasAuthority('FUNC_PODCAST_MANAGE_CATEGORIES');
 
-  const selectLanguageAndClose = useCallback(
-    (next: LanguageCode) => {
-      selectLanguage(next);
-      setLanguageModalVisible(false);
-    },
-    [selectLanguage]
-  );
 
   const handleLogout = useCallback(() => {
     showAlert('Log out', 'You can log back in anytime.', [
@@ -129,7 +85,7 @@ export default function SettingsScreen() {
           key: 'language',
           icon: Globe,
           title: 'Language',
-          onPress: () => setLanguageModalVisible(true),
+          onPress: () => router.push('/settings/language'),
           trailing: {
             type: 'value',
             text: `${LANGUAGE_FLAGS[language]}  ${LANGUAGE_LABELS[language]}`,
@@ -212,12 +168,6 @@ export default function SettingsScreen() {
         </ThemedView>
       </ScrollView>
 
-      <LanguageModal
-        visible={languageModalVisible}
-        language={language}
-        onClose={() => setLanguageModalVisible(false)}
-        onSelect={selectLanguageAndClose}
-      />
     </ThemedView>
   );
 }
@@ -231,24 +181,5 @@ const styles = StyleSheet.create({
   },
   rows: {
     paddingHorizontal: Spacing.three,
-  },
-  modalBackdrop: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    padding: Spacing.four,
-  },
-  modalCard: {
-    borderRadius: RADII.card,
-    gap: Spacing.three,
-    padding: Spacing.four,
-  },
-  optionRow: {
-    minHeight: 48,
-    justifyContent: 'center',
-  },
-  closeButton: {
-    alignItems: 'center',
-    borderRadius: RADII.control,
-    paddingVertical: Spacing.three,
   },
 });
