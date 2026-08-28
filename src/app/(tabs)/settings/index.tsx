@@ -61,7 +61,7 @@ export default function SettingsScreen() {
           key: 'account',
           icon: User,
           title: 'Your account',
-          subtitle: 'Password, deactivate, delete',
+          subtitle: 'Username, display name, password',
           onPress: () => router.push('/settings/account'),
           trailing: { type: 'chevron' },
         },
