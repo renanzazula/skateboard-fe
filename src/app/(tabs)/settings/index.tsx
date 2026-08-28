@@ -9,7 +9,7 @@ import { ProfileCard } from '@/features/settings/components/ProfileCard';
 import { SettingsHeader } from '@/features/settings/components/SettingsHeader';
 import { SettingsRow, type SettingsRowTrailing } from '@/features/settings/components/SettingsRow';
 import { SettingsSection } from '@/features/settings/components/SettingsSection';
-import { LANGUAGE_LABELS, LANGUAGES, useLocalSettings, type LanguageCode } from '@/features/settings/hooks/useLocalSettings';
+import { LANGUAGE_FLAGS, LANGUAGE_LABELS, LANGUAGES, useLocalSettings, type LanguageCode } from '@/features/settings/hooks/useLocalSettings';
 import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
 import { RADII, Spacing } from '@/shared/constants/theme';
@@ -52,7 +52,7 @@ function LanguageModal({
             <Pressable key={option} onPress={() => onSelect(option)} style={styles.optionRow}>
               <ThemedText type="smallBold" themeColor={language === option ? 'primary' : 'textPrimary'}>
                 {language === option ? '✓ ' : '   '}
-                {LANGUAGE_LABELS[option]}
+                {LANGUAGE_FLAGS[option]}  {LANGUAGE_LABELS[option]}
               </ThemedText>
             </Pressable>
           ))}
@@ -130,7 +130,12 @@ export default function SettingsScreen() {
           icon: Globe,
           title: 'Language',
           onPress: () => setLanguageModalVisible(true),
-          trailing: { type: 'value', text: LANGUAGE_LABELS[language], tone: 'accent', chevron: true },
+          trailing: {
+            type: 'value',
+            text: `${LANGUAGE_FLAGS[language]}  ${LANGUAGE_LABELS[language]}`,
+            tone: 'accent',
+            chevron: true,
+          },
         },
       ],
     },
