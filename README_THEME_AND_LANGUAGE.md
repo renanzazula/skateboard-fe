@@ -46,7 +46,7 @@ yet"), written before the picker was built; the picker arrived and the wiring
 never followed.
 
 That is worse than having no picker at all: a setting that appears to work and
-silently doesn't. Either translate or hide the control — see §5.
+silently doesn't. Translations are being added on another branch — see §5.
 
 ---
 
@@ -96,15 +96,15 @@ So the work is a palette plus one hook — not a sweep through every screen.
 **Estimate.** Phase 1 is a day, most of it spent choosing the light palette
 rather than wiring it. Phase 2 is smaller and can follow.
 
-## 5. Language: pick one
+## 5. Language: being translated elsewhere
 
-Not optional — the current state misleads.
+**This is in progress on another branch** — translations are being added
+there, so do not hide or remove the picker on the strength of this document.
 
-- **Translate.** Add `es.ts` and `pt.ts`, widen `Language`, and make
-  `useTranslation` read the stored language instead of the `'en'` constant.
-  The key set already exists in `en.ts`, so this is translation work more than
-  engineering.
-- **Or hide the picker** until the locales exist. One line, honest, reversible.
+What that branch needs to finish: `es.ts` and `pt.ts` beside `en.ts`, the
+`Language` union widened, and `useTranslation` reading the stored language
+instead of its `'en'` constant. The key set already exists in `en.ts`, so the
+remaining work is translation more than engineering.
 
 Given the show is Brazilian, `pt` is the one that earns its place first.
 
