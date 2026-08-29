@@ -147,7 +147,7 @@ export default function SettingsScreen() {
     <ThemedView style={styles.container}>
       <SettingsHeader title="Settings" handle={profile?.username ? `@${profile.username}` : undefined} showBack={false} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <ProfileCard />
+        <ProfileCard onPress={() => router.push('/settings/account')} />
 
         <ThemedView style={styles.rows}>
           {sections.map((section) => (
