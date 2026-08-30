@@ -3,6 +3,7 @@ import { Pressable, StyleSheet } from 'react-native';
 import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
 import { RADII, Spacing } from '@/shared/constants/theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 
 interface ErrorBannerProps {
   message: string;
@@ -18,6 +19,7 @@ interface ErrorBannerProps {
 
 /** Renders a shared/api/errors BffError (or any Error) message with an optional retry action. */
 export function ErrorBanner({ message, detail, onRetry }: ErrorBannerProps) {
+  const { t } = useTranslation();
   return (
     <ThemedView type="surface" style={styles.container}>
       <ThemedText type="small" themeColor="destructive">
@@ -30,7 +32,7 @@ export function ErrorBanner({ message, detail, onRetry }: ErrorBannerProps) {
       )}
       {onRetry && (
         <Pressable onPress={onRetry}>
-          <ThemedText type="linkPrimary">Retry</ThemedText>
+          <ThemedText type="linkPrimary">{t('common.retry')}</ThemedText>
         </Pressable>
       )}
     </ThemedView>

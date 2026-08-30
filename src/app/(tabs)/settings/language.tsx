@@ -13,6 +13,7 @@ import {
 } from '@/features/settings/hooks/useLocalSettings';
 import { ThemedView } from '@/shared/components/themed-view';
 import { Spacing } from '@/shared/constants/theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 
 /**
  * Language was the one picker in Settings that opened a bottom sheet while
@@ -25,6 +26,7 @@ import { Spacing } from '@/shared/constants/theme';
  */
 export default function LanguageScreen() {
   const { language, selectLanguage } = useLocalSettings();
+  const { t } = useTranslation();
 
   const handleSelect = (next: LanguageCode) => {
     selectLanguage(next);
@@ -33,7 +35,7 @@ export default function LanguageScreen() {
 
   return (
     <ThemedView style={styles.screen}>
-      <SettingsHeader title="Language" />
+      <SettingsHeader title={t('settings.language')} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <SettingsSection dividerInset="edge">
           {LANGUAGES.map((option) => (

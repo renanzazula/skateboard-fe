@@ -5,6 +5,7 @@ import { PrimaryButton } from '@/shared/components/PrimaryButton';
 import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
 import { Spacing } from '@/shared/constants/theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 
 interface RouteErrorFallbackProps {
   error: Error;
@@ -21,12 +22,13 @@ interface RouteErrorFallbackProps {
  * debugger to (e.g. a production/TestFlight build).
  */
 export function RouteErrorFallback({ error, retry }: RouteErrorFallbackProps) {
+  const { t } = useTranslation();
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content}>
           <ThemedText type="subtitle" themeColor="destructive">
-            Something went wrong
+            {t('common.somethingWentWrong')}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
             {error.name}: {error.message}
@@ -36,7 +38,7 @@ export function RouteErrorFallback({ error, retry }: RouteErrorFallbackProps) {
               {error.stack}
             </ThemedText>
           ) : null}
-          <PrimaryButton title="Try again" onPress={retry} />
+          <PrimaryButton title={t('common.tryAgainAction')} onPress={retry} />
         </ScrollView>
       </SafeAreaView>
     </ThemedView>

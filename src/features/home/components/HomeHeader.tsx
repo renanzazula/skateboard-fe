@@ -8,6 +8,7 @@ import { BrandedLogo } from '@/features/branding/components/BrandedLogo';
 import { AppHeader } from '@/shared/components/AppHeader';
 import { ThemedText } from '@/shared/components/themed-text';
 import { useTheme } from '@/shared/hooks/use-theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 
 const AVATAR_SIZE = 34;
 const LOGO_HEIGHT = 28;
@@ -26,10 +27,11 @@ function initials(name: string): string {
  */
 export function HomeHeader() {
   const theme = useTheme();
+  const { t } = useTranslation();
   const { profile } = useProfile();
   const [imageFailed, setImageFailed] = useState(false);
 
-  const displayName = profile?.displayName || profile?.username || 'Skater';
+  const displayName = profile?.displayName || profile?.username || t('settings.skater');
   const username = profile?.username ? `@${profile.username}` : displayName;
 
   // Reset once the URL itself changes (e.g. a fresh upload), so a past
@@ -47,7 +49,7 @@ export function HomeHeader() {
           <Pressable
             onPress={() => router.push('/settings')}
             accessibilityRole="button"
-            accessibilityLabel="Open Settings"
+            accessibilityLabel={t('home.openSettings')}
             style={({ pressed }) => [styles.avatar, { backgroundColor: theme.primary, opacity: pressed ? 0.8 : 1 }]}>
             {showImage ? (
               <Image

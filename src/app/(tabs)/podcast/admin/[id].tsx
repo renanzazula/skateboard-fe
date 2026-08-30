@@ -8,6 +8,7 @@ import { usePodcastPost } from '@/features/podcast/hooks/usePodcastPost';
 import { isBffError } from '@/shared/api/errors';
 import { ErrorBanner } from '@/shared/components/ErrorBanner';
 import { Spacing } from '@/shared/constants/theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 import { showAlert } from '@/shared/utils/alert';
 
 // There is no "get post by id" endpoint on the BFF (only by slug), so this
@@ -17,6 +18,7 @@ import { showAlert } from '@/shared/utils/alert';
 export default function EditPodcastPostScreen() {
   const { id, slug } = useLocalSearchParams<{ id: string; slug: string }>();
   const { hasAuthority } = useAuth();
+  const { t } = useTranslation();
   const { post, loading, error, refetch } = usePodcastPost(slug);
   const { updatePost, submitting } = usePodcastAdmin();
 
@@ -29,7 +31,7 @@ export default function EditPodcastPostScreen() {
       const updated = await updatePost(id, values);
       router.replace(`/podcast/${updated.slug ?? slug}`);
     } catch (submitError) {
-      showAlert('Could not save changes', isBffError(submitError) ? submitError.message : 'Try again.');
+      showAlert(t('feed.saveChangesError'), isBffError(submitError) ? submitError.message : t('common.tryAgain'));
     }
   };
 
@@ -38,7 +40,7 @@ export default function EditPodcastPostScreen() {
   }
 
   if (error || !post) {
-    return <ErrorBanner message={isBffError(error) ? error.message : 'Post not found.'} onRetry={refetch} />;
+    return <ErrorBanner message={isBffError(error) ? error.message : t('podcast.postNotFound')} onRetry={refetch} />;
   }
 
   return (
@@ -51,7 +53,7 @@ export default function EditPodcastPostScreen() {
         socialMediaLinks: post.socialMediaLinks,
       }}
       syncedDescription={post.description}
-      submitLabel="Save changes"
+      submitLabel={t('feed.saveChanges')}
       submitting={submitting}
       onSubmit={handleSubmit}
     />

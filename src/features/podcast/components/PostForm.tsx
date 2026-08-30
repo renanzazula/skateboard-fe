@@ -160,7 +160,9 @@ function BlockEditorRow({
 
       {editor.type === 'gallery' && (
         <>
-          <ThemedText type="small">{t('feed.galleryImages')} (one URL per line)</ThemedText>
+          <ThemedText type="small">
+            {t('feed.galleryImages')} ({t('podcast.oneUrlPerLine')})
+          </ThemedText>
           <TextInput
             style={[inputStyle, styles.textArea]}
             value={editor.urls}
@@ -344,7 +346,7 @@ export function PostForm({ initialValues, submitLabel, submitting, onSubmit, syn
         <Pressable onPress={handlePickImage}>
           <ThemedView type="surface" style={styles.uploadButton}>
             <ThemedText type="small">
-              {coverUrl.startsWith('data:') ? 'Image selected ✓' : t('feed.coverImageUpload')}
+              {coverUrl.startsWith('data:') ? t('podcast.imageSelected') : t('feed.coverImageUpload')}
             </ThemedText>
           </ThemedView>
         </Pressable>

@@ -22,6 +22,7 @@ import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
 import { MAX_CONTENT_WIDTH, RADII, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 import type { Post } from '@/shared/types/posts';
 import { showAlert } from '@/shared/utils/alert';
 
@@ -36,6 +37,7 @@ const CONTENT_SOURCE: FeaturedContentSource = 'PODCAST';
 export default function FeaturedPlayerScreen() {
   const theme = useTheme();
   const { hasAuthority } = useAuth();
+  const { t } = useTranslation();
   const { submitting, getConfig, updateConfig } = useFeaturedPlayerAdmin();
   const { search, setSearch, posts, isLoading: searching, hasMore, loadMore } = useFeaturedContentPicker();
 
@@ -96,9 +98,9 @@ export default function FeaturedPlayerScreen() {
         position,
         preferredPlatform,
       });
-      showAlert('Saved', 'Home Featured Player updated.');
+      showAlert(t('admin.featuredPlayer.savedTitle'), t('admin.featuredPlayer.savedMessage'));
     } catch (saveError) {
-      showAlert('Could not save', isBffError(saveError) ? saveError.message : 'Try again.');
+      showAlert(t('admin.featuredPlayer.saveError'), isBffError(saveError) ? saveError.message : t('common.tryAgain'));
     }
   };
 
@@ -121,7 +123,7 @@ export default function FeaturedPlayerScreen() {
   if (loading) {
     return (
       <ThemedView style={styles.container}>
-        <SettingsHeader title="Featured Player" />
+        <SettingsHeader title={t('admin.featuredPlayer.title')} />
         <ActivityIndicator style={styles.loading} color={theme.primary} />
       </ThemedView>
     );
@@ -130,25 +132,24 @@ export default function FeaturedPlayerScreen() {
   if (configError) {
     return (
       <ThemedView style={styles.container}>
-        <SettingsHeader title="Featured Player" />
-        <ErrorBanner message={isBffError(configError) ? configError.message : 'Could not load the Featured Player configuration.'} onRetry={refresh} />
+        <SettingsHeader title={t('admin.featuredPlayer.title')} />
+        <ErrorBanner message={isBffError(configError) ? configError.message : t('admin.featuredPlayer.loadError')} onRetry={refresh} />
       </ThemedView>
     );
   }
 
   return (
     <ThemedView style={styles.container}>
-      <SettingsHeader title="Featured Player" />
+      <SettingsHeader title={t('admin.featuredPlayer.title')} />
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedText type="default" themeColor="textSecondary" style={styles.hint}>
-          Show a compact player for one podcast episode on the Home dashboard. Off by default — nothing is
-          shown until an episode is selected and enabled.
+          {t('admin.featuredPlayer.hint')}
         </ThemedText>
 
         <SettingsSection>
           <SettingsRow
             icon={Music}
-            title="Enable Featured Player"
+            title={t('admin.featuredPlayer.enable')}
             trailing={{ type: 'switch', value: enabled, onChange: setEnabled }}
           />
         </SettingsSection>
@@ -156,18 +157,17 @@ export default function FeaturedPlayerScreen() {
         {enabled ? (
           <>
             <View style={styles.section}>
-              <ThemedText type="smallBold">Position</ThemedText>
+              <ThemedText type="smallBold">{t('admin.featuredPlayer.position')}</ThemedText>
               <View style={styles.modeRow}>
-                <CategoryChip label="Top" selected={position === 'TOP'} onPress={() => setPosition('TOP')} />
-                <CategoryChip label="Bottom" selected={position === 'BOTTOM'} onPress={() => setPosition('BOTTOM')} />
+                <CategoryChip label={t('admin.featuredPlayer.top')} selected={position === 'TOP'} onPress={() => setPosition('TOP')} />
+                <CategoryChip label={t('admin.featuredPlayer.bottom')} selected={position === 'BOTTOM'} onPress={() => setPosition('BOTTOM')} />
               </View>
             </View>
 
             <View style={styles.section}>
-              <ThemedText type="smallBold">Featured episode</ThemedText>
+              <ThemedText type="smallBold">{t('admin.featuredPlayer.episodeSection')}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                Pick any episode below. If it has a matched Spotify link (shown as a badge), the mini player
-                uses Spotify automatically — otherwise it falls back to YouTube.
+                {t('admin.featuredPlayer.episodeHint')}
               </ThemedText>
 
               {selectedPost ? (
@@ -179,28 +179,28 @@ export default function FeaturedPlayerScreen() {
                 </View>
               ) : contentId ? (
                 <ThemedText type="small" themeColor="textSecondary">
-                  Currently selected episode isn’t in the results below — search to find it, or pick another.
+                  {t('admin.featuredPlayer.selectedNotInResults')}
                 </ThemedText>
               ) : null}
 
               {selectedHasBothPlatforms ? (
                 <View style={styles.section}>
                   <ThemedText type="small" themeColor="textSecondary">
-                    This episode has both Spotify and YouTube. Choose which one to feature:
+                    {t('admin.featuredPlayer.bothPlatformsHint')}
                   </ThemedText>
                   <View style={styles.modeRow}>
                     <CategoryChip
-                      label="Auto (Spotify first)"
+                      label={t('admin.featuredPlayer.autoSpotifyFirst')}
                       selected={preferredPlatform == null}
                       onPress={() => setPreferredPlatform(null)}
                     />
                     <CategoryChip
-                      label="Spotify"
+                      label={t('admin.featuredPlayer.spotify')}
                       selected={preferredPlatform === 'SPOTIFY'}
                       onPress={() => setPreferredPlatform('SPOTIFY')}
                     />
                     <CategoryChip
-                      label="YouTube"
+                      label={t('admin.featuredPlayer.youtube')}
                       selected={preferredPlatform === 'YOUTUBE'}
                       onPress={() => setPreferredPlatform('YOUTUBE')}
                     />
@@ -211,7 +211,7 @@ export default function FeaturedPlayerScreen() {
               <TextInput
                 value={search}
                 onChangeText={setSearch}
-                placeholder="Search episodes..."
+                placeholder={t('admin.featuredPlayer.searchPlaceholder')}
                 placeholderTextColor={theme.textMuted}
                 style={[styles.searchInput, { color: theme.textPrimary, borderColor: theme.border, backgroundColor: theme.surface }]}
               />
@@ -231,7 +231,7 @@ export default function FeaturedPlayerScreen() {
                     ))}
                     {posts.length === 0 ? (
                       <ThemedText type="small" themeColor="textSecondary" style={styles.emptyHint}>
-                        No episodes found.
+                        {t('admin.featuredPlayer.noEpisodesFound')}
                       </ThemedText>
                     ) : null}
                   </View>
@@ -245,7 +245,7 @@ export default function FeaturedPlayerScreen() {
                       {searching ? (
                         <ActivityIndicator color={theme.primary} />
                       ) : (
-                        <Text style={[styles.loadMoreText, { color: theme.textPrimary }]}>Load more</Text>
+                        <Text style={[styles.loadMoreText, { color: theme.textPrimary }]}>{t('admin.featuredPlayer.loadMore')}</Text>
                       )}
                     </Pressable>
                   ) : null}
@@ -255,7 +255,7 @@ export default function FeaturedPlayerScreen() {
           </>
         ) : null}
 
-        <PrimaryButton title="Save" loading={submitting} disabled={!canSave} onPress={handleSave} />
+        <PrimaryButton title={t('common.save')} loading={submitting} disabled={!canSave} onPress={handleSave} />
       </ScrollView>
     </ThemedView>
   );
@@ -279,6 +279,7 @@ function EpisodeThumbnail({ post }: { post: Post }) {
 // Spotify when both exist; see PodcastFeaturedContentResolver).
 function EpisodeRow({ post, selected, onPress }: { post: Post; selected: boolean; onPress: () => void }) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const hasSpotify = post.platforms?.some((p) => p.platform === 'SPOTIFY');
   const hasYoutube = post.platforms?.some((p) => p.platform === 'YOUTUBE') || Boolean(post.youtubeVideoId);
 
@@ -302,12 +303,12 @@ function EpisodeRow({ post, selected, onPress }: { post: Post; selected: boolean
           ) : null}
           {hasSpotify ? (
             <View style={[styles.platformPill, { borderColor: theme.spotify }]}>
-              <Text style={[styles.platformPillText, { color: theme.spotify }]}>Spotify</Text>
+              <Text style={[styles.platformPillText, { color: theme.spotify }]}>{t('admin.featuredPlayer.spotify')}</Text>
             </View>
           ) : null}
           {hasYoutube ? (
             <View style={[styles.platformPill, { borderColor: theme.youtube }]}>
-              <Text style={[styles.platformPillText, { color: theme.youtube }]}>YouTube</Text>
+              <Text style={[styles.platformPillText, { color: theme.youtube }]}>{t('admin.featuredPlayer.youtube')}</Text>
             </View>
           ) : null}
         </View>

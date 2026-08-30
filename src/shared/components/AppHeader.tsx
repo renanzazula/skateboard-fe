@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MAX_CONTENT_WIDTH, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 
 /**
  * The one header every screen renders, so the bar is the same height across
@@ -30,6 +31,7 @@ type Props = {
 
 export function AppHeader({ title, subtitle, showBack = false, children }: Props) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
   // Same guard as PodcastPostScreen: router.back() is a no-op when this screen
@@ -52,7 +54,7 @@ export function AppHeader({ title, subtitle, showBack = false, children }: Props
             style={styles.back}
             hitSlop={8}
             accessibilityRole="button"
-            accessibilityLabel="Back">
+            accessibilityLabel={t('common.back')}>
             <ArrowLeft size={22} color={theme.textPrimary} />
           </Pressable>
         ) : null}

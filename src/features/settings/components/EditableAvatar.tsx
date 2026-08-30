@@ -8,6 +8,7 @@ import { setProfile } from '@/features/account/hooks/useProfile';
 import { isBffError } from '@/shared/api/errors';
 import { ImageUploadDialog, type ProcessedImageAsset } from '@/shared/components/image-upload';
 import { useTheme } from '@/shared/hooks/use-theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 import { showAlert } from '@/shared/utils/alert';
 
 const AVATAR_SIZE = 60;
@@ -31,6 +32,7 @@ type Props = {
  */
 export function EditableAvatar({ imageUrl, initials, onUploaded }: Props) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const { uploadProfilePicture, submitting } = useAccountActions();
   const [dialogVisible, setDialogVisible] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
@@ -53,7 +55,7 @@ export function EditableAvatar({ imageUrl, initials, onUploaded }: Props) {
       setProfile(updated);
       onUploaded();
     } catch (actionError) {
-      showAlert('Could not update profile picture', isBffError(actionError) ? actionError.message : 'Try again.');
+      showAlert(t('settings.profilePictureError'), isBffError(actionError) ? actionError.message : t('common.tryAgain'));
     }
   };
 
@@ -64,7 +66,7 @@ export function EditableAvatar({ imageUrl, initials, onUploaded }: Props) {
         disabled={submitting}
         style={styles.wrapper}
         accessibilityRole="button"
-        accessibilityLabel="Change profile picture">
+        accessibilityLabel={t('settings.changeProfilePicture')}>
         <View style={[styles.avatar, { backgroundColor: theme.primary }]}>
           {showImage ? (
             <Image
@@ -90,7 +92,7 @@ export function EditableAvatar({ imageUrl, initials, onUploaded }: Props) {
 
       <ImageUploadDialog
         visible={dialogVisible}
-        title="Profile picture"
+        title={t('settings.profilePicture')}
         constraints={{ aspectRatio: 1, outputWidth: OUTPUT_SIZE, outputHeight: OUTPUT_SIZE }}
         onCancel={() => setDialogVisible(false)}
         onConfirm={handleConfirm}

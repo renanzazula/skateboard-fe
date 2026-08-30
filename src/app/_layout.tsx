@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AuthProvider, useAuth } from '@/core/auth';
 import { AppConfigProvider } from '@/core/config';
+import { I18nProvider, useLanguageReady } from '@/core/i18n';
 import { AnimatedSplashOverlay } from '@/shared/components/animated-icon';
 import { RouteErrorFallback } from '@/shared/components/RouteErrorFallback';
 
@@ -25,9 +26,11 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AppConfigProvider>
-        <AuthProvider>
-          <RootNavigator fontsLoaded={fontsLoaded} />
-        </AuthProvider>
+        <I18nProvider>
+          <AuthProvider>
+            <RootNavigator fontsLoaded={fontsLoaded} />
+          </AuthProvider>
+        </I18nProvider>
       </AppConfigProvider>
     </GestureHandlerRootView>
   );
@@ -35,7 +38,8 @@ export default function RootLayout() {
 
 function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
   const { status } = useAuth();
-  const ready = status !== 'loading' && fontsLoaded;
+  const languageReady = useLanguageReady();
+  const ready = status !== 'loading' && fontsLoaded && languageReady;
 
   return (
     <NavigationThemeProvider value={DarkTheme}>

@@ -35,10 +35,7 @@ export default function PodcastAdminScreen() {
     if (syncing) return;
     try {
       const result = await triggerSync();
-      showAlert(
-        t('common.success'),
-        t('podcast.syncSuccess').replace('{created}', String(result.created ?? 0))
-      );
+      showAlert(t('common.success'), t('podcast.syncSuccess', { created: result.created ?? 0 }));
     } catch (syncError) {
       showAlert(t('common.error'), isBffError(syncError) ? syncError.message : t('podcast.syncFailed'));
     }
@@ -51,7 +48,7 @@ export default function PodcastAdminScreen() {
             key="sync"
             icon={RefreshCw}
             title={syncing ? t('podcast.syncing') : t('podcast.syncNow')}
-            subtitle="Import new episodes and playlists from YouTube"
+            subtitle={t('podcast.syncSubtitle')}
             onPress={handleSync}
             disabled={syncing}
             trailing={{ type: 'chevron' }}
@@ -64,7 +61,7 @@ export default function PodcastAdminScreen() {
             key="categories"
             icon={ListOrdered}
             title={t('podcast.manageCategories')}
-            subtitle="Rename, reorder & pick the default category"
+            subtitle={t('podcast.manageCategoriesSubtitle')}
             onPress={() => router.push('/settings/manage-categories')}
             trailing={{ type: 'chevron' }}
           />,
@@ -74,12 +71,12 @@ export default function PodcastAdminScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <SettingsHeader title="Podcast sync" />
+      <SettingsHeader title={t('podcast.syncTitle')} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <ThemedText type="small" themeColor="textSecondary">
-          Administrative actions for the Podcast tab.
+          {t('podcast.adminActions')}
         </ThemedText>
-        <SettingsSection label="Podcast">{rows}</SettingsSection>
+        <SettingsSection label={t('tabs.podcast')}>{rows}</SettingsSection>
       </ScrollView>
     </ThemedView>
   );

@@ -16,6 +16,7 @@ import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
 import { RADII, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 
 type Step = 'source' | 'preview' | 'crop' | 'processing' | 'error';
 
@@ -27,12 +28,12 @@ type Props = {
   onConfirm: (asset: ProcessedImageAsset) => void;
 };
 
-const REJECTION_MESSAGES: Record<string, string> = {
-  unsupported_type: 'That file type is not supported.',
-  file_too_large: 'That image is too large.',
-  resolution_too_small: 'That image is too small.',
-  resolution_too_large: 'That image is too large.',
-};
+const REJECTION_KEYS = {
+  unsupported_type: 'imageUpload.rejectedUnsupportedType',
+  file_too_large: 'imageUpload.rejectedTooLarge',
+  resolution_too_small: 'imageUpload.rejectedTooSmall',
+  resolution_too_large: 'imageUpload.rejectedTooLarge',
+} as const satisfies Record<string, string>;
 
 function saveFormatFor(mimeType: string | null | undefined): SaveFormat {
   if (mimeType === 'image/png') return SaveFormat.PNG;
@@ -97,8 +98,9 @@ async function processAsset(
  * resolution) — e.g. `{ aspectRatio: 1 }` for a profile picture, a wider
  * ratio for a login background.
  */
-export function ImageUploadDialog({ visible, title = 'Choose image', constraints, onCancel, onConfirm }: Props) {
+export function ImageUploadDialog({ visible, title, constraints, onCancel, onConfirm }: Props) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const { pickFromLibrary, pickFromCamera } = useImageSource(constraints);
   const cropperRef = useRef<ImageCropperHandle>(null);
@@ -129,9 +131,10 @@ export function ImageUploadDialog({ visible, title = 'Choose image', constraints
 
   const handlePickError = (err: unknown) => {
     if (err instanceof ImageSourceRejectedError) {
-      setErrorMessage(REJECTION_MESSAGES[err.reason] ?? 'That image could not be used.');
+      const key = REJECTION_KEYS[err.reason as keyof typeof REJECTION_KEYS];
+      setErrorMessage(key ? t(key) : t('imageUpload.couldNotUse'));
     } else {
-      setErrorMessage(err instanceof Error ? err.message : 'Could not select an image.');
+      setErrorMessage(err instanceof Error ? err.message : t('imageUpload.couldNotSelect'));
     }
     setStep('error');
   };
@@ -145,7 +148,7 @@ export function ImageUploadDialog({ visible, title = 'Choose image', constraints
       reset();
       onConfirm(processed);
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'Could not process that image.');
+      setErrorMessage(err instanceof Error ? err.message : t('imageUpload.couldNotProcess'));
       setStep('error');
     }
   };
@@ -159,14 +162,20 @@ export function ImageUploadDialog({ visible, title = 'Choose image', constraints
         <ThemedView style={styles.backdrop}>
           <ThemedView type="surface" style={[styles.card, { width: cardWidth, borderColor: theme.border }]}>
             <ThemedText type="subtitle" style={styles.title}>
-              {title}
+              {title ?? t('imageUpload.defaultTitle')}
             </ThemedText>
 
             {step === 'source' ? (
               <View style={styles.sourceActions}>
-                <PrimaryButton title="Choose from Library" onPress={() => pickFromLibrary().then(handlePicked).catch(handlePickError)} />
-                <SecondaryButton title="Take Photo" onPress={() => pickFromCamera().then(handlePicked).catch(handlePickError)} />
-                <SecondaryButton title="Cancel" onPress={handleCancel} />
+                <PrimaryButton
+                  title={t('imageUpload.chooseFromLibrary')}
+                  onPress={() => pickFromLibrary().then(handlePicked).catch(handlePickError)}
+                />
+                <SecondaryButton
+                  title={t('imageUpload.takePhoto')}
+                  onPress={() => pickFromCamera().then(handlePicked).catch(handlePickError)}
+                />
+                <SecondaryButton title={t('common.cancel')} onPress={handleCancel} />
               </View>
             ) : null}
 
@@ -174,8 +183,8 @@ export function ImageUploadDialog({ visible, title = 'Choose image', constraints
               <View>
                 <Image source={{ uri: asset.uri }} style={{ width: cropAreaSize, height: cropAreaSize, borderRadius: RADII.control }} contentFit="contain" />
                 <View style={styles.footerActions}>
-                  <SecondaryButton title="Retake" onPress={reset} />
-                  <PrimaryButton title="Use Photo" onPress={handleUsePhoto} />
+                  <SecondaryButton title={t('imageUpload.retake')} onPress={reset} />
+                  <PrimaryButton title={t('imageUpload.usePhoto')} onPress={handleUsePhoto} />
                 </View>
               </View>
             ) : null}
@@ -192,8 +201,8 @@ export function ImageUploadDialog({ visible, title = 'Choose image', constraints
                   containerHeight={Math.min(cropAreaSize, windowHeight * 0.5)}
                 />
                 <View style={styles.footerActions}>
-                  <SecondaryButton title="Retake" onPress={reset} />
-                  <PrimaryButton title="Use Photo" onPress={handleUsePhoto} />
+                  <SecondaryButton title={t('imageUpload.retake')} onPress={reset} />
+                  <PrimaryButton title={t('imageUpload.usePhoto')} onPress={handleUsePhoto} />
                 </View>
               </View>
             ) : null}
@@ -202,7 +211,7 @@ export function ImageUploadDialog({ visible, title = 'Choose image', constraints
               <View style={styles.processing}>
                 <ActivityIndicator color={theme.primary} />
                 <ThemedText type="small" themeColor="textSecondary">
-                  Processing…
+                  {t('imageUpload.processing')}
                 </ThemedText>
               </View>
             ) : null}
@@ -213,8 +222,8 @@ export function ImageUploadDialog({ visible, title = 'Choose image', constraints
                   {errorMessage}
                 </ThemedText>
                 <View style={styles.footerActions}>
-                  <SecondaryButton title="Cancel" onPress={handleCancel} />
-                  <PrimaryButton title="Try Again" onPress={reset} />
+                  <SecondaryButton title={t('common.cancel')} onPress={handleCancel} />
+                  <PrimaryButton title={t('imageUpload.tryAgain')} onPress={reset} />
                 </View>
               </View>
             ) : null}

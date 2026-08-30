@@ -8,26 +8,28 @@ import { SettingsRow } from '@/features/settings/components/SettingsRow';
 import { SettingsSection } from '@/features/settings/components/SettingsSection';
 import { ThemedView } from '@/shared/components/themed-view';
 import { Spacing } from '@/shared/constants/theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 
 export default function NotificationsScreen() {
   const { profile } = useProfile();
   const { preferences, setPushEnabled, setNewPodcastEnabled } = useNotificationPreferences();
+  const { t } = useTranslation();
 
   return (
     <ThemedView style={styles.container}>
-      <SettingsHeader title="Notifications" handle={profile?.username ? `@${profile.username}` : undefined} />
+      <SettingsHeader title={t('settings.notifications')} handle={profile?.username ? `@${profile.username}` : undefined} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <SettingsSection label="Alerts">
+        <SettingsSection label={t('settings.alerts')}>
           <SettingsRow
             icon={Bell}
-            title="Push notifications"
-            subtitle="Receive notifications"
+            title={t('settings.pushNotifications')}
+            subtitle={t('settings.pushNotificationsSubtitle')}
             trailing={{ type: 'switch', value: preferences?.pushEnabled ?? false, onChange: setPushEnabled }}
           />
           <SettingsRow
             icon={Mic}
-            title="New podcasts"
-            subtitle="Notify me when a new podcast is published"
+            title={t('settings.newPodcasts')}
+            subtitle={t('settings.newPodcastsSubtitle')}
             trailing={{ type: 'switch', value: preferences?.newPodcastEnabled ?? false, onChange: setNewPodcastEnabled }}
           />
         </SettingsSection>

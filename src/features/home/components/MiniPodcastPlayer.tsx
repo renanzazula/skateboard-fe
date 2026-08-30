@@ -9,6 +9,7 @@ import { extractSpotifyInfo } from '@/features/podcast/services/spotify';
 import { ThemedText } from '@/shared/components/themed-text';
 import { RADII, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 
 // Loaded lazily so the web bundle never executes native-only modules — same
 // pattern as PodcastEpisodeDetail's Spotify WebView.
@@ -88,6 +89,7 @@ function embedHeightFor(playbackType: string | undefined, width: number): number
  */
 export function MiniPodcastPlayer({ content }: Props) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [embedWidth, setEmbedWidth] = useState(0);
   const embed = resolveEmbed(content);
@@ -109,7 +111,7 @@ export function MiniPodcastPlayer({ content }: Props) {
         style={styles.bar}
         onPress={() => setExpanded((v) => !v)}
         accessibilityRole="button"
-        accessibilityLabel={expanded ? 'Collapse featured player' : 'Expand featured player'}
+        accessibilityLabel={expanded ? t('home.collapsePlayer') : t('home.expandPlayer')}
       >
         <View style={[styles.artwork, { backgroundColor: theme.surface }]}>
           {content.thumbnailUrl ? (

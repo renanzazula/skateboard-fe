@@ -7,6 +7,7 @@ import { EditableAvatar } from '@/features/settings/components/EditableAvatar';
 import { Badge } from '@/shared/components/Badge';
 import { Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 
 // Any of the authorities that unlock the Administration sub-screen counts as
 // "admin" for the pill — see settings/administration.tsx and (tabs)/settings
@@ -38,10 +39,11 @@ type Props = {
  */
 export function ProfileCard({ onPress }: Props) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const { email, hasAuthority } = useAuth();
   const { profile, isLoading, refresh } = useProfile();
 
-  const displayName = profile?.displayName || profile?.username || 'Skater';
+  const displayName = profile?.displayName || profile?.username || t('settings.skater');
   const isAdmin = ADMIN_AUTHORITIES.some(hasAuthority);
 
   return (
@@ -74,9 +76,9 @@ export function ProfileCard({ onPress }: Props) {
 
       <View style={styles.metaRow}>
         <Text style={[styles.email, { color: theme.textSecondary }]} numberOfLines={1}>
-          {email ?? 'No email on file'}
+          {email ?? t('settings.noEmail')}
         </Text>
-        <Badge label={isAdmin ? 'ADMIN' : 'MEMBER'} />
+        <Badge label={isAdmin ? t('settings.adminBadge') : t('settings.memberBadge')} />
       </View>
     </Pressable>
   );

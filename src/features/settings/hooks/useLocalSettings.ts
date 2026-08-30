@@ -1,38 +1,18 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { useCallback, useEffect, useState } from 'react';
 
+import { setLanguage } from '@/core/i18n/languageStore';
 import { secureStorage } from '@/core/storage/secureStorage';
+import { useTranslation } from '@/shared/hooks/useTranslation';
+import { LANGUAGE_FLAGS, LANGUAGE_LABELS, LANGUAGES, type Language } from '@/shared/locales';
 import { showAlert } from '@/shared/utils/alert';
 
-export type LanguageCode = 'en' | 'es' | 'pt';
+// Language now lives in core/i18n's store (so useTranslation can read it too);
+// re-exported here since the Settings screen imports these from this hook.
+export type LanguageCode = Language;
+export { LANGUAGE_FLAGS, LANGUAGE_LABELS, LANGUAGES };
 
-const LANGUAGE_STORAGE_KEY = 'skateboard.settings.language';
 const WIFI_ONLY_STORAGE_KEY = 'skateboard.settings.downloadWifiOnly';
-
-export const LANGUAGES: LanguageCode[] = ['en', 'es', 'pt'];
-export const LANGUAGE_LABELS: Record<LanguageCode, string> = {
-  en: 'English',
-  es: 'Español',
-  pt: 'Português',
-};
-
-/**
- * Regional-indicator pairs, which every iOS and Android version renders as a
- * flag. Portuguese flies the Brazilian flag rather than Portugal's: the show
- * is Brazilian and its episodes are in pt-BR.
- *
- * Windows renders these as letter pairs ("GB") instead of flags, so the label
- * beside them is what carries the meaning — never show a flag on its own.
- */
-export const LANGUAGE_FLAGS: Record<LanguageCode, string> = {
-  en: '🇬🇧',
-  es: '🇪🇸',
-  pt: '🇧🇷',
-};
-
-function isLanguageCode(value: string | null): value is LanguageCode {
-  return value === 'en' || value === 'es' || value === 'pt';
-}
 
 function formatBytes(bytes: number) {
   if (bytes < 1024) {
@@ -66,7 +46,7 @@ async function directorySize(uri: string): Promise<number> {
 
 /** Language / cache / Wi-Fi-only / storage-usage local preferences — shared by Settings home (Language row) and Data & storage. */
 export function useLocalSettings() {
-  const [language, setLanguage] = useState<LanguageCode>('en');
+  const { t, language } = useTranslation();
   const [downloadWifiOnly, setDownloadWifiOnly] = useState(false);
   const [storageUsage, setStorageUsage] = useState('0 B');
   const [isCalculatingStorage, setIsCalculatingStorage] = useState(true);
@@ -81,22 +61,15 @@ export function useLocalSettings() {
 
   useEffect(() => {
     (async () => {
-      const [storedLanguage, storedDownloadWifiOnly] = await Promise.all([
-        secureStorage.getItem(LANGUAGE_STORAGE_KEY),
-        secureStorage.getItem(WIFI_ONLY_STORAGE_KEY),
-      ]);
-
-      if (isLanguageCode(storedLanguage)) {
-        setLanguage(storedLanguage);
-      }
+      const storedDownloadWifiOnly = await secureStorage.getItem(WIFI_ONLY_STORAGE_KEY);
       setDownloadWifiOnly(storedDownloadWifiOnly === 'true');
       await refreshStorageUsage();
     })();
   }, [refreshStorageUsage]);
 
+  // Persistence + subscriber fan-out both happen in the i18n store.
   const selectLanguage = useCallback((next: LanguageCode) => {
     setLanguage(next);
-    secureStorage.setItem(LANGUAGE_STORAGE_KEY, next).catch(() => {});
   }, []);
 
   const toggleDownloadWifiOnly = useCallback((next: boolean) => {
@@ -106,14 +79,14 @@ export function useLocalSettings() {
 
   const clearCache = useCallback(async () => {
     if (!FileSystem.cacheDirectory) {
-      showAlert('Clear cache', 'No cache directory is available on this platform.');
+      showAlert(t('settings.clearCache'), t('settings.clearCacheNoDir'));
       return;
     }
 
-    showAlert('Clear cache', 'Clear local cached files? Backend user data will not be changed.', [
-      { text: 'Cancel', style: 'cancel' },
+    showAlert(t('settings.clearCache'), t('settings.clearCacheMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Clear',
+        text: t('settings.clear'),
         style: 'destructive',
         onPress: async () => {
           const entries = await FileSystem.readDirectoryAsync(FileSystem.cacheDirectory!).catch(() => []);
@@ -126,7 +99,7 @@ export function useLocalSettings() {
         },
       },
     ]);
-  }, [refreshStorageUsage]);
+  }, [refreshStorageUsage, t]);
 
   return {
     language,
