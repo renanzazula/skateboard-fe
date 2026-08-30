@@ -9,10 +9,12 @@ import { SettingsRow } from '@/features/settings/components/SettingsRow';
 import { SettingsSection } from '@/features/settings/components/SettingsSection';
 import { ThemedView } from '@/shared/components/themed-view';
 import { Spacing } from '@/shared/constants/theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 
 export default function AdministrationScreen() {
   const { hasAuthority } = useAuth();
   const { profile } = useProfile();
+  const { t } = useTranslation();
 
   const canManageBranding = hasAuthority('FUNC_TAB_SETTINGS_BRANDING');
   const canConfigureHomeCategories = hasAuthority('FUNC_HOME_CATEGORY_CONFIG');
@@ -25,14 +27,14 @@ export default function AdministrationScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <SettingsHeader title="Administration" handle={profile?.username ? `@${profile.username}` : undefined} />
+      <SettingsHeader title={t('admin.administration.title')} handle={profile?.username ? `@${profile.username}` : undefined} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <SettingsSection label="Configuration">
+        <SettingsSection label={t('admin.administration.sectionConfiguration')}>
         {canManageBranding ? (
           <SettingsRow
             icon={Palette}
-            title="Branding"
-            subtitle="Manage login background, app logo & assets"
+            title={t('admin.administration.branding')}
+            subtitle={t('admin.administration.brandingSubtitle')}
             onPress={() => router.push('/settings/branding')}
             trailing={{ type: 'chevron' }}
           />
@@ -40,8 +42,8 @@ export default function AdministrationScreen() {
         {canConfigureHomeCategories ? (
           <SettingsRow
             icon={Home}
-            title="Home Video Categories"
-            subtitle="Choose which categories appear on the Home dashboard"
+            title={t('admin.administration.homeCategories')}
+            subtitle={t('admin.administration.homeCategoriesSubtitle')}
             onPress={() => router.push('/settings/home-categories')}
             trailing={{ type: 'chevron' }}
           />
@@ -49,8 +51,8 @@ export default function AdministrationScreen() {
         {canConfigureFeaturedPlayer ? (
           <SettingsRow
             icon={Music}
-            title="Featured Player"
-            subtitle="Pick the episode featured on the Home dashboard"
+            title={t('admin.administration.featuredPlayer')}
+            subtitle={t('admin.administration.featuredPlayerSubtitle')}
             onPress={() => router.push('/settings/featured-player')}
             trailing={{ type: 'chevron' }}
           />
@@ -58,8 +60,8 @@ export default function AdministrationScreen() {
         {canAdministerPodcast ? (
           <SettingsRow
             icon={Mic}
-            title="Podcast sync"
-            subtitle="Sync now & manage categories"
+            title={t('admin.administration.podcastSync')}
+            subtitle={t('admin.administration.podcastSyncSubtitle')}
             onPress={() => router.push('/settings/podcast-admin')}
             trailing={{ type: 'chevron' }}
           />

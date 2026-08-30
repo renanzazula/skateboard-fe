@@ -17,6 +17,7 @@ import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
 import { MAX_CONTENT_WIDTH, RADII, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 import { showAlert } from '@/shared/utils/alert';
 
 // README_HOME_DASHBOARD.md §22.9: admin-only screen controlling which video
@@ -27,6 +28,7 @@ import { showAlert } from '@/shared/utils/alert';
 export default function HomeCategoriesScreen() {
   const theme = useTheme();
   const { hasAuthority } = useAuth();
+  const { t } = useTranslation();
   const { submitting, getConfig, updateConfig } = useHomeCategoryAdmin();
   const { categories, isLoading: categoriesLoading, error: categoriesError, refresh: refreshCategories } =
     useCategories();
@@ -79,9 +81,9 @@ export default function HomeCategoriesScreen() {
   const handleSave = async () => {
     try {
       await updateConfig(mode, mode === 'SELECTED' ? Array.from(selectedSlugs) : []);
-      showAlert('Saved', 'Home video categories updated.');
+      showAlert(t('admin.homeCategories.savedTitle'), t('admin.homeCategories.savedMessage'));
     } catch (saveError) {
-      showAlert('Could not save', isBffError(saveError) ? saveError.message : 'Try again.');
+      showAlert(t('admin.homeCategories.saveError'), isBffError(saveError) ? saveError.message : t('common.tryAgain'));
     }
   };
 
@@ -92,7 +94,7 @@ export default function HomeCategoriesScreen() {
   if (isLoading) {
     return (
       <ThemedView style={styles.container}>
-        <SettingsHeader title="Home Video Categories" />
+        <SettingsHeader title={t('admin.homeCategories.title')} />
         <ActivityIndicator style={styles.loading} color={theme.primary} />
       </ThemedView>
     );
@@ -101,24 +103,23 @@ export default function HomeCategoriesScreen() {
   if (error) {
     return (
       <ThemedView style={styles.container}>
-        <SettingsHeader title="Home Video Categories" />
-        <ErrorBanner message={isBffError(error) ? error.message : 'Could not load Home categories.'} onRetry={handleRetry} />
+        <SettingsHeader title={t('admin.homeCategories.title')} />
+        <ErrorBanner message={isBffError(error) ? error.message : t('admin.homeCategories.loadError')} onRetry={handleRetry} />
       </ThemedView>
     );
   }
 
   return (
     <ThemedView style={styles.container}>
-      <SettingsHeader title="Home Video Categories" />
+      <SettingsHeader title={t('admin.homeCategories.title')} />
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedText type="default" themeColor="textSecondary" style={styles.hint}>
-          Choose which video categories can appear on the Home dashboard. Videos from disabled categories
-          are only hidden from Home — nothing is deleted, and other screens are unaffected.
+          {t('admin.homeCategories.hint')}
         </ThemedText>
 
         <View style={styles.modeRow}>
-          <CategoryChip label="All categories" selected={mode === 'ALL'} onPress={() => setMode('ALL')} />
-          <CategoryChip label="Selected categories" selected={mode === 'SELECTED'} onPress={() => setMode('SELECTED')} />
+          <CategoryChip label={t('admin.homeCategories.allCategories')} selected={mode === 'ALL'} onPress={() => setMode('ALL')} />
+          <CategoryChip label={t('admin.homeCategories.selectedCategories')} selected={mode === 'SELECTED'} onPress={() => setMode('SELECTED')} />
         </View>
 
         {mode === 'SELECTED' ? (
@@ -137,13 +138,13 @@ export default function HomeCategoriesScreen() {
             ))}
             {!canSave ? (
               <ThemedText type="small" themeColor="destructive" style={styles.validationHint}>
-                Select at least one category.
+                {t('admin.homeCategories.selectAtLeastOne')}
               </ThemedText>
             ) : null}
           </View>
         ) : null}
 
-        <PrimaryButton title="Save" loading={submitting} disabled={!canSave} onPress={handleSave} />
+        <PrimaryButton title={t('common.save')} loading={submitting} disabled={!canSave} onPress={handleSave} />
       </ScrollView>
     </ThemedView>
   );

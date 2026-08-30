@@ -17,6 +17,7 @@ import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
 import { RADII, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 import { showAlert } from '@/shared/utils/alert';
 
 const PREVIEW_HEIGHT = 140;
@@ -37,6 +38,7 @@ async function pickImage(): Promise<ImagePicker.ImagePickerAsset | null> {
 export default function BrandingScreen() {
   const { hasAuthority } = useAuth();
   const theme = useTheme();
+  const { t } = useTranslation();
   const admin = useBrandingAdmin();
   const [config, setConfig] = useState<BrandingConfig | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,7 +58,7 @@ export default function BrandingScreen() {
       setLoginTitleInput(data.loginTitle ?? '');
       setLoginMessageInput(data.loginMessage ?? '');
     } catch (loadError) {
-      showAlert('Could not load branding', isBffError(loadError) ? loadError.message : 'Try again.');
+      showAlert(t('admin.branding.loadError'), isBffError(loadError) ? loadError.message : t('common.tryAgain'));
     } finally {
       setLoading(false);
     }
@@ -78,7 +80,7 @@ export default function BrandingScreen() {
       setConfig(updated);
       refreshAppConfig();
     } catch (saveError) {
-      showAlert('Could not save login text', isBffError(saveError) ? saveError.message : 'Try again.');
+      showAlert(t('admin.branding.saveLoginTextError'), isBffError(saveError) ? saveError.message : t('common.tryAgain'));
     }
   };
 
@@ -90,7 +92,7 @@ export default function BrandingScreen() {
       setConfig(updated);
       refreshAppConfig();
     } catch (uploadError) {
-      showAlert('Could not update login background', isBffError(uploadError) ? uploadError.message : 'Try again.');
+      showAlert(t('admin.branding.uploadLoginBackgroundError'), isBffError(uploadError) ? uploadError.message : t('common.tryAgain'));
     }
   };
 
@@ -100,7 +102,7 @@ export default function BrandingScreen() {
       setConfig(updated);
       refreshAppConfig();
     } catch (removeError) {
-      showAlert('Could not remove login background', isBffError(removeError) ? removeError.message : 'Try again.');
+      showAlert(t('admin.branding.removeLoginBackgroundError'), isBffError(removeError) ? removeError.message : t('common.tryAgain'));
     }
   };
 
@@ -112,7 +114,7 @@ export default function BrandingScreen() {
       setConfig(updated);
       refreshAppConfig();
     } catch (uploadError) {
-      showAlert('Could not update app logo', isBffError(uploadError) ? uploadError.message : 'Try again.');
+      showAlert(t('admin.branding.uploadAppLogoError'), isBffError(uploadError) ? uploadError.message : t('common.tryAgain'));
     }
   };
 
@@ -122,7 +124,7 @@ export default function BrandingScreen() {
       setConfig(updated);
       refreshAppConfig();
     } catch (removeError) {
-      showAlert('Could not remove app logo', isBffError(removeError) ? removeError.message : 'Try again.');
+      showAlert(t('admin.branding.removeAppLogoError'), isBffError(removeError) ? removeError.message : t('common.tryAgain'));
     }
   };
 
@@ -134,7 +136,7 @@ export default function BrandingScreen() {
       setNewAssetName('');
       setNewAssetPromptVisible(true);
     } catch (pickError) {
-      showAlert('Could not pick image', isBffError(pickError) ? pickError.message : 'Try again.');
+      showAlert(t('admin.branding.pickImageError'), isBffError(pickError) ? pickError.message : t('common.tryAgain'));
     }
   };
 
@@ -147,7 +149,7 @@ export default function BrandingScreen() {
       setPendingAsset(null);
       await refresh();
     } catch (uploadError) {
-      showAlert('Could not add branding asset', isBffError(uploadError) ? uploadError.message : 'Try again.');
+      showAlert(t('admin.branding.addAssetError'), isBffError(uploadError) ? uploadError.message : t('common.tryAgain'));
     }
   };
 
@@ -159,24 +161,24 @@ export default function BrandingScreen() {
       await admin.replaceBrandingAsset(asset.id, picked);
       await refresh();
     } catch (replaceError) {
-      showAlert('Could not replace branding asset', isBffError(replaceError) ? replaceError.message : 'Try again.');
+      showAlert(t('admin.branding.replaceAssetError'), isBffError(replaceError) ? replaceError.message : t('common.tryAgain'));
     }
   };
 
   const handleRemoveAsset = (asset: BrandingAsset) => {
     if (!asset.id) return;
     const assetId = asset.id;
-    showAlert('Remove branding asset', `Remove "${asset.name}"? This cannot be undone.`, [
-      { text: 'Cancel', style: 'cancel' },
+    showAlert(t('admin.branding.removeAssetTitle'), t('admin.branding.removeAssetMessage', { name: asset.name ?? '' }), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Remove',
+        text: t('common.remove'),
         style: 'destructive',
         onPress: async () => {
           try {
             await admin.removeBrandingAsset(assetId);
             await refresh();
           } catch (removeError) {
-            showAlert('Could not remove branding asset', isBffError(removeError) ? removeError.message : 'Try again.');
+            showAlert(t('admin.branding.removeAssetError'), isBffError(removeError) ? removeError.message : t('common.tryAgain'));
           }
         },
       },
@@ -186,7 +188,7 @@ export default function BrandingScreen() {
   if (loading) {
     return (
       <ThemedView style={styles.screen}>
-        <SettingsHeader title="Branding" />
+        <SettingsHeader title={t('admin.branding.title')} />
         <ThemedView style={styles.loading}>
           <ActivityIndicator color={theme.primary} />
         </ThemedView>
@@ -196,34 +198,34 @@ export default function BrandingScreen() {
 
   return (
     <ThemedView style={styles.screen}>
-      <SettingsHeader title="Branding" />
+      <SettingsHeader title={t('admin.branding.title')} />
       <View style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <Section title="Login text">
+          <Section title={t('admin.branding.loginTextSection')}>
             <TextField
               value={loginTitleInput}
               onChangeText={setLoginTitleInput}
-              placeholder="Title (shown above the logo)"
+              placeholder={t('admin.branding.loginTitlePlaceholder')}
             />
             <TextField
               value={loginMessageInput}
               onChangeText={setLoginMessageInput}
-              placeholder="Message (defaults to “Sign in to continue”)"
+              placeholder={t('admin.branding.loginMessagePlaceholder')}
             />
             <PrimaryButton
-              title="Save"
+              title={t('common.save')}
               onPress={handleSaveLoginText}
               loading={admin.submitting}
               disabled={admin.submitting}
             />
           </Section>
 
-          <Section title="Login background">
+          <Section title={t('admin.branding.loginBackgroundSection')}>
             <Preview uri={config?.loginBackgroundUrl} />
             <View style={styles.actionRow}>
               <View style={styles.actionButton}>
                 <PrimaryButton
-                  title={config?.loginBackgroundUrl ? 'Replace' : 'Upload'}
+                  title={config?.loginBackgroundUrl ? t('admin.branding.replace') : t('admin.branding.upload')}
                   onPress={handleUploadLoginBackground}
                   loading={admin.submitting}
                   disabled={admin.submitting}
@@ -235,12 +237,12 @@ export default function BrandingScreen() {
             </View>
           </Section>
 
-          <Section title="App logo">
+          <Section title={t('admin.branding.appLogoSection')}>
             <Preview uri={config?.appLogoUrl} contentFit="contain" />
             <View style={styles.actionRow}>
               <View style={styles.actionButton}>
                 <PrimaryButton
-                  title={config?.appLogoUrl ? 'Replace' : 'Upload'}
+                  title={config?.appLogoUrl ? t('admin.branding.replace') : t('admin.branding.upload')}
                   onPress={handleUploadAppLogo}
                   loading={admin.submitting}
                   disabled={admin.submitting}
@@ -251,7 +253,7 @@ export default function BrandingScreen() {
           </Section>
 
           <Section
-            title="Branding assets"
+            title={t('admin.branding.brandingAssetsSection')}
             action={
               <Pressable onPress={handleAddAssetPress} disabled={admin.submitting} hitSlop={8}>
                 <Plus color={theme.primary} size={20} />
@@ -271,7 +273,7 @@ export default function BrandingScreen() {
                   </View>
                   <Pressable onPress={() => handleReplaceAsset(asset)} disabled={admin.submitting} hitSlop={8}>
                     <ThemedText type="small" themeColor="primary">
-                      Replace
+                      {t('admin.branding.replace')}
                     </ThemedText>
                   </Pressable>
                   <Pressable onPress={() => handleRemoveAsset(asset)} disabled={admin.submitting} hitSlop={8}>
@@ -281,7 +283,7 @@ export default function BrandingScreen() {
               ))
             ) : (
               <ThemedText type="small" themeColor="textSecondary">
-                No branding assets yet.
+                {t('admin.branding.noAssets')}
               </ThemedText>
             )}
           </Section>
@@ -291,18 +293,18 @@ export default function BrandingScreen() {
       <Modal animationType="slide" transparent visible={newAssetPromptVisible} onRequestClose={() => setNewAssetPromptVisible(false)}>
         <ThemedView style={styles.modalBackdrop}>
           <ThemedView type="surface" style={styles.modalCard}>
-            <ThemedText type="subtitle">Name this asset</ThemedText>
+            <ThemedText type="subtitle">{t('admin.branding.newAssetTitle')}</ThemedText>
             <TextField
               value={newAssetName}
               onChangeText={setNewAssetName}
-              placeholder="e.g. home-header"
+              placeholder={t('admin.branding.newAssetPlaceholder')}
               autoCapitalize="none"
               autoCorrect={false}
             />
             <View style={styles.actionRow}>
               <View style={styles.actionButton}>
                 <PrimaryButton
-                  title="Cancel"
+                  title={t('common.cancel')}
                   onPress={() => {
                     setNewAssetPromptVisible(false);
                     setPendingAsset(null);
@@ -311,7 +313,7 @@ export default function BrandingScreen() {
               </View>
               <View style={styles.actionButton}>
                 <PrimaryButton
-                  title="Add"
+                  title={t('common.add')}
                   onPress={handleConfirmNewAsset}
                   loading={admin.submitting}
                   disabled={admin.submitting || !newAssetName.trim()}
@@ -339,6 +341,7 @@ function Section({ title, action, children }: { title: string; action?: ReactNod
 
 function Preview({ uri, contentFit = 'cover' }: { uri?: string | null; contentFit?: 'cover' | 'contain' }) {
   const theme = useTheme();
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.previewWrapper, { borderColor: theme.border, backgroundColor: theme.surface }]}>
@@ -346,7 +349,7 @@ function Preview({ uri, contentFit = 'cover' }: { uri?: string | null; contentFi
         <Image source={{ uri }} style={styles.preview} contentFit={contentFit} />
       ) : (
         <ThemedText type="small" themeColor="textSecondary">
-          Not set — using the app default
+          {t('admin.branding.notSet')}
         </ThemedText>
       )}
     </View>
@@ -354,11 +357,11 @@ function Preview({ uri, contentFit = 'cover' }: { uri?: string | null; contentFi
 }
 
 function RemoveButton({ onPress, disabled }: { onPress: () => void; disabled?: boolean }) {
-  const theme = useTheme();
+  const { t } = useTranslation();
   return (
     <Pressable onPress={onPress} disabled={disabled} style={styles.removeButton} hitSlop={8}>
       <ThemedText type="smallBold" themeColor="destructive">
-        Remove
+        {t('common.remove')}
       </ThemedText>
     </Pressable>
   );

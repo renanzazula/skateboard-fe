@@ -13,6 +13,7 @@ import { SecondaryButton } from '@/shared/components/SecondaryButton';
 import { TextField } from '@/shared/components/TextField';
 import { MAX_CONTENT_WIDTH, RADII, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 import { showAlert } from '@/shared/utils/alert';
 
 /**
@@ -25,6 +26,7 @@ import { showAlert } from '@/shared/utils/alert';
 export default function ManageCategoriesScreen() {
   const colors = useTheme();
   const { hasAuthority } = useAuth();
+  const { t } = useTranslation();
   const { submitting, listCategories, renameCategory, reorderCategories, setDefaultCategory } =
     useCategoryAdmin();
 
@@ -65,7 +67,7 @@ export default function ManageCategoriesScreen() {
       setCategories(await reorderCategories(next.map((c) => c.id!)));
     } catch (reorderError) {
       setCategories(previous);
-      showAlert('Could not reorder', isBffError(reorderError) ? reorderError.message : 'Try again.');
+      showAlert(t('admin.manageCategories.reorderError'), isBffError(reorderError) ? reorderError.message : t('common.tryAgain'));
     }
   };
 
@@ -75,7 +77,7 @@ export default function ManageCategoriesScreen() {
       await setDefaultCategory(category.id!);
       setCategories((prev) => prev.map((c) => ({ ...c, default: c.id === category.id })));
     } catch (defaultError) {
-      showAlert('Could not set default', isBffError(defaultError) ? defaultError.message : 'Try again.');
+      showAlert(t('admin.manageCategories.setDefaultError'), isBffError(defaultError) ? defaultError.message : t('common.tryAgain'));
     }
   };
 
@@ -91,14 +93,14 @@ export default function ManageCategoriesScreen() {
       setCategories((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
       setRenaming(null);
     } catch (renameError) {
-      showAlert('Could not rename', isBffError(renameError) ? renameError.message : 'Try again.');
+      showAlert(t('admin.manageCategories.renameError'), isBffError(renameError) ? renameError.message : t('common.tryAgain'));
     }
   };
 
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <SettingsHeader title="Manage categories" />
+        <SettingsHeader title={t('admin.manageCategories.title')} />
         <ActivityIndicator style={styles.loading} color={colors.primary} />
       </View>
     );
@@ -107,8 +109,8 @@ export default function ManageCategoriesScreen() {
   if (error) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <SettingsHeader title="Manage categories" />
-        <ErrorBanner message={isBffError(error) ? error.message : 'Could not load categories.'} onRetry={load} />
+        <SettingsHeader title={t('admin.manageCategories.title')} />
+        <ErrorBanner message={isBffError(error) ? error.message : t('admin.manageCategories.loadError')} onRetry={load} />
       </View>
     );
   }
@@ -124,21 +126,21 @@ export default function ManageCategoriesScreen() {
         style={styles.rowBody}
         onPress={() => openRename(item)}
         accessibilityRole="button"
-        accessibilityLabel={`Rename ${item.name}`}>
+        accessibilityLabel={t('admin.manageCategories.renameAccessibilityLabel', { name: item.name ?? '' })}>
         <View style={styles.nameLine}>
           <Text style={[styles.name, { color: colors.textPrimary }]} numberOfLines={1}>
             {item.name}
           </Text>
           {item.default ? (
             <View style={[styles.defaultTag, { backgroundColor: colors.primarySoft }]}>
-              <Text style={[styles.defaultTagText, { color: colors.primary }]}>DEFAULT</Text>
+              <Text style={[styles.defaultTagText, { color: colors.primary }]}>{t('admin.manageCategories.defaultTag')}</Text>
             </View>
           ) : null}
         </View>
         <Text style={[styles.meta, { color: colors.textSecondary }]} numberOfLines={1}>
-          {item.postCount ?? 0} episodes
-          {item.customName ? ` · YouTube: ${item.youtubeName}` : ''}
-          {!item.enabled ? ' · playlist removed' : ''}
+          {t('admin.manageCategories.episodesCount', { count: item.postCount ?? 0 })}
+          {item.customName ? ` · ${t('admin.manageCategories.youtubeName', { name: item.youtubeName ?? '' })}` : ''}
+          {!item.enabled ? ` · ${t('admin.manageCategories.playlistRemoved')}` : ''}
         </Text>
       </Pressable>
 
@@ -148,7 +150,11 @@ export default function ManageCategoriesScreen() {
           disabled={submitting || !!item.default}
           hitSlop={6}
           accessibilityRole="button"
-          accessibilityLabel={item.default ? `${item.name} is the default` : `Make ${item.name} the default`}>
+          accessibilityLabel={
+            item.default
+              ? t('admin.manageCategories.isDefaultAccessibilityLabel', { name: item.name ?? '' })
+              : t('admin.manageCategories.makeDefaultAccessibilityLabel', { name: item.name ?? '' })
+          }>
           <Star
             size={20}
             color={item.default ? colors.primary : colors.textMuted}
@@ -160,7 +166,7 @@ export default function ManageCategoriesScreen() {
           disabled={submitting || index === 0}
           hitSlop={6}
           accessibilityRole="button"
-          accessibilityLabel={`Move ${item.name} up`}>
+          accessibilityLabel={t('admin.manageCategories.moveUpAccessibilityLabel', { name: item.name ?? '' })}>
           <ChevronUp size={22} color={index === 0 ? colors.textDisabled : colors.textPrimary} />
         </Pressable>
         <Pressable
@@ -168,7 +174,7 @@ export default function ManageCategoriesScreen() {
           disabled={submitting || index === categories.length - 1}
           hitSlop={6}
           accessibilityRole="button"
-          accessibilityLabel={`Move ${item.name} down`}>
+          accessibilityLabel={t('admin.manageCategories.moveDownAccessibilityLabel', { name: item.name ?? '' })}>
           <ChevronDown
             size={22}
             color={index === categories.length - 1 ? colors.textDisabled : colors.textPrimary}
@@ -180,7 +186,7 @@ export default function ManageCategoriesScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <SettingsHeader title="Manage categories" />
+      <SettingsHeader title={t('admin.manageCategories.title')} />
       <FlatList
         data={categories}
         keyExtractor={(item) => item.id!}
@@ -189,9 +195,7 @@ export default function ManageCategoriesScreen() {
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListHeaderComponent={
           <Text style={[styles.hint, { color: colors.textSecondary }]}>
-            Tap a category to rename it. The starred category is what the Podcast tab opens on.
-            Categories mirror the channel&apos;s YouTube playlists — new playlists appear at the
-            bottom until you move them.
+            {t('admin.manageCategories.hint')}
           </Text>
         }
       />
@@ -199,23 +203,23 @@ export default function ManageCategoriesScreen() {
       <Modal visible={renaming !== null} transparent animationType="fade" onRequestClose={() => setRenaming(null)}>
         <View style={styles.modalBackdrop}>
           <View style={[styles.modalCard, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Rename category</Text>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>{t('admin.manageCategories.renameTitle')}</Text>
             <TextField
-              label={renaming?.customName ? `YouTube title: ${renaming.youtubeName}` : undefined}
+              label={renaming?.customName ? t('admin.manageCategories.youtubeTitleLabel', { name: renaming.youtubeName ?? '' }) : undefined}
               value={renameValue}
               onChangeText={setRenameValue}
               placeholder={renaming?.youtubeName ?? ''}
               autoFocus
             />
             <PrimaryButton
-              title="Save"
+              title={t('common.save')}
               loading={submitting}
               onPress={() => submitRename(renameValue.trim() ? renameValue.trim() : null)}
             />
             {renaming?.customName ? (
-              <SecondaryButton title="Reset to YouTube title" onPress={() => submitRename(null)} />
+              <SecondaryButton title={t('admin.manageCategories.resetToYoutubeTitle')} onPress={() => submitRename(null)} />
             ) : null}
-            <SecondaryButton title="Cancel" onPress={() => setRenaming(null)} />
+            <SecondaryButton title={t('common.cancel')} onPress={() => setRenaming(null)} />
           </View>
         </View>
       </Modal>
