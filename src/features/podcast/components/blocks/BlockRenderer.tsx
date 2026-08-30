@@ -1,14 +1,81 @@
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useState } from 'react';
-import { ExternalLink, ImageOff, Music, Quote, Video } from 'lucide-react-native';
+import { ExternalLink, ImageOff, Music, Quote } from 'lucide-react-native';
 import { Image, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Block } from '@/shared/types/posts';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 
+// Loaded lazily so the web bundle never executes native-only modules — the
+// same pattern MiniPodcastPlayer and EpisodeVideoPlayer use.
+//
+// YouTube needs its own component rather than a WebView on the /embed/ URL:
+// the iframe player validates the referring origin, and a WebView pointed
+// straight at that URL presents none, so it refuses with "Error 153" instead
+// of playing. react-native-youtube-iframe hosts the player in a document with
+// a real base URL. Vimeo performs no such check, so a plain WebView is enough.
+let RNWebView: any = null;
+let YoutubePlayer: any = null;
+if (Platform.OS !== 'web') {
+  RNWebView = require('react-native-webview').WebView;
+  YoutubePlayer = require('react-native-youtube-iframe').default;
+}
+
+/** A video is 16:9; anything else letterboxes or crops the frame. */
+const VIDEO_ASPECT_RATIO = 16 / 9;
+
 // Ported from rork-standard-app/expo's modules/feed/components/BlockRenderer.tsx.
 type Props = { block: Block };
+
+/**
+ * An embed block, playing in place on both platforms.
+ *
+ * Native used to render a "Watch on YouTube" card that left the app, while
+ * web embedded the real player — so the same post read as two different
+ * things depending on where it was opened. It plays inline everywhere now.
+ *
+ * Height comes from the measured width so the frame keeps 16:9 at any width,
+ * rather than the fixed height the web branch has always used.
+ */
+function EmbedBlockView({ platform, id }: { platform: 'youtube' | 'vimeo'; id: string }) {
+  const [width, setWidth] = useState(0);
+  const height = width > 0 ? Math.round(width / VIDEO_ASPECT_RATIO) : undefined;
+
+  if (Platform.OS === 'web') {
+    const embedUrl =
+      platform === 'youtube'
+        ? `https://www.youtube.com/embed/${id}`
+        : `https://player.vimeo.com/video/${id}`;
+    return (
+      <View style={styles.embedContainer}>
+        {/* @ts-ignore web-only element */}
+        <iframe src={embedUrl} style={{ width: '100%', height: 300, border: 'none' }} allowFullScreen />
+      </View>
+    );
+  }
+
+  return (
+    <View
+      style={styles.embedContainer}
+      onLayout={(event) => {
+        const next = event.nativeEvent.layout.width;
+        setWidth((current) => (current === next ? current : next));
+      }}>
+      {height === undefined ? null : platform === 'youtube' ? (
+        <YoutubePlayer height={height} videoId={id} />
+      ) : (
+        <RNWebView
+          source={{ uri: `https://player.vimeo.com/video/${id}` }}
+          style={{ height }}
+          scrollEnabled={false}
+          allowsInlineMediaPlayback
+          allowsFullscreenVideo
+        />
+      )}
+    </View>
+  );
+}
 
 function NativeVideoBlock({ url }: { url: string }) {
   const player = useVideoPlayer(url);
@@ -88,34 +155,8 @@ export function BlockRenderer({ block }: Props) {
         </View>
       );
 
-    case 'embed': {
-      const embedUrl =
-        block.data.platform === 'youtube'
-          ? `https://www.youtube.com/embed/${block.data.id}`
-          : `https://player.vimeo.com/video/${block.data.id}`;
-      if (Platform.OS === 'web') {
-        return (
-          <View style={styles.embedContainer}>
-            {/* @ts-ignore web-only element */}
-            <iframe src={embedUrl} style={{ width: '100%', height: 300, border: 'none' }} allowFullScreen />
-          </View>
-        );
-      }
-      const label = block.data.platform === 'youtube' ? 'YouTube' : 'Vimeo';
-      const watchUrl =
-        block.data.platform === 'youtube'
-          ? `https://www.youtube.com/watch?v=${block.data.id}`
-          : `https://vimeo.com/${block.data.id}`;
-      return (
-        <Pressable
-          style={[styles.linkCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-          onPress={() => Linking.openURL(watchUrl)}>
-          <Video size={24} color={colors.primary} />
-          <Text style={[styles.linkTitle, { color: colors.textPrimary }]}>Watch on {label}</Text>
-          <ExternalLink size={16} color={colors.textSecondary} />
-        </Pressable>
-      );
-    }
+    case 'embed':
+      return <EmbedBlockView platform={block.data.platform} id={block.data.id} />;
 
     case 'spotify': {
       const embedSrc = `https://open.spotify.com/embed/${block.data.spotifyType}/${block.data.spotifyId}`;
