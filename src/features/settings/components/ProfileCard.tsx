@@ -46,14 +46,6 @@ export function ProfileCard({ onPress }: Props) {
   const displayName = profile?.displayName || profile?.username || t('settings.skater');
   const isAdmin = ADMIN_AUTHORITIES.some(hasAuthority);
 
-  const handleSaveUsername = async (next: string) => {
-    if (next.length < 3) {
-      throw new Error(t('settings.usernameMinLength', { min: 3 }));
-    }
-    await changeUsername(next);
-    await refresh();
-  };
-
   return (
     <Pressable
       onPress={onPress}
@@ -69,12 +61,6 @@ export function ProfileCard({ onPress }: Props) {
         <EditableAvatar imageUrl={profile?.profilePictureUrl ?? null} initials={isLoading ? '' : initials(displayName)} onUploaded={refresh} />
 
         <View style={styles.info}>
-          <InlineEditField
-            label={t('settings.username')}
-            value={profile?.username ?? ''}
-            placeholder={t('settings.usernamePlaceholder')}
-            onSave={handleSaveUsername}
-          />
           <Text style={[styles.name, { color: theme.textPrimary }]} numberOfLines={1}>
             {displayName}
           </Text>

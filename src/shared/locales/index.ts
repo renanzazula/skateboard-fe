@@ -17,6 +17,18 @@ export const LANGUAGE_LABELS: Record<Language, string> = {
   pt: 'Português',
 };
 
+// Regional-indicator pairs, which every iOS and Android version renders as a
+// flag. Portuguese flies the Brazilian flag rather than Portugal's: the show
+// is Brazilian and its episodes are in pt-BR.
+//
+// Windows renders these as letter pairs ("GB") instead of flags, so the label
+// beside them is what carries the meaning — never show a flag on its own.
+export const LANGUAGE_FLAGS: Record<Language, string> = {
+  en: '🇬🇧',
+  es: '🇪🇸',
+  pt: '🇧🇷',
+};
+
 export function isLanguage(value: string | null | undefined): value is Language {
   return value === 'en' || value === 'es' || value === 'pt';
 }

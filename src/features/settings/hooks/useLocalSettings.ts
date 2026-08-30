@@ -4,13 +4,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { setLanguage } from '@/core/i18n/languageStore';
 import { secureStorage } from '@/core/storage/secureStorage';
 import { useTranslation } from '@/shared/hooks/useTranslation';
-import { LANGUAGE_LABELS, LANGUAGES, type Language } from '@/shared/locales';
+import { LANGUAGE_FLAGS, LANGUAGE_LABELS, LANGUAGES, type Language } from '@/shared/locales';
 import { showAlert } from '@/shared/utils/alert';
 
 // Language now lives in core/i18n's store (so useTranslation can read it too);
 // re-exported here since the Settings screen imports these from this hook.
 export type LanguageCode = Language;
-export { LANGUAGE_LABELS, LANGUAGES };
+export { LANGUAGE_FLAGS, LANGUAGE_LABELS, LANGUAGES };
 
 const WIFI_ONLY_STORAGE_KEY = 'skateboard.settings.downloadWifiOnly';
 

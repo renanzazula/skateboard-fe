@@ -32,48 +32,11 @@ type HomeSection = {
   rows: HomeRow[];
 };
 
-function LanguageModal({
-  visible,
-  language,
-  onClose,
-  onSelect,
-}: {
-  visible: boolean;
-  language: LanguageCode;
-  onClose: () => void;
-  onSelect: (language: LanguageCode) => void;
-}) {
-  const { t } = useTranslation();
-  return (
-    <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose}>
-      <ThemedView style={styles.modalBackdrop}>
-        <ThemedView type="surface" style={styles.modalCard}>
-          <ThemedText type="subtitle">{t('settings.language')}</ThemedText>
-          {LANGUAGES.map((option) => (
-            <Pressable key={option} onPress={() => onSelect(option)} style={styles.optionRow}>
-              <ThemedText type="smallBold" themeColor={language === option ? 'primary' : 'textPrimary'}>
-                {language === option ? '✓ ' : '   '}
-                {LANGUAGE_LABELS[option]}
-              </ThemedText>
-            </Pressable>
-          ))}
-          <Pressable onPress={onClose} style={styles.closeButton}>
-            <ThemedText type="smallBold" themeColor="primary">
-              {t('common.close')}
-            </ThemedText>
-          </Pressable>
-        </ThemedView>
-      </ThemedView>
-    </Modal>
-  );
-}
-
 export default function SettingsScreen() {
   const { logout, hasAuthority } = useAuth();
   const { profile } = useProfile();
-  const { language, selectLanguage } = useLocalSettings();
+  const { language } = useLocalSettings();
   const { t } = useTranslation();
-  const [languageModalVisible, setLanguageModalVisible] = useState(false);
 
   const canAccessAdministration =
     hasAuthority('FUNC_TAB_SETTINGS_BRANDING') ||
