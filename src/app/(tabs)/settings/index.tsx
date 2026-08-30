@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { Bell, Database, Globe, Info, LogOut, Shield, User, type LucideIcon } from 'lucide-react-native';
-import { useCallback, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { useCallback } from 'react';
+import { ScrollView, StyleSheet } from 'react-native';
 
 import { useAuth } from '@/core/auth';
 import { useProfile } from '@/features/account/hooks/useProfile';
@@ -9,10 +9,9 @@ import { ProfileCard } from '@/features/settings/components/ProfileCard';
 import { SettingsHeader } from '@/features/settings/components/SettingsHeader';
 import { SettingsRow, type SettingsRowTrailing } from '@/features/settings/components/SettingsRow';
 import { SettingsSection } from '@/features/settings/components/SettingsSection';
-import { LANGUAGE_LABELS, LANGUAGES, useLocalSettings, type LanguageCode } from '@/features/settings/hooks/useLocalSettings';
-import { ThemedText } from '@/shared/components/themed-text';
+import { LANGUAGE_FLAGS, LANGUAGE_LABELS, useLocalSettings } from '@/features/settings/hooks/useLocalSettings';
 import { ThemedView } from '@/shared/components/themed-view';
-import { RADII, Spacing } from '@/shared/constants/theme';
+import { Spacing } from '@/shared/constants/theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import { showAlert } from '@/shared/utils/alert';
 
@@ -82,13 +81,6 @@ export default function SettingsScreen() {
     hasAuthority('FUNC_PODCAST_IMPORT_JSON') ||
     hasAuthority('FUNC_PODCAST_MANAGE_CATEGORIES');
 
-  const selectLanguageAndClose = useCallback(
-    (next: LanguageCode) => {
-      selectLanguage(next);
-      setLanguageModalVisible(false);
-    },
-    [selectLanguage]
-  );
 
   const handleLogout = useCallback(() => {
     showAlert(t('settings.logOut'), t('settings.logOutConfirmMessage'), [
@@ -132,8 +124,13 @@ export default function SettingsScreen() {
           key: 'language',
           icon: Globe,
           title: t('settings.language'),
-          onPress: () => setLanguageModalVisible(true),
-          trailing: { type: 'value', text: LANGUAGE_LABELS[language], tone: 'accent', chevron: true },
+          onPress: () => router.push('/settings/language'),
+          trailing: {
+            type: 'value',
+            text: `${LANGUAGE_FLAGS[language]}  ${LANGUAGE_LABELS[language]}`,
+            tone: 'accent',
+            chevron: true,
+          },
         },
       ],
     },
@@ -189,7 +186,7 @@ export default function SettingsScreen() {
     <ThemedView style={styles.container}>
       <SettingsHeader title={t('settings.title')} handle={profile?.username ? `@${profile.username}` : undefined} showBack={false} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <ProfileCard />
+        <ProfileCard onPress={() => router.push('/settings/account')} />
 
         <ThemedView style={styles.rows}>
           {sections.map((section) => (
@@ -210,12 +207,6 @@ export default function SettingsScreen() {
         </ThemedView>
       </ScrollView>
 
-      <LanguageModal
-        visible={languageModalVisible}
-        language={language}
-        onClose={() => setLanguageModalVisible(false)}
-        onSelect={selectLanguageAndClose}
-      />
     </ThemedView>
   );
 }
@@ -229,24 +220,5 @@ const styles = StyleSheet.create({
   },
   rows: {
     paddingHorizontal: Spacing.three,
-  },
-  modalBackdrop: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    padding: Spacing.four,
-  },
-  modalCard: {
-    borderRadius: RADII.card,
-    gap: Spacing.three,
-    padding: Spacing.four,
-  },
-  optionRow: {
-    minHeight: 48,
-    justifyContent: 'center',
-  },
-  closeButton: {
-    alignItems: 'center',
-    borderRadius: RADII.control,
-    paddingVertical: Spacing.three,
   },
 });

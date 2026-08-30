@@ -15,6 +15,7 @@ export default function SettingsLayout() {
       <Stack.Screen name="display-name" />
       <Stack.Screen name="notifications" />
       <Stack.Screen name="data-storage" />
+      <Stack.Screen name="language" />
       <Stack.Screen name="change-password" />
       <Stack.Screen name="administration" />
       <Stack.Screen name="branding" />

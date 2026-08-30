@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import { ChevronRight, type LucideIcon } from 'lucide-react-native';
+import { Check, ChevronRight, type LucideIcon } from 'lucide-react-native';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { Skeleton } from '@/features/settings/components/Skeleton';
@@ -15,6 +15,9 @@ export type SettingsRowTrailing =
   // style the spec calls out for Language.
   | { type: 'value'; text: string; loading?: boolean; chevron?: boolean; tone?: 'default' | 'accent' }
   | { type: 'switch'; value: boolean; onChange: (value: boolean) => void; disabled?: boolean }
+  // A row that is one option among several — Language. The unchecked rows
+  // reserve the same space so the labels don't shift when the choice moves.
+  | { type: 'check'; checked: boolean }
   | { type: 'none' };
 
 type Props = {
@@ -124,6 +127,14 @@ function Trailing({ trailing, onSwitchChange }: { trailing: SettingsRowTrailing;
     );
   }
 
+  if (trailing.type === 'check') {
+    return (
+      <View style={styles.trailing}>
+        {trailing.checked ? <Check color={theme.primary} size={18} strokeWidth={2.5} /> : <View style={styles.checkPlaceholder} />}
+      </View>
+    );
+  }
+
   if (trailing.type === 'chevron') {
     return (
       <View style={styles.trailing}>
@@ -154,6 +165,10 @@ const styles = StyleSheet.create({
   },
   // Without an icon there is no column to clear, so the label starts at the
   // row's own padding.
+  // Reserves the checked width so labels hold still as the choice moves.
+  checkPlaceholder: {
+    width: 18,
+  },
   textStackFlush: {
     marginLeft: 0,
   },
