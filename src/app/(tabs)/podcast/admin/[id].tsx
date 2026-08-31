@@ -45,6 +45,7 @@ export default function EditPodcastPostScreen() {
 
   return (
     <PostForm
+      mode="edit"
       initialValues={{
         title: post.title,
         coverUrl: post.coverUrl,
