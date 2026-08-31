@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import { ArrowLeft, Calendar, Clock, Mic, Pencil, Trash2 } from 'lucide-react-native';
-import { useState } from 'react';
-import { Image, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Animated, Image, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BlockRenderer } from '@/features/podcast/components/blocks/BlockRenderer';
@@ -38,6 +38,10 @@ const OVERLAY = {
 };
 
 const HERO_HEIGHT = 280;
+const FLOATING_BAR_INSET = 8;
+const FLOATING_BUTTON_SIZE = 40;
+/** How far the fade runs, ending as the hero's last pixel leaves the bar. */
+const HEADER_FADE_DISTANCE = 40;
 const DESCRIPTION_COLLAPSE_LENGTH = 180;
 
 type Props = {
@@ -78,6 +82,20 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
   const description = getDescription(post);
 
   const [expanded, setExpanded] = useState(false);
+
+  // The action bar is pinned so Back stays reachable at any scroll position,
+  // which means that once the hero scrolls past it the buttons sit on top of
+  // ordinary content — over the Spotify embed, over the title. A background
+  // fades in behind them as the hero leaves, so they land on a surface of
+  // their own instead of colliding with whatever is underneath.
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const headerHeight = insets.top + FLOATING_BAR_INSET * 2 + FLOATING_BUTTON_SIZE;
+  const fadeEnd = Math.max(1, HERO_HEIGHT - headerHeight);
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [Math.max(0, fadeEnd - HEADER_FADE_DISTANCE), fadeEnd],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
 
   // Episodes without a YouTube id can still carry a direct video file as a
   // `video` block — surface the first one in the hero player.
@@ -135,7 +153,10 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <Animated.ScrollView
+        contentContainerStyle={styles.scrollContent}
+        scrollEventThrottle={16}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}>
         <View style={styles.hero}>{renderHero()}</View>
 
         <View style={styles.body}>
@@ -229,9 +250,23 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
             {t('podcast.recordedOn', { date: publishDate })}
           </Text>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
 
-      <View style={[styles.floatingBar, { top: insets.top + 8 }]}>
+      {/* Painted before the bar so the buttons stay on top of it. */}
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.headerBackground,
+          {
+            height: headerHeight,
+            backgroundColor: colors.background,
+            borderBottomColor: colors.border,
+            opacity: headerOpacity,
+          },
+        ]}
+      />
+
+      <View style={[styles.floatingBar, { top: insets.top + FLOATING_BAR_INSET }]}>
         <FloatingButton onPress={onBack} label={t('podcast.back')}>
           <ArrowLeft size={20} color={OVERLAY.white} />
         </FloatingButton>
@@ -268,6 +303,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  headerBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
   floatingBar: {
     position: 'absolute',
     left: 14,
@@ -280,9 +322,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   floatingButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: FLOATING_BUTTON_SIZE,
+    height: FLOATING_BUTTON_SIZE,
+    borderRadius: FLOATING_BUTTON_SIZE / 2,
     backgroundColor: OVERLAY.scrimButton,
     alignItems: 'center',
     justifyContent: 'center',
