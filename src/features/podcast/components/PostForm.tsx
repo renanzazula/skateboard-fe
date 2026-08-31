@@ -276,7 +276,14 @@ export function PostForm({ initialValues, submitLabel, submitting, onSubmit, syn
       return;
     }
     const blocks = blockEditors.map(toBlock).filter((b): b is Block => b !== null);
-    if (blocks.length === 0) {
+    // A synced episode counts as having content: its description is what the
+    // detail screen renders, and it arrives with no blocks at all. Requiring a
+    // block regardless made every YouTube-synced episode unsaveable — a title,
+    // cover, status or social-link edit was rejected over content the post
+    // already had and the form cannot add, since the description is sync-owned
+    // and read-only here. Neither the BFF contract nor the domain requires
+    // blocks; only this check did.
+    if (blocks.length === 0 && !syncedDescription?.trim()) {
       showAlert(t('common.error'), t('feed.validationBlockRequired'));
       return;
     }
