@@ -38,6 +38,16 @@ interface PostFormProps {
    * as sync-owned, read-only), so there is nothing for onSubmit to send.
    */
   syncedDescription?: string | null;
+  /**
+   * 'create' refuses an empty post — the only thing the content rule was ever
+   * for. 'edit' does not: the post exists, the server requires no blocks
+   * (Create/UpdatePostRequest both require only [title, coverUrl]), and a
+   * synced episode carries its content in a description this form shows
+   * read-only and cannot add to. Blocking a title or status change on content
+   * the post already has, and the form cannot supply, made every synced
+   * episode unsaveable.
+   */
+  mode?: 'create' | 'edit';
 }
 
 type SocialLinkEditor = { url: string };
@@ -223,7 +233,7 @@ function BlockEditorRow({
   );
 }
 
-export function PostForm({ initialValues, submitLabel, submitting, onSubmit, syncedDescription }: PostFormProps) {
+export function PostForm({ initialValues, submitLabel, submitting, onSubmit, syncedDescription, mode = 'create' }: PostFormProps) {
   const theme = useTheme();
   const { t } = useTranslation();
   const [title, setTitle] = useState(initialValues?.title ?? '');
@@ -276,14 +286,7 @@ export function PostForm({ initialValues, submitLabel, submitting, onSubmit, syn
       return;
     }
     const blocks = blockEditors.map(toBlock).filter((b): b is Block => b !== null);
-    // A synced episode counts as having content: its description is what the
-    // detail screen renders, and it arrives with no blocks at all. Requiring a
-    // block regardless made every YouTube-synced episode unsaveable — a title,
-    // cover, status or social-link edit was rejected over content the post
-    // already had and the form cannot add, since the description is sync-owned
-    // and read-only here. Neither the BFF contract nor the domain requires
-    // blocks; only this check did.
-    if (blocks.length === 0 && !syncedDescription?.trim()) {
+    if (mode === 'create' && blocks.length === 0) {
       showAlert(t('common.error'), t('feed.validationBlockRequired'));
       return;
     }
