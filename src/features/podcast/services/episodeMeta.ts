@@ -36,7 +36,8 @@ export function youtubeThumbnail(id: string, quality: 'maxresdefault' | 'hqdefau
 // that is the authoritative episode id, not the post's position in the feed.
 export function getEpisodeNumber(post: Post): number | null {
   if (post.episodeNumber != null) return post.episodeNumber;
-  const match = post.title.match(/#(\d+)\s*$/) ?? post.title.match(/#(\d+)/);
+  // "#" and the digits are sometimes typed apart ("… Skateboard Podcast # 77").
+  const match = post.title.match(/#\s*(\d+)\s*$/) ?? post.title.match(/#\s*(\d+)/);
   return match ? parseInt(match[1], 10) : null;
 }
 
@@ -91,15 +92,37 @@ function hostOf(url: string): string | null {
 }
 
 /**
- * `@handle` for a profile URL whose path is exactly one segment — the shape
- * every platform here uses for a personal profile (instagram.com/renan,
- * tiktok.com/@renan, x.com/renan). A non-profile link (a specific post,
- * reel or video) carries extra path segments and intentionally falls
- * through to the platform label instead.
+ * First path segments that name a route rather than an account, so a link to
+ * a specific post/reel/video (instagram.com/p/…, youtube.com/watch, x.com/i/…)
+ * still falls through to the platform label instead of showing a route word
+ * as if it were a username.
+ */
+const NON_PROFILE_SEGMENTS = new Set([
+  'p', 'reel', 'reels', 'tv', 'stories', 'explore', 's', 'accounts', 'direct', // instagram
+  'watch', 'shorts', 'embed', 'playlist', 'channel', 'results', 'feed', 'hashtag', 'clip', // youtube
+  'video', 't', // tiktok, x short links
+  'i', 'home', 'search', 'intent', 'share', 'messages', 'notifications', 'settings', 'compose', // x
+  'groups', 'events', 'marketplace', 'pages', 'sharer', 'story.php', 'permalink.php', 'profile.php', // facebook
+]);
+
+/**
+ * `@handle` for a link that points at a personal profile. Reads the first path
+ * segment (instagram.com/renan, tiktok.com/@renan, x.com/renan) — extra
+ * segments after it (a locale, /reels, tracking params) are tolerated, since a
+ * pasted profile URL often carries them. `/c/name` and `/user/name` (YouTube)
+ * keep the name one level deeper. A route keyword or an all-numeric id is not a
+ * handle and falls through to the platform label.
  */
 function handleFromUrl(url: string): string | null {
-  const match = /^[a-z]+:\/\/[^/]+\/@?([A-Za-z0-9._]{1,40})\/?(?:[?#].*)?$/i.exec(url.trim());
-  return match ? match[1] : null;
+  const match = /^[a-z]+:\/\/[^/]+\/([^?#]*)/i.exec(url.trim());
+  if (!match) return null;
+  const segments = match[1].split('/').filter(Boolean);
+  let candidate = segments[0];
+  if ((candidate === 'c' || candidate === 'user') && segments[1]) candidate = segments[1];
+  candidate = (candidate ?? '').replace(/^@/, '');
+  if (!candidate || NON_PROFILE_SEGMENTS.has(candidate.toLowerCase())) return null;
+  if (!/^[A-Za-z0-9._-]{1,40}$/.test(candidate) || !/[A-Za-z]/.test(candidate)) return null;
+  return candidate;
 }
 
 /**

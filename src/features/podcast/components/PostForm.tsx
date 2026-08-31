@@ -1,5 +1,6 @@
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 
 import {
@@ -22,6 +23,13 @@ export interface PostFormValues {
   title: string;
   coverUrl: string;
   status: 'draft' | 'scheduled' | 'published';
+  /**
+   * ISO 8601 instant, e.g. "2022-07-04T22:39:39.000Z". The feed is ordered by
+   * this, so it's required on create; on edit it's pre-filled and sent back so
+   * the BFF keeps it (omitting it there would leave the stored value untouched
+   * anyway, but sending it keeps create/edit symmetric).
+   */
+  publishAt: string;
   blocks: Block[];
   socialMediaLinks?: SocialMediaLink[];
 }
@@ -223,6 +231,89 @@ function BlockEditorRow({
   );
 }
 
+/**
+ * Publish date + time, edited with the OS picker. `value` / `onChange` speak
+ * ISO 8601 UTC ("2022-07-04T22:39:39.000Z"). iOS shows an inline datetime
+ * picker; Android has no combined mode, so a tap opens the date picker and then
+ * the time picker; web falls back to <input type="datetime-local">.
+ */
+function DateTimeField({ value, onChange }: { value: string; onChange: (iso: string) => void }) {
+  const theme = useTheme();
+  const [androidStep, setAndroidStep] = useState<null | 'date' | 'time'>(null);
+
+  const date = useMemo(() => {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+  }, [value]);
+
+  if (Platform.OS === 'web') {
+    // datetime-local wants local wall-clock "YYYY-MM-DDTHH:mm", no zone.
+    const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    return (
+      <input
+        type="datetime-local"
+        value={local}
+        onChange={(e) => {
+          const next = new Date(e.target.value);
+          if (!Number.isNaN(next.getTime())) onChange(next.toISOString());
+        }}
+        style={{
+          padding: 12,
+          borderRadius: RADII.control,
+          border: `1px solid ${theme.border}`,
+          background: theme.background,
+          color: theme.textPrimary,
+          fontSize: 15,
+          colorScheme: 'light dark',
+        }}
+      />
+    );
+  }
+
+  if (Platform.OS === 'ios') {
+    return (
+      <DateTimePicker
+        value={date}
+        mode="datetime"
+        onChange={(_e: DateTimePickerEvent, next?: Date) => {
+          if (next) onChange(next.toISOString());
+        }}
+      />
+    );
+  }
+
+  // Android: tap to open date, then time.
+  const handleAndroidChange = (event: DateTimePickerEvent, next?: Date) => {
+    if (event.type !== 'set' || !next) {
+      setAndroidStep(null);
+      return;
+    }
+    const merged = new Date(date);
+    if (androidStep === 'date') {
+      merged.setFullYear(next.getFullYear(), next.getMonth(), next.getDate());
+      onChange(merged.toISOString());
+      setAndroidStep('time');
+    } else {
+      merged.setHours(next.getHours(), next.getMinutes(), 0, 0);
+      onChange(merged.toISOString());
+      setAndroidStep(null);
+    }
+  };
+
+  return (
+    <>
+      <Pressable onPress={() => setAndroidStep('date')}>
+        <ThemedView type="surface" style={[styles.input, { borderColor: theme.border }]}>
+          <ThemedText type="small">{date.toLocaleString()}</ThemedText>
+        </ThemedView>
+      </Pressable>
+      {androidStep ? (
+        <DateTimePicker value={date} mode={androidStep} onChange={handleAndroidChange} />
+      ) : null}
+    </>
+  );
+}
+
 export function PostForm({ initialValues, submitLabel, submitting, onSubmit, syncedDescription }: PostFormProps) {
   const theme = useTheme();
   const { t } = useTranslation();
@@ -230,6 +321,7 @@ export function PostForm({ initialValues, submitLabel, submitting, onSubmit, syn
   const [coverUrl, setCoverUrl] = useState(initialValues?.coverUrl ?? '');
   const [coverSource, setCoverSource] = useState<'url' | 'upload'>('url');
   const [status, setStatus] = useState<PostFormValues['status']>(initialValues?.status ?? 'published');
+  const [publishAt, setPublishAt] = useState(initialValues?.publishAt ?? new Date().toISOString());
   const [blockEditors, setBlockEditors] = useState<BlockEditor[]>(
     initialValues?.blocks?.map(blockToEditor) ?? []
   );
@@ -295,10 +387,16 @@ export function PostForm({ initialValues, submitLabel, submitting, onSubmit, syn
     }
     const socialMediaLinks: SocialMediaLink[] = socialLinks.map((l) => ({ url: l.url.trim() }));
 
+    if (Number.isNaN(new Date(publishAt).getTime())) {
+      showAlert(t('common.error'), t('feed.validationPublishDate'));
+      return;
+    }
+
     onSubmit({
       title: title.trim(),
       coverUrl: coverUrl.trim(),
       status,
+      publishAt,
       blocks,
       socialMediaLinks: socialMediaLinks.length > 0 ? socialMediaLinks : undefined,
     });
@@ -374,6 +472,9 @@ export function PostForm({ initialValues, submitLabel, submitting, onSubmit, syn
           );
         })}
       </ThemedView>
+
+      <ThemedText type="small">{t('feed.publishDate')}</ThemedText>
+      <DateTimeField value={publishAt} onChange={setPublishAt} />
 
       <ThemedText type="small" style={styles.sectionLabel}>
         {t('feed.socialMediaLinks')}

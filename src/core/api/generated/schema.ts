@@ -606,8 +606,11 @@ export interface components {
              * @enum {string}
              */
             status: "draft" | "scheduled" | "published";
-            /** Format: date-time */
-            publishAt?: string;
+            /**
+             * Format: date-time
+             * @description When the episode was (or is to be) published — the feed is ordered by it. Required: an episode without a publish date has no defined place in the feed.
+             */
+            publishAt: string;
             blocks?: {
                 [key: string]: unknown;
             }[];

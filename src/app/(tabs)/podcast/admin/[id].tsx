@@ -49,6 +49,9 @@ export default function EditPodcastPostScreen() {
         title: post.title,
         coverUrl: post.coverUrl,
         status: post.status,
+        // A legacy manually-authored post can have no publish date; the form
+        // then defaults to now and the admin sets the real one before saving.
+        publishAt: post.publishAt ?? undefined,
         blocks: post.blocks,
         socialMediaLinks: post.socialMediaLinks,
       }}
