@@ -91,6 +91,18 @@ function hostOf(url: string): string | null {
 }
 
 /**
+ * `@handle` for a profile URL whose path is exactly one segment — the shape
+ * every platform here uses for a personal profile (instagram.com/renan,
+ * tiktok.com/@renan, x.com/renan). A non-profile link (a specific post,
+ * reel or video) carries extra path segments and intentionally falls
+ * through to the platform label instead.
+ */
+function handleFromUrl(url: string): string | null {
+  const match = /^[a-z]+:\/\/[^/]+\/@?([A-Za-z0-9._]{1,40})\/?(?:[?#].*)?$/i.exec(url.trim());
+  return match ? match[1] : null;
+}
+
+/**
  * Every social link on the post, each with something to label it by.
  *
  * The detail screen used to render only Instagram, via getInstagramUrl — so a
@@ -107,9 +119,14 @@ export function getSocialLinks(post: Post): ResolvedSocialLink[] {
       const url = link.url.trim();
       const host = hostOf(url);
       const known = SOCIAL_PLATFORMS.find((platform) => host && platform.pattern.test(host));
+      const handle = handleFromUrl(url);
       return {
         url,
-        label: known?.label ?? link.platform?.trim() ?? host ?? url,
+        // A profile link's own @handle beats the generic platform name — it's
+        // what actually tells two Instagram chips apart. Falls back to the
+        // platform label (then the stored platform, then the domain) for a
+        // link to a specific post/video rather than a profile.
+        label: (handle && `@${handle}`) || known?.label || link.platform?.trim() || host || url,
         isInstagram: known?.label === 'Instagram',
       };
     });
