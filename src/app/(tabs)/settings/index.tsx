@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Bell, Database, Globe, Info, LogOut, Shield, User, type LucideIcon } from 'lucide-react-native';
+import { Bell, Database, Globe, Info, LogOut, Shield, User, Users, type LucideIcon } from 'lucide-react-native';
 import { useCallback } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 
@@ -42,7 +42,8 @@ export default function SettingsScreen() {
     hasAuthority('FUNC_TAB_SETTINGS_BRANDING') ||
     hasAuthority('FUNC_HOME_CATEGORY_CONFIG') ||
     hasAuthority('FUNC_PODCAST_IMPORT_JSON') ||
-    hasAuthority('FUNC_PODCAST_MANAGE_CATEGORIES');
+    hasAuthority('FUNC_PODCAST_MANAGE_CATEGORIES') ||
+    hasAuthority('FUNC_ABOUT_US_MANAGE');
 
 
   const handleLogout = useCallback(() => {
@@ -119,6 +120,14 @@ export default function SettingsScreen() {
       key: 'about',
       label: t('settings.sectionAbout'),
       rows: [
+        {
+          key: 'about-us',
+          icon: Users,
+          title: t('aboutUs.title'),
+          subtitle: t('aboutUs.settingsSubtitle'),
+          onPress: () => router.push('/settings/about-us'),
+          trailing: { type: 'chevron' },
+        },
         {
           key: 'about',
           icon: Info,

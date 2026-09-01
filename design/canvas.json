@@ -1,6 +1,9 @@
 {
   "artboards": [
-    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 390, "h": 1180, "title": "Featured player — yellow options" }
+    { "file": "Login.dc.html", "x": 0, "y": 0, "w": 390, "h": 844, "title": "Login" },
+    { "file": "Main.dc.html", "x": 490, "y": 0, "w": 390, "h": 844, "title": "Home" },
+    { "file": "Podcast.dc.html", "x": 980, "y": 0, "w": 390, "h": 920, "title": "Podcast" },
+    { "file": "Settings.dc.html", "x": 1470, "y": 0, "w": 390, "h": 890, "title": "Settings" }
   ],
   "launch": { "view": "focused", "file": "Main.dc.html" }
 }

@@ -3,10 +3,14 @@ import { useState } from 'react';
 import { ExternalLink, ImageOff, Music, Quote } from 'lucide-react-native';
 import { Image, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import type { Block } from '@/shared/types/posts';
+import type { ContentBlock } from '@/shared/types/content-blocks';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 
+// Ported from rork-standard-app/expo's modules/feed/components/BlockRenderer.tsx.
+// Originally lived under src/features/podcast; moved to shared/ when the About
+// Us page began reusing the same content-block model (shared/types/content-blocks.ts).
+//
 // Loaded lazily so the web bundle never executes native-only modules — the
 // same pattern MiniPodcastPlayer and EpisodeVideoPlayer use.
 //
@@ -25,8 +29,7 @@ if (Platform.OS !== 'web') {
 /** A video is 16:9; anything else letterboxes or crops the frame. */
 const VIDEO_ASPECT_RATIO = 16 / 9;
 
-// Ported from rork-standard-app/expo's modules/feed/components/BlockRenderer.tsx.
-type Props = { block: Block };
+type Props = { block: ContentBlock };
 
 /**
  * An embed block, playing in place on both platforms.
@@ -123,8 +126,38 @@ function ImageBlockView({ url, caption }: { url: string; caption?: string }) {
   );
 }
 
+/**
+ * A hero block — a wide image with an optional headline / subheadline drawn
+ * over its lower half. Used as the top section of the About Us page.
+ */
+function HeroBlockView({
+  imageUrl,
+  headline,
+  subheadline,
+}: {
+  imageUrl: string;
+  headline?: string;
+  subheadline?: string;
+}) {
+  const colors = useTheme();
+
+  return (
+    <View style={[styles.hero, { backgroundColor: colors.surface }]}>
+      {imageUrl ? <Image source={{ uri: imageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : null}
+      {headline || subheadline ? (
+        <View style={styles.heroTextWrap}>
+          {headline ? <Text style={styles.heroHeadline}>{headline}</Text> : null}
+          {subheadline ? <Text style={styles.heroSubheadline}>{subheadline}</Text> : null}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 export function BlockRenderer({ block }: Props) {
   const colors = useTheme();
+
+  if ('hidden' in block && block.hidden) return null;
 
   switch (block.type) {
     case 'text':
@@ -132,6 +165,15 @@ export function BlockRenderer({ block }: Props) {
 
     case 'image':
       return <ImageBlockView url={block.data.url} caption={block.data.caption} />;
+
+    case 'hero':
+      return (
+        <HeroBlockView
+          imageUrl={block.data.imageUrl}
+          headline={block.data.headline}
+          subheadline={block.data.subheadline}
+        />
+      );
 
     case 'video':
       if (Platform.OS === 'web') {
@@ -217,6 +259,8 @@ export function BlockRenderer({ block }: Props) {
       );
 
     default:
+      // `social-links` is rendered by the About Us page itself (it needs the
+      // platform-icon set), so it is intentionally not handled here.
       return null;
   }
 }
@@ -248,6 +292,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: 'center',
     marginTop: 6,
+  },
+  hero: {
+    width: '100%',
+    height: 240,
+    borderRadius: 12,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+    marginBottom: 16,
+  },
+  heroTextWrap: {
+    padding: 16,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    gap: 4,
+  },
+  heroHeadline: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  heroSubheadline: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    lineHeight: 20,
+    opacity: 0.9,
   },
   quoteBlock: {
     borderLeftWidth: 4,

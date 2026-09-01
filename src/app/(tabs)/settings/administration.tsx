@@ -1,5 +1,5 @@
 import { Redirect, router } from 'expo-router';
-import { Home, Mic, Music, Palette } from 'lucide-react-native';
+import { Home, Info, Mic, Music, Palette } from 'lucide-react-native';
 import { ScrollView, StyleSheet } from 'react-native';
 
 import { useAuth } from '@/core/auth';
@@ -20,8 +20,15 @@ export default function AdministrationScreen() {
   const canConfigureHomeCategories = hasAuthority('FUNC_HOME_CATEGORY_CONFIG');
   const canConfigureFeaturedPlayer = hasAuthority('FUNC_HOME_FEATURED_PLAYER_CONFIG');
   const canAdministerPodcast = hasAuthority('FUNC_PODCAST_IMPORT_JSON') || hasAuthority('FUNC_PODCAST_MANAGE_CATEGORIES');
+  const canManageAboutUs = hasAuthority('FUNC_ABOUT_US_MANAGE');
 
-  if (!canManageBranding && !canConfigureHomeCategories && !canConfigureFeaturedPlayer && !canAdministerPodcast) {
+  if (
+    !canManageBranding &&
+    !canConfigureHomeCategories &&
+    !canConfigureFeaturedPlayer &&
+    !canAdministerPodcast &&
+    !canManageAboutUs
+  ) {
     return <Redirect href="/settings" />;
   }
 
@@ -63,6 +70,15 @@ export default function AdministrationScreen() {
             title={t('admin.administration.podcastSync')}
             subtitle={t('admin.administration.podcastSyncSubtitle')}
             onPress={() => router.push('/settings/podcast-admin')}
+            trailing={{ type: 'chevron' }}
+          />
+        ) : null}
+        {canManageAboutUs ? (
+          <SettingsRow
+            icon={Info}
+            title={t('admin.administration.aboutUs')}
+            subtitle={t('admin.administration.aboutUsSubtitle')}
+            onPress={() => router.push('/settings/about-us-admin')}
             trailing={{ type: 'chevron' }}
           />
         ) : null}

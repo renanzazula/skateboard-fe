@@ -315,6 +315,64 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/about-us": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the published About Us page (any authenticated user)
+         * @description Reached from the Settings tab, so it is gated by FUNC_TAB_SETTINGS — the baseline authority every standard user holds.
+         */
+        get: operations["getAboutUs"];
+        /**
+         * Create or update the About Us page (admin only)
+         * @description Saves the single About Us page. `status: published` makes it visible on GET /api/about-us; `status: draft` keeps changes admin-only.
+         */
+        put: operations["updateAboutUs"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/about-us/admin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the About Us page including unpublished draft content (admin only) */
+        get: operations["getAboutUsAdmin"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/about-us/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload an image for use in an About Us content block (admin only) */
+        post: operations["uploadAboutUsImage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/config": {
         parameters: {
             query?: never;
@@ -823,6 +881,31 @@ export interface components {
             youtubeVideoId?: string | null;
             /** @description Category slug the video was fetched under (null in ALL mode). */
             category?: string | null;
+        };
+        /** @enum {string} */
+        AboutPageStatus: "draft" | "published";
+        AboutPageResponse: {
+            title: string;
+            subtitle?: string | null;
+            status: components["schemas"]["AboutPageStatus"];
+            /** @description Ordered array of typed content blocks — same opaque shape as PostResponse.blocks. The frontend's shared/types/content-blocks.ts carries the concrete union (text, image, gallery, quote, video, embed, link, spotify, hero, social-links); a block may carry an optional `hidden: true`. */
+            blocks?: {
+                [key: string]: unknown;
+            }[];
+            /** Format: date-time */
+            updatedAt?: string | null;
+            updatedBy?: string | null;
+        };
+        UpdateAboutPageRequest: {
+            title: string;
+            subtitle?: string | null;
+            status: components["schemas"]["AboutPageStatus"];
+            blocks?: {
+                [key: string]: unknown;
+            }[];
+        };
+        AboutImageResponse: {
+            url: string;
         };
         ErrorResponse: {
             status?: number;
@@ -1775,6 +1858,192 @@ export interface operations {
             };
             /** @description Not authenticated */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getAboutUs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The published About Us page */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AboutPageResponse"];
+                };
+            };
+            /** @description No About Us page has been published yet */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateAboutUs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAboutPageRequest"];
+            };
+        };
+        responses: {
+            /** @description About Us page saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AboutPageResponse"];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_ABOUT_US_MANAGE required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getAboutUsAdmin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The current About Us page (draft or published) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AboutPageResponse"];
+                };
+            };
+            /** @description No About Us page has been created yet */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_ABOUT_US_MANAGE required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    uploadAboutUsImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Image stored; returns its hosted URL */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AboutImageResponse"];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_ABOUT_US_MANAGE required */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700&display=swap">
+  <style>
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    a { color: #F5C518; } a:hover { color: #D9AE12; }
+  </style>
+</helmet>
+
+<div style="width: 390px; height: 844px; background: #0D0D0D; box-sizing: border-box; overflow: hidden; position: relative; display: flex; flex-direction: column; align-items: center;">
+  <div style="width: 100%; max-width: 480px; box-sizing: border-box; padding: 56px 24px 32px; display: flex; flex-direction: column; align-items: center;">
+
+    <div style="height: 96px; width: 96px; border-radius: 48px; background: #F5C518; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; flex-shrink: 0;">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#0D0D0D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="9" width="20" height="4" rx="2"/>
+        <circle cx="6" cy="17" r="2"/>
+        <circle cx="18" cy="17" r="2"/>
+        <line x1="6" y1="13" x2="6" y2="15"/>
+        <line x1="18" y1="13" x2="18" y2="15"/>
+      </svg>
+    </div>
+
+    <div style="width: 100%; text-align: center; font-family: 'Fraunces', serif; font-weight: 700; font-size: 40px; line-height: 46px; color: #F5F5F2;">Skateboard</div>
+
+    <div style="width: 100%; text-align: center; font-size: 16px; line-height: 24px; font-weight: 500; color: #8A8A86; margin-top: 8px; margin-bottom: 28px;">Sign in to continue</div>
+
+    <div style="width: 100%; display: flex; flex-direction: column; gap: 16px;">
+
+      <div style="width: 100%; display: flex; flex-direction: column; gap: 4px;">
+        <div style="font-size: 14px; line-height: 20px; font-weight: 500; color: #8A8A86;">Email or username</div>
+        <div style="width: 100%; box-sizing: border-box; border: 1px solid #262521; border-radius: 12px; padding: 13px 16px; background: #161615;">
+          <div style="font-size: 16px; color: #5F5F5B;">you@skateboard.app</div>
+        </div>
+      </div>
+
+      <div style="width: 100%; display: flex; flex-direction: column; gap: 4px;">
+        <div style="font-size: 14px; line-height: 20px; font-weight: 500; color: #8A8A86;">Password</div>
+        <div style="width: 100%; box-sizing: border-box; border: 1px solid #262521; border-radius: 12px; padding: 13px 16px; background: #161615;">
+          <div style="font-size: 16px; letter-spacing: 3px; color: #5F5F5B;">••••••••</div>
+        </div>
+      </div>
+
+      <div style="width: 100%; box-sizing: border-box; min-height: 50px; border-radius: 12px; background: #F5C518; display: flex; align-items: center; justify-content: center; padding: 13px 24px;">
+        <div style="font-size: 14px; line-height: 20px; font-weight: 700; color: #0D0D0D;">Log In</div>
+      </div>
+
+      <div style="width: 100%; display: flex; align-items: center; gap: 8px;">
+        <div style="flex-grow: 1; height: 1px; background: #232320;"></div>
+        <div style="font-size: 14px; line-height: 20px; font-weight: 500; color: #8A8A86;">or</div>
+        <div style="flex-grow: 1; height: 1px; background: #232320;"></div>
+      </div>
+
+      <div style="width: 100%; box-sizing: border-box; min-height: 50px; border-radius: 12px; border: 1px solid #262521; background: #161615; display: flex; align-items: center; justify-content: center; padding: 13px 24px; gap: 8px;">
+        <svg width="18" height="18" viewBox="0 0 48 48">
+          <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.6 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.4-.1-2.8-.4-3.5z"/>
+          <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.8 1.1 8 3l6-6C34.6 6.1 29.6 4 24 4 16.1 4 9.3 8.5 6.3 14.7z"/>
+          <path fill="#4CAF50" d="M24 44c5.5 0 10.4-2 14.1-5.4l-6.5-5.5C29.6 34.8 26.9 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.6 5.1C9.2 39.4 16 44 24 44z"/>
+          <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4.1 5.5l6.5 5.5C41.3 35.7 45 30.4 45 24c0-1.4-.1-2.8-.4-3.5z"/>
+        </svg>
+        <div style="font-size: 14px; line-height: 20px; font-weight: 700; color: #F5F5F2;">Continue with Google</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

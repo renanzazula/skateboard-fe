@@ -4,9 +4,7 @@ import { useRef, useState } from 'react';
 import { Animated, Image, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BlockRenderer } from '@/features/podcast/components/blocks/BlockRenderer';
 import { EpisodeVideoPlayer } from '@/features/podcast/components/EpisodeVideoPlayer';
-import { InstagramIcon } from '@/features/podcast/components/icons/InstagramIcon';
 import {
   extractYoutubeIdFromUrl,
   getConsumedBlocks,
@@ -17,6 +15,8 @@ import {
   getYoutubeId,
 } from '@/features/podcast/services/episodeMeta';
 import { Badge } from '@/shared/components/Badge';
+import { BlockRenderer } from '@/shared/components/content/BlockRenderer';
+import { InstagramIcon } from '@/shared/components/icons/InstagramIcon';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import { MAX_CONTENT_WIDTH, RADII } from '@/shared/constants/theme';

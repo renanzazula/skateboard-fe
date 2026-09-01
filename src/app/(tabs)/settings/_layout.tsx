@@ -22,7 +22,9 @@ export default function SettingsLayout() {
       <Stack.Screen name="home-categories" />
       <Stack.Screen name="podcast-admin" />
       <Stack.Screen name="manage-categories" />
+      <Stack.Screen name="about-us-admin" />
       <Stack.Screen name="about" />
+      <Stack.Screen name="about-us" />
     </Stack>
   );
 }
