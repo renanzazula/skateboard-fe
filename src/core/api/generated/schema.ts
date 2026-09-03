@@ -230,6 +230,30 @@ export interface paths {
         patch: operations["updateNotificationPreferences"];
         trace?: never;
     };
+    "/api/me/devices/{deviceIdentifier}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Register or update the caller's push device
+         * @description Idempotent per (user, deviceIdentifier). The user and tenant come from the JWT downstream and are never read from the request. The client should call this after a successful sign-in, on app start, and whenever the Expo push token changes.
+         */
+        put: operations["registerDevice"];
+        post?: never;
+        /**
+         * Stop sending push to the caller's device
+         * @description Called on logout. Idempotent — removing an unknown or already-removed device still returns 204, so a sign-out is never blocked by it. The device is disabled rather than deleted, keeping its delivery history.
+         */
+        delete: operations["removeDevice"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/me/profile-picture": {
         parameters: {
             query?: never;
@@ -772,6 +796,37 @@ export interface components {
         NotificationPreferences: {
             pushEnabled?: boolean;
             newPodcastEnabled?: boolean;
+        };
+        RegisterDeviceRequest: {
+            /** @enum {string} */
+            platform: "IOS" | "ANDROID";
+            /**
+             * @default EXPO
+             * @enum {string}
+             */
+            provider: "EXPO";
+            /** @description Provider-issued token, e.g. ExponentPushToken[xxxx] */
+            pushToken: string;
+            appVersion?: string | null;
+            deviceName?: string | null;
+        };
+        DeviceResponse: {
+            /** Format: uuid */
+            id?: string;
+            deviceIdentifier?: string;
+            /** @enum {string} */
+            platform?: "IOS" | "ANDROID";
+            /** @enum {string} */
+            provider?: "EXPO";
+            appVersion?: string | null;
+            deviceName?: string | null;
+            enabled?: boolean;
+            /** Format: date-time */
+            lastSeenAt?: string | null;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
         };
         NotificationPreferencesResponse: {
             notifications?: components["schemas"]["NotificationPreferences"];
@@ -1660,6 +1715,107 @@ export interface operations {
             };
             /** @description Not authenticated */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    registerDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Stable per-install identifier chosen by the client */
+                deviceIdentifier: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterDeviceRequest"];
+            };
+        };
+        responses: {
+            /** @description Device registered or updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceResponse"];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Missing required permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Notification service unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    removeDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deviceIdentifier: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Device disabled */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Missing required permission */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -123,6 +123,7 @@ export const en = {
     pushNotificationsSubtitle: 'Receive notifications',
     newPodcasts: 'New podcasts',
     newPodcastsSubtitle: 'Notify me when a new podcast is published',
+    notificationsBlocked: 'Notifications are turned off for this app in your device settings. These switches take effect once you allow them there.',
     storage: 'Storage',
     clearCache: 'Clear cache',
     freeSpace: 'Free {size}',

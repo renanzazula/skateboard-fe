@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider, useAuth } from '@/core/auth';
 import { AppConfigProvider } from '@/core/config';
 import { I18nProvider, useLanguageReady } from '@/core/i18n';
+import { PushNotificationsGate } from '@/features/notifications';
 import { AnimatedSplashOverlay } from '@/shared/components/animated-icon';
 import { RouteErrorFallback } from '@/shared/components/RouteErrorFallback';
 
@@ -28,6 +29,10 @@ export default function RootLayout() {
       <AppConfigProvider>
         <I18nProvider>
           <AuthProvider>
+            {/* Inside AuthProvider because it registers this device only once
+                the user is signed in — the call is authenticated and the
+                device is recorded against the JWT's subject. Renders nothing. */}
+            <PushNotificationsGate />
             <RootNavigator fontsLoaded={fontsLoaded} />
           </AuthProvider>
         </I18nProvider>
