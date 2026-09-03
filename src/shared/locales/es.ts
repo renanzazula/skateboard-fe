@@ -124,6 +124,7 @@ export const es: TranslationKeys = {
     pushNotificationsSubtitle: 'Recibir notificaciones',
     newPodcasts: 'Nuevos episodios',
     newPodcastsSubtitle: 'Avísame cuando se publique un nuevo episodio',
+    notificationsBlocked: 'Las notificaciones están desactivadas para esta app en los ajustes del dispositivo. Estas opciones se aplicarán cuando las permitas allí.',
     storage: 'Almacenamiento',
     clearCache: 'Borrar caché',
     freeSpace: 'Liberar {size}',

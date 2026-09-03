@@ -5,6 +5,8 @@ import { Platform } from 'react-native';
 
 import { env } from '@/core/config/env';
 import { secureStorage } from '@/core/storage/secureStorage';
+import { forgetCachedDeviceIdentifier } from '@/features/notifications/deviceIdentifier';
+import { unregisterPushDevice } from '@/features/notifications/pushRegistration';
 import { withTimeout } from '@/shared/utils/withTimeout';
 
 // Required once at module load so the in-app browser sheet closes itself and
@@ -243,6 +245,18 @@ export async function loginWithGoogle(): Promise<void> {
 export async function logout(): Promise<void> {
   const refreshToken = await secureStorage.getItem(REFRESH_TOKEN_KEY);
   const discovery = await getDiscovery().catch(() => null);
+
+  // Before signOutLocal(), which clears the access token this call needs.
+  // Skipping it would leave the handset registered to the account signing
+  // out, so its notifications would keep arriving — and would be shown to
+  // whoever signs in next on this device. It never throws, so a sign-out is
+  // never blocked by it. The involuntary sign-out paths (bootstrap() and
+  // refreshAccessToken() failing) deliberately don't call this: there is no
+  // valid token left to call with, and the backend releases the registration
+  // anyway the next time this push token is claimed by another account.
+  await unregisterPushDevice();
+  forgetCachedDeviceIdentifier();
+
   await signOutLocal();
 
   if (discovery?.endSessionEndpoint && refreshToken) {
