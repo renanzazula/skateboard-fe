@@ -802,9 +802,9 @@ export interface components {
             platform: "IOS" | "ANDROID";
             /**
              * @default EXPO
-             * @enum {string}
+             * @enum {string|null}
              */
-            provider: "EXPO";
+            provider: "EXPO" | null;
             /** @description Provider-issued token, e.g. ExponentPushToken[xxxx] */
             pushToken: string;
             appVersion?: string | null;
