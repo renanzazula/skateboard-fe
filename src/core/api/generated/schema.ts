@@ -963,9 +963,10 @@ export interface components {
             url: string;
         };
         ErrorResponse: {
-            status?: number;
-            error?: string;
+            /** @description Stable machine-readable code, e.g. NOTIFICATION_SERVICE_UNAVAILABLE */
+            code?: string;
             message?: string;
+            correlationId?: string | null;
             /** Format: date-time */
             timestamp?: string;
         };
