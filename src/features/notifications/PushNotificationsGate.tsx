@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+import { AppState, Platform } from 'react-native';
 
 import { useAuth } from '@/core/auth';
 import { openNotificationTarget, type NotificationTarget } from '@/features/notifications/pushNavigation';
@@ -9,15 +10,20 @@ import { registerPushDevice } from '@/features/notifications/pushRegistration';
  * Foreground presentation. Without a handler, a notification arriving while
  * the app is open is delivered to the listeners but never shown, which reads
  * as "push is broken" during exactly the testing everyone does first.
+ *
+ * Skipped on web, where it subscribes to an emitter stub that only logs a
+ * "not yet fully supported" warning on every load.
  */
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+if (Platform.OS !== 'web') {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
+}
 
 /**
  * Registers this device for push once the user is signed in, and routes
@@ -28,10 +34,33 @@ Notifications.setNotificationHandler({
  * authenticated call to the BFF and the device is recorded against the JWT's
  * subject; registering earlier would either 401 or attach the handset to
  * whoever signs in next.
+ *
+ * The whole thing is native-only, and the split is not cosmetic:
+ * `useLastNotificationResponse` is a hook, so it cannot be called
+ * conditionally, and expo-notifications' web build has no
+ * `getLastNotificationResponse` behind it — calling it on web throws
+ * "not available on web" out of a render, which the root ErrorBoundary turns
+ * into a blank app on every page load. Returning null before the native
+ * component is ever rendered is what keeps that code off the web bundle's
+ * execution path.
  */
 export function PushNotificationsGate() {
+  if (Platform.OS === 'web') return null;
+  return <NativePushNotificationsGate />;
+}
+
+function NativePushNotificationsGate() {
   const { status } = useAuth();
   const registeredRef = useRef(false);
+
+  const attemptRegistration = useCallback(async () => {
+    if (registeredRef.current) return;
+    const token = await registerPushDevice();
+    // Only latched on success. Marking it done regardless would strand anyone
+    // who declined the prompt, or whose registration failed while the backend
+    // was down, with no way back short of signing out and in again.
+    registeredRef.current = token !== null;
+  }, []);
 
   useEffect(() => {
     if (status !== 'signedIn') {
@@ -40,10 +69,24 @@ export function PushNotificationsGate() {
       registeredRef.current = false;
       return;
     }
-    if (registeredRef.current) return;
-    registeredRef.current = true;
-    registerPushDevice();
-  }, [status]);
+    attemptRegistration();
+  }, [status, attemptRegistration]);
+
+  /**
+   * Granting permission means leaving for the OS settings app and coming back,
+   * and enabling it there fires no notification event of any kind. Retrying on
+   * foreground is what turns that into a working registration instead of one
+   * that only happens at the next sign-in.
+   */
+  useEffect(() => {
+    if (status !== 'signedIn') return;
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        attemptRegistration();
+      }
+    });
+    return () => subscription.remove();
+  }, [status, attemptRegistration]);
 
   // Expo rotates push tokens without warning (an OS update, a restored
   // backup). Re-registering on rotation is what stops delivery from silently

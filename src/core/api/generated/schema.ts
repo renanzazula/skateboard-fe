@@ -802,9 +802,9 @@ export interface components {
             platform: "IOS" | "ANDROID";
             /**
              * @default EXPO
-             * @enum {string}
+             * @enum {string|null}
              */
-            provider: "EXPO";
+            provider: "EXPO" | null;
             /** @description Provider-issued token, e.g. ExponentPushToken[xxxx] */
             pushToken: string;
             appVersion?: string | null;
@@ -963,9 +963,10 @@ export interface components {
             url: string;
         };
         ErrorResponse: {
-            status?: number;
-            error?: string;
+            /** @description Stable machine-readable code, e.g. NOTIFICATION_SERVICE_UNAVAILABLE */
+            code?: string;
             message?: string;
+            correlationId?: string | null;
             /** Format: date-time */
             timestamp?: string;
         };
