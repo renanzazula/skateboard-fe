@@ -26,6 +26,20 @@ function projectId(): string | undefined {
   );
 }
 
+/**
+ * Whether this build can hold a push token at all.
+ *
+ * Two cases, and neither is covered by the other. On web, `Device.isDevice` is
+ * `true` — it reports the browser as a real device — so it does not stand in
+ * for a platform check; expo-notifications ships no push token module for web,
+ * and web push would need VAPID keys and a service worker this app does not
+ * have. On a simulator there is no APNs/FCM registration to make, so a token
+ * request throws rather than returning anything useful.
+ */
+function isPushSupported(): boolean {
+  return Platform.OS !== 'web' && Device.isDevice;
+}
+
 export type PushPermissionState = 'granted' | 'denied' | 'undetermined' | 'unsupported';
 
 /**
@@ -37,7 +51,7 @@ export type PushPermissionState = 'granted' | 'denied' | 'undetermined' | 'unsup
  * ever gives us on a render.
  */
 export async function getPushPermissionState(): Promise<PushPermissionState> {
-  if (!Device.isDevice) return 'unsupported';
+  if (!isPushSupported()) return 'unsupported';
 
   const existing = await Notifications.getPermissionsAsync();
   if (existing.granted) return 'granted';
@@ -51,9 +65,7 @@ export async function getPushPermissionState(): Promise<PushPermissionState> {
  * answer back rather than a no-op call that looks like a denial.
  */
 export async function requestPushPermission(): Promise<PushPermissionState> {
-  // A simulator has no APNs/FCM registration to make, so a token request there
-  // throws rather than returning anything useful.
-  if (!Device.isDevice) return 'unsupported';
+  if (!isPushSupported()) return 'unsupported';
 
   const existing = await Notifications.getPermissionsAsync();
   if (existing.granted) return 'granted';
@@ -127,6 +139,10 @@ export async function registerPushDevice(): Promise<string | null> {
  * for whoever signs in next.
  */
 export async function unregisterPushDevice(): Promise<void> {
+  // Nothing was ever registered where push is unsupported, so this would be a
+  // DELETE for a device identifier the backend has never seen.
+  if (!isPushSupported()) return;
+
   try {
     const deviceIdentifier = await getDeviceIdentifier();
     await bffClient.DELETE('/api/me/devices/{deviceIdentifier}', {
