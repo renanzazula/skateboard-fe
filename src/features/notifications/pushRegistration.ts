@@ -26,7 +26,24 @@ function projectId(): string | undefined {
   );
 }
 
-export type PushPermissionState = 'granted' | 'denied' | 'unsupported';
+export type PushPermissionState = 'granted' | 'denied' | 'undetermined' | 'unsupported';
+
+/**
+ * Reads the current permission without prompting.
+ *
+ * <p>Separate from {@link requestPushPermission} because showing the user what
+ * their OS setting is must not itself trigger the system prompt — a screen
+ * that asks for permission merely by being opened spends the one prompt iOS
+ * ever gives us on a render.
+ */
+export async function getPushPermissionState(): Promise<PushPermissionState> {
+  if (!Device.isDevice) return 'unsupported';
+
+  const existing = await Notifications.getPermissionsAsync();
+  if (existing.granted) return 'granted';
+  // The OS will not ask again, so this is the user's final answer.
+  return existing.canAskAgain ? 'undetermined' : 'denied';
+}
 
 /**
  * Asks for notification permission, without asking twice: iOS only ever shows

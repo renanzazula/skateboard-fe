@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+import { AppState } from 'react-native';
 
 import { useAuth } from '@/core/auth';
 import { openNotificationTarget, type NotificationTarget } from '@/features/notifications/pushNavigation';
@@ -33,6 +34,15 @@ export function PushNotificationsGate() {
   const { status } = useAuth();
   const registeredRef = useRef(false);
 
+  const attemptRegistration = useCallback(async () => {
+    if (registeredRef.current) return;
+    const token = await registerPushDevice();
+    // Only latched on success. Marking it done regardless would strand anyone
+    // who declined the prompt, or whose registration failed while the backend
+    // was down, with no way back short of signing out and in again.
+    registeredRef.current = token !== null;
+  }, []);
+
   useEffect(() => {
     if (status !== 'signedIn') {
       // Allow a re-register on the next sign-in — the device may now belong
@@ -40,10 +50,24 @@ export function PushNotificationsGate() {
       registeredRef.current = false;
       return;
     }
-    if (registeredRef.current) return;
-    registeredRef.current = true;
-    registerPushDevice();
-  }, [status]);
+    attemptRegistration();
+  }, [status, attemptRegistration]);
+
+  /**
+   * Granting permission means leaving for the OS settings app and coming back,
+   * and enabling it there fires no notification event of any kind. Retrying on
+   * foreground is what turns that into a working registration instead of one
+   * that only happens at the next sign-in.
+   */
+  useEffect(() => {
+    if (status !== 'signedIn') return;
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        attemptRegistration();
+      }
+    });
+    return () => subscription.remove();
+  }, [status, attemptRegistration]);
 
   // Expo rotates push tokens without warning (an OS update, a restored
   // backup). Re-registering on rotation is what stops delivery from silently

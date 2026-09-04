@@ -1,10 +1,14 @@
 import { Bell, Mic } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { AppState, ScrollView, StyleSheet } from 'react-native';
 
 import { useNotificationPreferences } from '@/features/account/hooks/useNotificationPreferences';
 import { useProfile } from '@/features/account/hooks/useProfile';
-import { requestPushPermission, type PushPermissionState } from '@/features/notifications';
+import {
+  getPushPermissionState,
+  registerPushDevice,
+  type PushPermissionState,
+} from '@/features/notifications';
 import { SettingsHeader } from '@/features/settings/components/SettingsHeader';
 import { SettingsRow } from '@/features/settings/components/SettingsRow';
 import { SettingsSection } from '@/features/settings/components/SettingsSection';
@@ -19,12 +23,44 @@ export default function NotificationsScreen() {
   const { t } = useTranslation();
 
   // These switches are an app-level preference; the OS has its own, and it
-  // wins. Without this hint a user who denied the system prompt sees both
-  // switches on, receives nothing, and has no way to tell why.
+  // wins. Without this a user who denied the system prompt sees both switches
+  // on, receives nothing, and has no way to tell why.
   const [permission, setPermission] = useState<PushPermissionState | null>(null);
-  useEffect(() => {
-    requestPushPermission().then(setPermission);
+
+  const refreshPermission = useCallback(() => {
+    // Read-only: opening this screen must not spend the one prompt iOS ever
+    // gives us. Asking happens when the user turns push on, below.
+    getPushPermissionState().then(setPermission);
   }, []);
+
+  useEffect(refreshPermission, [refreshPermission]);
+
+  // Changing the OS setting means leaving the app and coming back, and it
+  // fires no event of its own — so re-read on foreground, or the hint below
+  // keeps claiming notifications are blocked after the user has allowed them.
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refreshPermission();
+    });
+    return () => subscription.remove();
+  }, [refreshPermission]);
+
+  /**
+   * Turning push on has to do more than set the server flag. The device may
+   * never have registered — permission declined at sign-in, or the backend was
+   * down — and without this the user flips the switch, sees it on, and still
+   * receives nothing.
+   */
+  const handlePushEnabledChange = useCallback(
+    async (enabled: boolean) => {
+      await setPushEnabled(enabled);
+      if (enabled) {
+        await registerPushDevice();
+        refreshPermission();
+      }
+    },
+    [setPushEnabled, refreshPermission]
+  );
 
   return (
     <ThemedView style={styles.container}>
@@ -40,7 +76,11 @@ export default function NotificationsScreen() {
             icon={Bell}
             title={t('settings.pushNotifications')}
             subtitle={t('settings.pushNotificationsSubtitle')}
-            trailing={{ type: 'switch', value: preferences?.pushEnabled ?? false, onChange: setPushEnabled }}
+            trailing={{
+              type: 'switch',
+              value: preferences?.pushEnabled ?? false,
+              onChange: handlePushEnabledChange,
+            }}
           />
           <SettingsRow
             icon={Mic}
