@@ -48,12 +48,13 @@ function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
 
   return (
     <NavigationThemeProvider value={DarkTheme}>
-      {/* Only mounted once auth and fonts are ready, so the native splash
-          (see SplashScreen.preventAutoHideAsync above) stays up through
-          silent sign-in instead of flashing the wrong font before hiding —
-          this also decides (tabs) vs (auth). App is dark-only, so the
-          navigation theme is always DarkTheme. */}
-      {ready && <AnimatedSplashOverlay />}
+      {/* Mounted immediately (not gated on `ready`) so it swaps in for the
+          native splash (see SplashScreen.preventAutoHideAsync above) the
+          instant its own layout completes — covering the Stack below, which
+          starts mounting/initializing right away but must stay hidden until
+          auth/fonts/language are ready. It only fades out once `ready` flips
+          true, so the login/home screen underneath is never exposed early. */}
+      <AnimatedSplashOverlay ready={ready} />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Protected guard={status === 'signedIn'}>
           <Stack.Screen name="(tabs)" />

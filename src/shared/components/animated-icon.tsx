@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import * as SplashScreen from 'expo-splash-screen';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -54,9 +54,25 @@ const wordmarkKeyframe = new Keyframe({
   },
 });
 
-export function AnimatedSplashOverlay() {
+type Props = {
+  /** True once auth/fonts/language have all resolved and the real screen underneath is safe to reveal. */
+  ready: boolean;
+};
+
+export function AnimatedSplashOverlay({ ready }: Props) {
+  // Separate from `ready`: the native splash can only be swapped for this
+  // view once the view itself has actually laid out, regardless of how
+  // quickly (or slowly) the app becomes ready — hiding it any earlier would
+  // reopen the gap this component exists to close.
+  const [nativeSplashHidden, setNativeSplashHidden] = useState(false);
   const [animate, setAnimate] = useState(false);
   const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    if (nativeSplashHidden && ready) {
+      setAnimate(true);
+    }
+  }, [nativeSplashHidden, ready]);
 
   if (!visible) return null;
 
@@ -86,7 +102,7 @@ export function AnimatedSplashOverlay() {
     <View
       onLayout={() => {
         SplashScreen.hideAsync().finally(() => {
-          setAnimate(true);
+          setNativeSplashHidden(true);
         });
       }}
       style={styles.splashOverlay}>
