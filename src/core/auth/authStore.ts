@@ -137,13 +137,23 @@ export async function bootstrap(): Promise<void> {
     );
     applyTokenResponse(tokenResponse);
   } catch (err) {
-    // Any failure here (secure-store access, discovery fetch, stale refresh
-    // token) must still resolve `status` away from 'loading' — the root
-    // layout keeps the splash screen up and renders nothing until it does.
-    // Logged (not swallowed silently) so a real failure here is visible in
-    // device logs instead of looking identical to "no stored session".
-    console.warn('[auth] bootstrap failed, signing out locally', err);
-    await signOutLocal();
+    if (err instanceof AuthSession.TokenError) {
+      // Keycloak actively rejected the refresh token (expired, revoked, or
+      // issued to a different client) — the session really is gone, so the
+      // stored token must go with it.
+      console.warn('[auth] bootstrap: refresh token rejected, signing out', err);
+      await signOutLocal();
+      return;
+    }
+    // Anything else (a timed-out or dropped connection, a truncated
+    // response body) is a transport failure, not proof the refresh token is
+    // invalid. `status` must still leave 'loading' — the root layout keeps
+    // the splash screen up until it does — but the stored token is left
+    // alone so the *next* bootstrap() (app restart, foreground) can still
+    // silently recover the session instead of forcing a full re-login over
+    // what may have been a one-off network blip.
+    console.warn('[auth] bootstrap failed transiently, leaving stored session intact', err);
+    setState({ status: 'signedOut', accessToken: null, authorities: [], email: null, expiresAt: null });
   }
 }
 
@@ -291,12 +301,21 @@ export async function refreshAccessToken(): Promise<string | null> {
       applyTokenResponse(tokenResponse);
       return tokenResponse.accessToken;
     } catch (err) {
-      // Logged for the same reason as bootstrap()'s catch — a silent
-      // sign-out mid-session (triggered by the 401-retry path in
-      // core/api/client.ts) would otherwise look identical to "content just
-      // isn't loading" with nothing to explain why.
-      console.warn('[auth] token refresh failed, signing out locally', err);
-      await signOutLocal();
+      if (err instanceof AuthSession.TokenError) {
+        // Keycloak actively rejected the refresh token — the session really
+        // is gone, same distinction bootstrap() makes for this error.
+        console.warn('[auth] token refresh: refresh token rejected, signing out', err);
+        await signOutLocal();
+        return null;
+      }
+      // A timeout or dropped connection isn't proof the refresh token is
+      // invalid — it just means *this* attempt (a 401 retry, or
+      // ensureFreshAccessToken on an expiring token) didn't get a fresh one.
+      // Signing out an actively-browsing user over a network blip would be
+      // worse than the screen that triggered this just failing to load;
+      // leaving state and the stored refresh token untouched lets the next
+      // call retry instead.
+      console.warn('[auth] token refresh failed transiently, leaving session intact', err);
       return null;
     }
   })();
