@@ -3331,6 +3331,15 @@ export interface operations {
                     "application/json": components["schemas"]["CampaignRuntimeResponse"][];
                 };
             };
+            /** @description App config service unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
         };
     };
     recordCampaignEvent: {

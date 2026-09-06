@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider, useAuth } from '@/core/auth';
 import { AppConfigProvider } from '@/core/config';
 import { I18nProvider, useLanguageReady } from '@/core/i18n';
+import { CampaignGate } from '@/features/campaign';
 import { PushNotificationsGate } from '@/features/notifications';
 import { AnimatedSplashOverlay } from '@/shared/components/animated-icon';
 import { RouteErrorFallback } from '@/shared/components/RouteErrorFallback';
@@ -54,17 +55,23 @@ function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
           this also decides (tabs) vs (auth). App is dark-only, so the
           navigation theme is always DarkTheme. */}
       {ready && <AnimatedSplashOverlay />}
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Protected guard={status === 'signedIn'}>
-          <Stack.Screen name="(tabs)" />
-          {/* Sits above (tabs) so Home can link into it without pushing onto
-              the Podcast tab's own stack — see app/video/[slug].tsx. */}
-          <Stack.Screen name="video/[slug]" />
-        </Stack.Protected>
-        <Stack.Protected guard={status !== 'signedIn'}>
-          <Stack.Screen name="(auth)" />
-        </Stack.Protected>
-      </Stack>
+      {/* Startup campaigns play here — above the stack, below the splash
+          overlay — so the stack mounts but stays hidden/non-interactive
+          until the sequence ends (or immediately, when nothing is eligible
+          or the feature is off). See features/campaign/CampaignGate. */}
+      <CampaignGate>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Protected guard={status === 'signedIn'}>
+            <Stack.Screen name="(tabs)" />
+            {/* Sits above (tabs) so Home can link into it without pushing onto
+                the Podcast tab's own stack — see app/video/[slug].tsx. */}
+            <Stack.Screen name="video/[slug]" />
+          </Stack.Protected>
+          <Stack.Protected guard={status !== 'signedIn'}>
+            <Stack.Screen name="(auth)" />
+          </Stack.Protected>
+        </Stack>
+      </CampaignGate>
     </NavigationThemeProvider>
   );
 }
