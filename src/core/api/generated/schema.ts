@@ -590,6 +590,215 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/campaigns/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get campaigns currently eligible to display (pre-auth)
+         * @description Already filtered by schedule/status/audience and sorted by priority — the client only applies its own local frequency-capping on top. No token is required; when the frontend sends one, AUTHENTICATED-audience campaigns are included too.
+         */
+        get: operations["getActiveCampaigns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/campaigns/{campaignId}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record a campaign analytics event (pre-auth)
+         * @description Impression, completion, skip, CTA click or close. A signed-out session must still be able to report events for an ANONYMOUS/ALL campaign. Never blocks or fails the app; unknown campaign/screen ids are accepted.
+         */
+        post: operations["recordCampaignEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/campaigns/admin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all campaigns regardless of status (admin) */
+        get: operations["listCampaigns"];
+        put?: never;
+        /** Create a new campaign as DRAFT (admin) */
+        post: operations["createCampaign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/campaigns/admin/{campaignId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a single campaign with its screens (admin) */
+        get: operations["getCampaign"];
+        /** Update a campaign's metadata and schedule (admin) */
+        put: operations["updateCampaign"];
+        post?: never;
+        /**
+         * Delete a campaign (admin, DRAFT only)
+         * @description Hard delete is only allowed while the campaign is still DRAFT. A campaign that has ever been published must be archived instead — that returns 409.
+         */
+        delete: operations["deleteCampaign"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/campaigns/admin/{campaignId}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish a campaign (admin)
+         * @description Enforces the publish invariants — 1–3 screens, total duration ≤ 10s, endAt after startAt, every screen valid. Invariant failures return 409.
+         */
+        post: operations["publishCampaign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/campaigns/admin/{campaignId}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pause a published campaign (admin) */
+        post: operations["pauseCampaign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/campaigns/admin/{campaignId}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive a campaign (admin) */
+        post: operations["archiveCampaign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/campaigns/admin/{campaignId}/screens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add a screen to a campaign (admin)
+         * @description Appended after the last existing screen; upload its image separately afterward. Rejects past the V1 limit of 3 screens or 10s total duration.
+         */
+        post: operations["addCampaignScreen"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/campaigns/admin/{campaignId}/screens/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Reorder a campaign's screens (admin) */
+        put: operations["reorderCampaignScreens"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/campaigns/admin/{campaignId}/screens/{screenId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update a screen's content and behavior (admin) */
+        put: operations["updateCampaignScreen"];
+        post?: never;
+        /** Remove a screen from a campaign (admin) */
+        delete: operations["removeCampaignScreen"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/campaigns/admin/{campaignId}/screens/{screenId}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload/replace a screen's background image and focal point (admin)
+         * @description Stores the image as-is (no resizing/variants in V1).
+         */
+        post: operations["uploadCampaignScreenImage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -802,9 +1011,9 @@ export interface components {
             platform: "IOS" | "ANDROID";
             /**
              * @default EXPO
-             * @enum {string|null}
+             * @enum {string}
              */
-            provider: "EXPO" | null;
+            provider: "EXPO";
             /** @description Provider-issued token, e.g. ExponentPushToken[xxxx] */
             pushToken: string;
             appVersion?: string | null;
@@ -963,12 +1172,147 @@ export interface components {
             url: string;
         };
         ErrorResponse: {
-            /** @description Stable machine-readable code, e.g. NOTIFICATION_SERVICE_UNAVAILABLE */
+            /** @description Stable machine-readable code, e.g. APP_CONFIG_SERVICE_UNAVAILABLE */
             code?: string;
             message?: string;
-            correlationId?: string | null;
+            correlationId?: string;
             /** Format: date-time */
             timestamp?: string;
+        };
+        /**
+         * @description The API-level lifecycle value. SCHEDULED/ACTIVE/EXPIRED are computed from startAt/endAt at read time, not stored or transitioned by a job — only DRAFT/PAUSED/ARCHIVED and the published intent are admin-driven.
+         * @enum {string}
+         */
+        CampaignStatus: "DRAFT" | "SCHEDULED" | "ACTIVE" | "PAUSED" | "EXPIRED" | "ARCHIVED";
+        /** @enum {string} */
+        CampaignAudience: "ALL" | "AUTHENTICATED" | "ANONYMOUS";
+        /** @enum {string} */
+        CampaignFrequencyType: "ALWAYS" | "ONCE" | "ONCE_PER_SESSION" | "ONCE_PER_DAY" | "MAX_PER_DAY";
+        /**
+         * @description V1 only has FULL_BACKGROUND; kept as its own enum for future layouts.
+         * @enum {string}
+         */
+        CampaignLayoutType: "FULL_BACKGROUND";
+        /** @enum {string} */
+        CampaignTextAlignment: "LEFT" | "CENTER" | "RIGHT";
+        /** @enum {string} */
+        CampaignTextSize: "SMALL" | "MEDIUM" | "LARGE" | "EXTRA_LARGE";
+        /** @enum {string} */
+        CampaignActionType: "NONE" | "INTERNAL" | "EXTERNAL";
+        /** @enum {string} */
+        CampaignEventType: "CAMPAIGN_STARTED" | "CAMPAIGN_SCREEN_IMPRESSION" | "CAMPAIGN_SCREEN_COMPLETED" | "CAMPAIGN_SCREEN_SKIPPED" | "CAMPAIGN_CTA_CLICKED" | "CAMPAIGN_CLOSED" | "CAMPAIGN_COMPLETED";
+        CampaignRequest: {
+            name: string;
+            /** @description Internal-only note; never shown to end users. */
+            description?: string | null;
+            /** Format: date-time */
+            startAt: string;
+            /** Format: date-time */
+            endAt: string;
+            /** @description Higher priority wins when multiple campaigns are eligible at once. */
+            priority: number;
+            audience: components["schemas"]["CampaignAudience"];
+            frequencyType: components["schemas"]["CampaignFrequencyType"];
+            /** @description Required and only meaningful when frequencyType is MAX_PER_DAY. */
+            maxDisplaysPerDay?: number | null;
+        };
+        CampaignResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description?: string | null;
+            status: components["schemas"]["CampaignStatus"];
+            /** Format: date-time */
+            startAt: string;
+            /** Format: date-time */
+            endAt: string;
+            priority: number;
+            audience: components["schemas"]["CampaignAudience"];
+            frequencyType: components["schemas"]["CampaignFrequencyType"];
+            maxDisplaysPerDay?: number | null;
+            screens: components["schemas"]["CampaignScreenResponse"][];
+            createdBy?: string | null;
+            /** Format: date-time */
+            createdAt?: string;
+            updatedBy?: string | null;
+            /** Format: date-time */
+            updatedAt?: string;
+            publishedBy?: string | null;
+            /** Format: date-time */
+            publishedAt?: string | null;
+        };
+        CampaignScreenRequest: {
+            durationSeconds: number;
+            layoutType: components["schemas"]["CampaignLayoutType"];
+            /** @description Fallback color shown while/if the background image isn't loaded. */
+            backgroundColor?: string | null;
+            title?: string | null;
+            description?: string | null;
+            textAlignment: components["schemas"]["CampaignTextAlignment"];
+            titleSize: components["schemas"]["CampaignTextSize"];
+            descriptionSize: components["schemas"]["CampaignTextSize"];
+            textColor?: string | null;
+            /** Format: float */
+            overlayOpacity?: number | null;
+            closeEnabled: boolean;
+            /** @description Must satisfy 0 <= closeAfterSeconds < durationSeconds when set; defaults to 1 second when closeEnabled is true and this is omitted. */
+            closeAfterSeconds?: number | null;
+            actionType: components["schemas"]["CampaignActionType"];
+            actionLabel?: string | null;
+            /** @description A supported internal route (INTERNAL) or a validated external URL (EXTERNAL); required unless actionType is NONE. */
+            actionTarget?: string | null;
+        };
+        CampaignScreenResponse: {
+            /** Format: uuid */
+            id: string;
+            position: number;
+            durationSeconds: number;
+            layoutType: components["schemas"]["CampaignLayoutType"];
+            /** @description Freshly presigned on every read; never persisted as-is. */
+            backgroundUrl?: string | null;
+            backgroundColor?: string | null;
+            /** Format: float */
+            focalPointX?: number | null;
+            /** Format: float */
+            focalPointY?: number | null;
+            title?: string | null;
+            description?: string | null;
+            textAlignment: components["schemas"]["CampaignTextAlignment"];
+            titleSize: components["schemas"]["CampaignTextSize"];
+            descriptionSize: components["schemas"]["CampaignTextSize"];
+            textColor?: string | null;
+            /** Format: float */
+            overlayOpacity?: number | null;
+            closeEnabled: boolean;
+            closeAfterSeconds?: number | null;
+            actionType: components["schemas"]["CampaignActionType"];
+            actionLabel?: string | null;
+            actionTarget?: string | null;
+        };
+        /** @description The lean, display-only shape for GET /api/campaigns/active — no name, description, or audit fields; the client has no use for them. */
+        CampaignRuntimeResponse: {
+            /** Format: uuid */
+            id: string;
+            priority: number;
+            frequencyType: components["schemas"]["CampaignFrequencyType"];
+            maxDisplaysPerDay?: number | null;
+            screens: components["schemas"]["CampaignScreenResponse"][];
+        };
+        ReorderCampaignScreensRequest: {
+            /** @description The campaign's screen ids in their new display order; must be a full permutation of its existing screens. */
+            screenIds: string[];
+        };
+        CampaignEventRequest: {
+            eventType: components["schemas"]["CampaignEventType"];
+            /**
+             * Format: uuid
+             * @description Omitted for campaign-level events (CAMPAIGN_STARTED/COMPLETED).
+             */
+            screenId?: string | null;
+            platform?: string | null;
+            appVersion?: string | null;
+            /** @description Only set for CAMPAIGN_CTA_CLICKED. */
+            actionTarget?: string | null;
         };
     };
     responses: never;
@@ -2960,6 +3304,785 @@ export interface operations {
             };
             /** @description Forbidden – FUNC_HOME_FEATURED_PLAYER_CONFIG required */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getActiveCampaigns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Eligible campaigns, highest priority first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignRuntimeResponse"][];
+                };
+            };
+        };
+    };
+    recordCampaignEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaignId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CampaignEventRequest"];
+            };
+        };
+        responses: {
+            /** @description Event recorded */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    listCampaigns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Campaigns */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignResponse"][];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_CAMPAIGN_READ required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CampaignRequest"];
+            };
+        };
+        responses: {
+            /** @description Campaign created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignResponse"];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_CAMPAIGN_MANAGE required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaignId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Campaign */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_CAMPAIGN_READ required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Campaign not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaignId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CampaignRequest"];
+            };
+        };
+        responses: {
+            /** @description Campaign updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignResponse"];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_CAMPAIGN_MANAGE required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Campaign not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    deleteCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaignId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Campaign deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_CAMPAIGN_MANAGE required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Campaign not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Campaign is not DRAFT – archive it instead */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    publishCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaignId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Campaign published */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_CAMPAIGN_PUBLISH required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Campaign not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Campaign does not satisfy the publish invariants */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    pauseCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaignId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Campaign paused */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_CAMPAIGN_PUBLISH required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Campaign not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Campaign is not in a state that can be paused */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    archiveCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaignId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Campaign archived */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_CAMPAIGN_PUBLISH required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Campaign not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    addCampaignScreen: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaignId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CampaignScreenRequest"];
+            };
+        };
+        responses: {
+            /** @description Screen added */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignScreenResponse"];
+                };
+            };
+            /** @description Invalid input, or the screen/duration limit would be exceeded */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_CAMPAIGN_MANAGE required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Campaign not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    reorderCampaignScreens: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaignId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderCampaignScreensRequest"];
+            };
+        };
+        responses: {
+            /** @description Screens reordered */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignResponse"];
+                };
+            };
+            /** @description screenIds is not a full permutation of the campaign's screens */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_CAMPAIGN_MANAGE required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Campaign not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateCampaignScreen: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaignId: string;
+                screenId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CampaignScreenRequest"];
+            };
+        };
+        responses: {
+            /** @description Screen updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignScreenResponse"];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_CAMPAIGN_MANAGE required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Campaign or screen not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    removeCampaignScreen: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaignId: string;
+                screenId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Screen removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_CAMPAIGN_MANAGE required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Campaign or screen not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    uploadCampaignScreenImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaignId: string;
+                screenId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                    /** Format: float */
+                    focalPointX?: number;
+                    /** Format: float */
+                    focalPointY?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Screen image updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignScreenResponse"];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_CAMPAIGN_MANAGE required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Campaign or screen not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
