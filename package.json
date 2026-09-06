@@ -51,7 +51,13 @@
     "serve": "^14.2.4"
   },
   "devDependencies": {
+    "@react-native/jest-preset": "0.86.3",
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.2.2",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "^57.0.2",
+    "jest": "^30.0.0",
+    "jest-expo": "~57.0.5",
     "openapi-typescript": "^7.13.0",
     "typescript": "~5.9.3"
   },
@@ -64,7 +70,11 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "build:web": "expo export -p web",
-    "start:web": "serve dist -s -l tcp://0.0.0.0:${PORT:-3000}"
+    "start:web": "serve dist -s -l tcp://0.0.0.0:${PORT:-3000}",
+    "test": "jest"
   },
-  "private": true
+  "private": true,
+  "overrides": {
+    "@react-native/jest-preset": "0.86.3"
+  }
 }
