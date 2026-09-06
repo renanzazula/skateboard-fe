@@ -46,13 +46,12 @@ export interface CampaignConfigCache {
  * (and the Admin FE target picker) — hand-synced, see the plan's gap #6. The
  * backend accepts a target that equals a prefix or starts with `prefix + "/"`.
  *
- * These are product-level destination names, not expo-router paths — the CTA
- * handler maps them onto the app's actual routes (see cta.ts).
+ * Only routes the app actually has — every entry maps to a real screen in
+ * `toAppRoute` (ctaMatch.ts). `/events` and `/competitions` were dropped for
+ * V1; re-add here + in `toAppRoute` + in the backend allow-list together.
  */
 export const INTERNAL_CTA_PREFIXES = [
   '/home',
   '/podcasts',
-  '/events',
-  '/competitions',
   '/settings/about-us',
 ] as const;

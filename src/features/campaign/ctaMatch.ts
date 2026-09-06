@@ -11,16 +11,16 @@ export function isExternalUrl(target: string): boolean {
 }
 
 /**
- * Maps a backend product-level internal target onto the app's real expo-router
- * path. The allow-list names (`/home`, `/podcasts`, …) are hand-synced with
- * skateboard-app-config-be and don't all correspond 1:1 to routes that exist
- * today — unmapped ones return null and the CTA is treated as a no-op.
+ * Maps a backend internal target onto the app's real expo-router path. Every
+ * entry in the V1 allow-list (INTERNAL_CTA_PREFIXES) has a mapping here, so an
+ * allow-listed target never silently no-ops. A null return means the target
+ * passed the allow-list but this app version has no route for it — only
+ * possible if the two lists drift (there's a test guarding that).
  */
 export function toAppRoute(target: string): string | null {
   if (target === '/home' || target.startsWith('/home/')) return '/';
   if (target === '/podcasts') return '/podcast';
   if (target.startsWith('/podcasts/')) return `/podcast/${target.slice('/podcasts/'.length)}`;
   if (target === '/settings/about-us' || target.startsWith('/settings/about-us')) return '/settings/about-us';
-  // /events and /competitions have no screen in V1.
   return null;
 }

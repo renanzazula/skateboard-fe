@@ -34,7 +34,9 @@ export async function runCampaignCta(actionType: string | undefined, actionTarge
     }
     const route = toAppRoute(actionTarget);
     if (!route) {
-      console.warn('[campaign] INTERNAL CTA target has no app route in V1', actionTarget);
+      // Shouldn't happen: every allow-listed prefix maps in toAppRoute (guarded
+      // by a test). Only reachable if the two lists have drifted.
+      console.warn('[campaign] allow-listed INTERNAL CTA target has no route mapping', actionTarget);
       return false;
     }
     // The allow-list is validated above; expo-router's typed routes can't

@@ -7,13 +7,13 @@ describe('INTERNAL_CTA_PREFIXES', () => {
   // update this copy (and toAppRoute) — there is no shared registry (BE plan
   // gap #6). This test is the drift alarm.
   it('matches the backend allow-list exactly', () => {
-    expect([...INTERNAL_CTA_PREFIXES]).toEqual([
-      '/home',
-      '/podcasts',
-      '/events',
-      '/competitions',
-      '/settings/about-us',
-    ]);
+    expect([...INTERNAL_CTA_PREFIXES]).toEqual(['/home', '/podcasts', '/settings/about-us']);
+  });
+
+  it('every allow-listed prefix maps to a real app route', () => {
+    for (const prefix of INTERNAL_CTA_PREFIXES) {
+      expect(toAppRoute(prefix)).not.toBeNull();
+    }
   });
 });
 
@@ -26,7 +26,7 @@ describe('isAllowedInternalTarget', () => {
 
   it('accepts a path segment under an allow-list prefix', () => {
     expect(isAllowedInternalTarget('/podcasts/123')).toBe(true);
-    expect(isAllowedInternalTarget('/competitions/summer-2026')).toBe(true);
+    expect(isAllowedInternalTarget('/settings/about-us/history')).toBe(true);
   });
 
   it('rejects anything outside the allow-list', () => {
@@ -34,6 +34,8 @@ describe('isAllowedInternalTarget', () => {
     expect(isAllowedInternalTarget('/homepage')).toBe(false); // prefix must be a full segment
     expect(isAllowedInternalTarget('/admin')).toBe(false);
     expect(isAllowedInternalTarget('podcasts')).toBe(false);
+    expect(isAllowedInternalTarget('/events')).toBe(false); // dropped for V1
+    expect(isAllowedInternalTarget('/competitions/summer')).toBe(false);
   });
 });
 
@@ -56,10 +58,5 @@ describe('toAppRoute', () => {
     expect(toAppRoute('/podcasts')).toBe('/podcast');
     expect(toAppRoute('/podcasts/abc')).toBe('/podcast/abc');
     expect(toAppRoute('/settings/about-us')).toBe('/settings/about-us');
-  });
-
-  it('returns null for destinations with no V1 screen', () => {
-    expect(toAppRoute('/events')).toBeNull();
-    expect(toAppRoute('/competitions/x')).toBeNull();
   });
 });
