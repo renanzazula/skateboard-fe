@@ -1,4 +1,21 @@
 import { isAllowedInternalTarget, isExternalUrl, toAppRoute } from '@/features/campaign/ctaMatch';
+import { INTERNAL_CTA_PREFIXES } from '@/features/campaign/types';
+
+describe('INTERNAL_CTA_PREFIXES', () => {
+  // Byte-identical to skateboard-app-config-be's
+  // CampaignScreen.ALLOWED_INTERNAL_ROUTE_PREFIXES. If that list changes,
+  // update this copy (and toAppRoute) — there is no shared registry (BE plan
+  // gap #6). This test is the drift alarm.
+  it('matches the backend allow-list exactly', () => {
+    expect([...INTERNAL_CTA_PREFIXES]).toEqual([
+      '/home',
+      '/podcasts',
+      '/events',
+      '/competitions',
+      '/settings/about-us',
+    ]);
+  });
+});
 
 describe('isAllowedInternalTarget', () => {
   it('accepts an exact allow-list prefix', () => {

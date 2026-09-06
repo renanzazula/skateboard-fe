@@ -1,10 +1,13 @@
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { useMemo, useState } from 'react';
 import { StyleSheet, Switch, View } from 'react-native';
 
 import { PrimaryButton } from '@/shared/components/PrimaryButton';
+import { SecondaryButton } from '@/shared/components/SecondaryButton';
 import { TextField } from '@/shared/components/TextField';
 import { ThemedText } from '@/shared/components/themed-text';
-import { Spacing } from '@/shared/constants/theme';
+import { RADII, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import { ChoiceChips } from '@/features/campaign/admin/components/ChoiceChips';
@@ -21,7 +24,8 @@ type Props = {
   initial?: CampaignScreen;
   submitting: boolean;
   submitLabel: string;
-  onSubmit: (body: CampaignScreenRequest) => void;
+  /** The picked image is uploaded by the caller right after the screen is saved. */
+  onSubmit: (body: CampaignScreenRequest, pendingImage?: ImagePicker.ImagePickerAsset) => void;
 };
 
 const ALIGNMENTS: CampaignTextAlignment[] = ['LEFT', 'CENTER', 'RIGHT'];
@@ -50,6 +54,12 @@ export function CampaignScreenForm({ initial, submitting, submitLabel, onSubmit 
   const [actionType, setActionType] = useState<CampaignActionType>(initial?.actionType ?? 'NONE');
   const [actionLabel, setActionLabel] = useState(initial?.actionLabel ?? '');
   const [actionTarget, setActionTarget] = useState(initial?.actionTarget ?? '');
+  const [pendingImage, setPendingImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.9 });
+    if (!result.canceled && result.assets?.length) setPendingImage(result.assets[0]);
+  };
 
   const durationNum = Number.parseInt(duration, 10) || 0;
   const closeAfterNum = Number.parseInt(closeAfter, 10) || 0;
@@ -90,11 +100,32 @@ export function CampaignScreenForm({ initial, submitting, submitLabel, onSubmit 
       actionType,
       actionLabel: actionType === 'NONE' ? undefined : actionLabel.trim() || undefined,
       actionTarget: actionType === 'NONE' ? undefined : actionTarget.trim() || undefined,
-    });
+    }, pendingImage ?? undefined);
   };
+
+  const previewUri = pendingImage?.uri ?? initial?.backgroundUrl ?? null;
 
   return (
     <View style={styles.form}>
+      <View style={styles.field}>
+        <ThemedText type="small" themeColor="textSecondary">
+          {t('admin.campaigns.screenImage')}
+        </ThemedText>
+        {previewUri ? (
+          <Image
+            source={{ uri: previewUri }}
+            style={[styles.imagePreview, { borderColor: theme.border }]}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+          />
+        ) : null}
+        <SecondaryButton
+          title={previewUri ? t('common.edit') : t('admin.campaigns.screenImage')}
+          onPress={pickImage}
+          disabled={submitting}
+        />
+      </View>
+
       <TextField
         label={t('admin.campaigns.duration')}
         value={duration}
@@ -202,5 +233,7 @@ export function CampaignScreenForm({ initial, submitting, submitLabel, onSubmit 
 
 const styles = StyleSheet.create({
   form: { gap: Spacing.three, paddingBottom: Spacing.five },
+  field: { gap: Spacing.one, width: '100%' },
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  imagePreview: { width: '100%', aspectRatio: 9 / 16, maxHeight: 260, borderRadius: RADII.control, borderWidth: 1 },
 });

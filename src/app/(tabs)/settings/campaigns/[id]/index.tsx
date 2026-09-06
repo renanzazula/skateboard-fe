@@ -15,19 +15,12 @@ import { isBffError } from '@/shared/api/errors';
 import { ErrorBanner } from '@/shared/components/ErrorBanner';
 import { PrimaryButton } from '@/shared/components/PrimaryButton';
 import { SecondaryButton } from '@/shared/components/SecondaryButton';
-import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
 import { MAX_CONTENT_WIDTH, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import type { Campaign, CampaignScreen, CampaignScreenRequest } from '@/features/campaign/types';
 import { showAlert } from '@/shared/utils/alert';
-
-async function pickImage(): Promise<ImagePicker.ImagePickerAsset | null> {
-  const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.9 });
-  if (result.canceled || !result.assets?.length) return null;
-  return result.assets[0];
-}
 
 type Panel = { kind: 'campaign' } | { kind: 'screen'; screen?: CampaignScreen };
 
@@ -108,19 +101,20 @@ export default function CampaignEditorScreen() {
     ]);
   };
 
-  const submitScreen = async (body: CampaignScreenRequest) => {
+  const submitScreen = async (body: CampaignScreenRequest, pendingImage?: ImagePicker.ImagePickerAsset) => {
     if (!id) return;
     try {
       const editing = panel.kind === 'screen' ? panel.screen : undefined;
-      if (editing) {
-        await admin.updateScreen(id, editing.id, body);
-      } else {
-        await admin.addScreen(id, body);
+      const saved = editing
+        ? await admin.updateScreen(id, editing.id, body)
+        : await admin.addScreen(id, body);
+      if (pendingImage) {
+        await admin.uploadScreenImage(id, saved.id, pendingImage);
       }
       setCampaign(await admin.getCampaign(id));
       setPanel({ kind: 'campaign' });
     } catch (err) {
-      fail('saveError', err);
+      fail(pendingImage ? 'uploadImageError' : 'saveError', err);
     }
   };
 
@@ -153,18 +147,6 @@ export default function CampaignEditorScreen() {
     }
   };
 
-  const uploadImage = async (screen: CampaignScreen) => {
-    if (!id) return;
-    const asset = await pickImage();
-    if (!asset) return;
-    try {
-      await admin.uploadScreenImage(id, screen.id, asset);
-      setCampaign(await admin.getCampaign(id));
-    } catch (err) {
-      fail('uploadImageError', err);
-    }
-  };
-
   if (loading) {
     return (
       <ThemedView style={styles.container}>
@@ -191,17 +173,6 @@ export default function CampaignEditorScreen() {
       <ThemedView style={styles.container}>
         <SettingsHeader title={panel.screen ? t('common.edit') : t('admin.campaigns.addScreen')} />
         <ScrollView contentContainerStyle={styles.content}>
-          {panel.screen ? (
-            <SecondaryButton
-              title={t('admin.campaigns.screenImage')}
-              onPress={() => uploadImage(panel.screen!)}
-              disabled={admin.submitting}
-            />
-          ) : (
-            <ThemedText type="small" themeColor="textMuted">
-              {t('admin.campaigns.screenImage')}: {t('admin.campaigns.addScreen')} → {t('common.save')}
-            </ThemedText>
-          )}
           <CampaignScreenForm
             initial={panel.screen}
             submitting={admin.submitting}
@@ -247,11 +218,6 @@ export default function CampaignEditorScreen() {
           onDelete={deleteCampaign}
         />
 
-        {canManage ? null : (
-          <ThemedText type="small" themeColor="textMuted">
-            {t('admin.campaigns.title')}
-          </ThemedText>
-        )}
         <View style={styles.spacer} />
         <PrimaryButton title={t('common.close')} onPress={() => router.back()} />
       </ScrollView>
