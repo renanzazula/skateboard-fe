@@ -50,4 +50,12 @@ export const env = {
     process.env.EXPO_PUBLIC_KEYCLOAK_ISSUER ?? 'http://localhost:8180/realms/skateboard-podcast',
   keycloakClientId: process.env.EXPO_PUBLIC_KEYCLOAK_CLIENT_ID ?? 'skateboard-podcast-fe',
   bffBaseUrl: process.env.EXPO_PUBLIC_BFF_BASE_URL ?? localBackend(8090),
+
+  /**
+   * Startup Campaigns (Campaign V1). Off unless `EXPO_PUBLIC_CAMPAIGNS_ENABLED`
+   * is exactly `"true"`, so the runtime resolver/renderer and the admin entry
+   * point stay dark until the BFF is deployed and the live Keycloak realm
+   * carries the FUNC_CAMPAIGN_* roles.
+   */
+  campaignsEnabled: process.env.EXPO_PUBLIC_CAMPAIGNS_ENABLED === 'true',
 } as const;

@@ -25,6 +25,10 @@ export default function SettingsLayout() {
       <Stack.Screen name="about-us-admin" />
       <Stack.Screen name="about" />
       <Stack.Screen name="about-us" />
+      <Stack.Screen name="campaigns/index" />
+      <Stack.Screen name="campaigns/new" />
+      <Stack.Screen name="campaigns/[id]/index" />
+      <Stack.Screen name="campaigns/[id]/preview" />
     </Stack>
   );
 }
