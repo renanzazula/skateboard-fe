@@ -32,7 +32,8 @@ export default function AdministrationScreen() {
     !canConfigureHomeCategories &&
     !canConfigureFeaturedPlayer &&
     !canAdministerPodcast &&
-    !canManageAboutUs
+    !canManageAboutUs &&
+    !canReadCampaigns
   ) {
     return <Redirect href="/settings" />;
   }

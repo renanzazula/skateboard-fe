@@ -1,6 +1,7 @@
 import { Fraunces_700Bold, useFonts } from '@expo-google-fonts/fraunces';
 import { DarkTheme, Stack, ThemeProvider as NavigationThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AuthProvider, useAuth } from '@/core/auth';
@@ -8,7 +9,6 @@ import { AppConfigProvider } from '@/core/config';
 import { I18nProvider, useLanguageReady } from '@/core/i18n';
 import { CampaignGate } from '@/features/campaign';
 import { PushNotificationsGate } from '@/features/notifications';
-import { AnimatedSplashOverlay } from '@/shared/components/animated-icon';
 import { RouteErrorFallback } from '@/shared/components/RouteErrorFallback';
 
 SplashScreen.preventAutoHideAsync();
@@ -47,18 +47,25 @@ function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
   const languageReady = useLanguageReady();
   const ready = status !== 'loading' && fontsLoaded && languageReady;
 
+  // Hold the native splash (see SplashScreen.preventAutoHideAsync above) until
+  // auth, fonts and language are resolved, then hand straight off to the first
+  // real screen — no intermediate overlay, so the branded splash goes directly
+  // to (auth)/login or (tabs). Silent sign-in finishes under the splash rather
+  // than flashing the wrong font or an unstyled frame.
+  useEffect(() => {
+    if (ready) {
+      SplashScreen.hideAsync().catch(() => undefined);
+    }
+  }, [ready]);
+
   return (
     <NavigationThemeProvider value={DarkTheme}>
-      {/* Only mounted once auth and fonts are ready, so the native splash
-          (see SplashScreen.preventAutoHideAsync above) stays up through
-          silent sign-in instead of flashing the wrong font before hiding —
-          this also decides (tabs) vs (auth). App is dark-only, so the
-          navigation theme is always DarkTheme. */}
-      {ready && <AnimatedSplashOverlay />}
-      {/* Startup campaigns play here — above the stack, below the splash
-          overlay — so the stack mounts but stays hidden/non-interactive
-          until the sequence ends (or immediately, when nothing is eligible
-          or the feature is off). See features/campaign/CampaignGate. */}
+      {/* App is dark-only, so the navigation theme is always DarkTheme.
+          The guards below also decide (tabs) vs (auth). */}
+      {/* Startup campaigns play here — above the stack — so the stack mounts
+          but stays hidden/non-interactive until the sequence ends (or
+          immediately, when nothing is eligible or the feature is off).
+          See features/campaign/CampaignGate. */}
       <CampaignGate>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Protected guard={status === 'signedIn'}>
