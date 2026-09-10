@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { fetchActiveCampaigns } from '@/features/campaign/api/fetchActiveCampaigns';
@@ -11,6 +12,8 @@ import { withTimeout } from '@/shared/utils/withTimeout';
 const CACHE_TTL_MS = 10 * 60 * 1000;
 /** Hard budget for resolving on a cold cache — past this the app just starts. */
 const RESOLVE_BUDGET_MS = 2500;
+/** Bounds how long the first screen's background image can hold the splash. */
+const IMAGE_PRELOAD_TIMEOUT_MS = 1000;
 
 /** ONCE_PER_SESSION state — survives component remounts, not an app restart. */
 const sessionShownIds = new Set<string>();
@@ -20,6 +23,18 @@ type Phase = 'resolving' | 'ready';
 interface ResolverState {
   phase: Phase;
   campaign: CampaignRuntime | null;
+}
+
+/**
+ * Prefetches the chosen campaign's first screen background so `phase: 'ready'`
+ * means "safe to render atomically" — `CampaignScreenView`'s `expo-image`
+ * then serves it from cache instead of popping in after the text. Bounded and
+ * never throws: a slow/broken image must not hold the splash hostage.
+ */
+async function preloadFirstScreenImage(campaign: CampaignRuntime | null): Promise<void> {
+  const url = campaign?.screens?.[0]?.backgroundUrl;
+  if (!url) return;
+  await withTimeout(Image.prefetch(url), IMAGE_PRELOAD_TIMEOUT_MS, 'campaign image preload').catch(() => undefined);
 }
 
 async function pickCampaign(campaigns: CampaignRuntime[]): Promise<CampaignRuntime | null> {
@@ -54,6 +69,14 @@ export function useCampaignResolver(enabled: boolean): ResolverState & { markSho
     done.current = true;
     let cancelled = false;
 
+    // `enabled` starts false while auth is still loading, so the initial
+    // `phase` above was computed as 'ready' (nothing to resolve yet). Once
+    // auth resolves and `enabled` flips true, announce 'resolving' before
+    // the async work starts — otherwise `phase` stays stale at 'ready' for a
+    // render or two, which would let a caller gating on `phase === 'ready'`
+    // alone (e.g. the splash-hide check in `_layout.tsx`) act too early.
+    setState((s) => (s.phase === 'ready' ? { ...s, phase: 'resolving' } : s));
+
     (async () => {
       try {
         const cache = await readCampaignConfigCache();
@@ -61,6 +84,7 @@ export function useCampaignResolver(enabled: boolean): ResolverState & { markSho
 
         if (cacheFresh) {
           const campaign = await pickCampaign(cache!.campaigns);
+          await preloadFirstScreenImage(campaign);
           if (!cancelled) setState({ phase: 'ready', campaign });
           // Revalidate for next launch, don't swap mid-session.
           fetchActiveCampaigns()
@@ -72,6 +96,7 @@ export function useCampaignResolver(enabled: boolean): ResolverState & { markSho
         const campaigns = await withTimeout(fetchActiveCampaigns(), RESOLVE_BUDGET_MS, 'campaign resolve');
         writeCampaignConfigCache(campaigns).catch(() => undefined);
         const campaign = await pickCampaign(campaigns);
+        await preloadFirstScreenImage(campaign);
         if (!cancelled) setState({ phase: 'ready', campaign });
       } catch (err) {
         console.warn('[campaign] resolve failed, skipping', err);

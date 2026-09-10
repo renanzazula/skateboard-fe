@@ -6,8 +6,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AuthProvider, useAuth } from '@/core/auth';
 import { AppConfigProvider } from '@/core/config';
+import { env } from '@/core/config/env';
 import { I18nProvider, useLanguageReady } from '@/core/i18n';
 import { CampaignGate } from '@/features/campaign';
+import { useCampaignResolver } from '@/features/campaign/hooks/useCampaignResolver';
 import { PushNotificationsGate } from '@/features/notifications';
 import { RouteErrorFallback } from '@/shared/components/RouteErrorFallback';
 
@@ -45,13 +47,22 @@ export default function RootLayout() {
 function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
   const { status } = useAuth();
   const languageReady = useLanguageReady();
-  const ready = status !== 'loading' && fontsLoaded && languageReady;
+
+  // Owned here (not inside CampaignGate) so its phase can also gate the
+  // native splash below — otherwise the stack becomes visible before the
+  // campaign overlay is ready, showing Login/Home first with the campaign
+  // popping in on top a beat later. See useCampaignResolver.
+  const campaignsEnabled = env.campaignsEnabled && status !== 'loading';
+  const { phase: campaignPhase, campaign, markShown } = useCampaignResolver(campaignsEnabled);
+
+  const ready = status !== 'loading' && fontsLoaded && languageReady && campaignPhase === 'ready';
 
   // Hold the native splash (see SplashScreen.preventAutoHideAsync above) until
-  // auth, fonts and language are resolved, then hand straight off to the first
-  // real screen — no intermediate overlay, so the branded splash goes directly
-  // to (auth)/login or (tabs). Silent sign-in finishes under the splash rather
-  // than flashing the wrong font or an unstyled frame.
+  // auth, fonts, language and the startup campaign are resolved, then hand
+  // straight off to the first real screen — no intermediate overlay, so the
+  // branded splash goes directly to (auth)/login, (tabs), or the campaign
+  // overlay on top of either. Silent sign-in and campaign/image preload all
+  // finish under the splash rather than flashing an intermediate screen.
   useEffect(() => {
     if (ready) {
       SplashScreen.hideAsync().catch(() => undefined);
@@ -66,7 +77,7 @@ function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
           but stays hidden/non-interactive until the sequence ends (or
           immediately, when nothing is eligible or the feature is off).
           See features/campaign/CampaignGate. */}
-      <CampaignGate>
+      <CampaignGate phase={campaignPhase} campaign={campaign} markShown={markShown}>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Protected guard={status === 'signedIn'}>
             <Stack.Screen name="(tabs)" />
