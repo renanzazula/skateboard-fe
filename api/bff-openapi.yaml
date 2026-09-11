@@ -2937,6 +2937,16 @@ components:
       type: string
       enum: [TOP, BOTTOM]
 
+    HomePlayerSelectionMode:
+      type: string
+      description: >-
+        MANUAL: the admin explicitly picks contentId, and it never changes on
+        its own. AUTO: contentId is ignored/absent — the BFF resolves the
+        latest imported YouTube video matching the official "Skateboard
+        Podcast #<n>" episode pattern on every read, so there is nothing to
+        pick manually. Defaults to MANUAL for existing configurations.
+      enum: [MANUAL, AUTO]
+
     PreferredPlaybackPlatform:
       type: string
       description: >-
@@ -2967,6 +2977,8 @@ components:
           allOf:
             - $ref: '#/components/schemas/PreferredPlaybackPlatform'
           nullable: true
+        selectionMode:
+          $ref: '#/components/schemas/HomePlayerSelectionMode'
         updatedAt:
           type: string
           format: date-time
@@ -2974,7 +2986,7 @@ components:
 
     UpdateHomeFeaturedPlayerConfigRequest:
       type: object
-      required: [enabled, playerType, position]
+      required: [enabled, playerType, position, selectionMode]
       properties:
         enabled:
           type: boolean
@@ -2993,6 +3005,8 @@ components:
           allOf:
             - $ref: '#/components/schemas/PreferredPlaybackPlatform'
           nullable: true
+        selectionMode:
+          $ref: '#/components/schemas/HomePlayerSelectionMode'
 
     HomeFeaturedPlayerPlayback:
       type: object

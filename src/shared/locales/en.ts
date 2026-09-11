@@ -381,6 +381,12 @@ export const en = {
       loadError: 'Could not load the Featured Player configuration.',
       hint: 'Show a compact player for one podcast episode on the Home dashboard. Off by default — nothing is shown until an episode is selected and enabled.',
       enable: 'Enable Featured Player',
+      selectionMode: 'Selection mode',
+      manual: 'Manual',
+      auto: 'Automatic',
+      manualHint: 'Pick the episode yourself. Podcast sync never changes your selection.',
+      autoHint:
+        'The latest imported YouTube video matching the official "Skateboard Podcast #<number>" pattern is featured automatically after each sync. Shorts, clips and other non-episode videos are skipped.',
       position: 'Position',
       top: 'Top',
       bottom: 'Bottom',

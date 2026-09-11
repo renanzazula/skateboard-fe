@@ -382,6 +382,12 @@ export const pt: TranslationKeys = {
       loadError: 'Não foi possível carregar a configuração do player em destaque.',
       hint: 'Mostra um player compacto para um episódio do podcast no painel da Home. Desativado por padrão — nada é exibido até que um episódio seja escolhido e ativado.',
       enable: 'Ativar player em destaque',
+      selectionMode: 'Modo de seleção',
+      manual: 'Manual',
+      auto: 'Automático',
+      manualHint: 'Escolha você mesmo o episódio. A sincronização do podcast nunca altera sua seleção.',
+      autoHint:
+        'O último vídeo do YouTube importado que corresponder ao padrão oficial "Skateboard Podcast #<número>" é destacado automaticamente após cada sincronização. Shorts, clipes e outros vídeos que não sejam episódios são ignorados.',
       position: 'Posição',
       top: 'Topo',
       bottom: 'Base',
