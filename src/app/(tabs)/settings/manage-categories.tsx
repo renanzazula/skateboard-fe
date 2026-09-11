@@ -192,7 +192,7 @@ export default function ManageCategoriesScreen() {
         keyExtractor={(item) => item.id!}
         renderItem={renderRow}
         contentContainerStyle={styles.listContent}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ItemSeparatorComponent={CategorySeparator}
         ListHeaderComponent={
           <Text style={[styles.hint, { color: colors.textSecondary }]}>
             {t('admin.manageCategories.hint')}
@@ -225,6 +225,12 @@ export default function ManageCategoriesScreen() {
       </Modal>
     </View>
   );
+}
+
+// Extracted so it isn't redefined on every render of ManageCategoriesScreen
+// (typescript:S6478).
+function CategorySeparator() {
+  return <View style={styles.separator} />;
 }
 
 const styles = StyleSheet.create({

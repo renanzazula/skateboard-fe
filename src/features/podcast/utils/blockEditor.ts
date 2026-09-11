@@ -15,49 +15,56 @@ export type BlockEditor =
   | { type: 'link'; url: string; title: string; description: string }
   | { type: 'spotify'; url: string };
 
+// Each case of toBlock's switch below is its own function so that the
+// switch itself stays a flat dispatch — extracted to keep toBlock's
+// cognitive complexity down (typescript:S3776); behavior is unchanged.
+
+function embedToBlock(editor: Extract<BlockEditor, { type: 'embed' }>): Block | null {
+  const url = editor.rawUrl;
+  if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    const id = url.split('v=')[1]?.split('&')[0] ?? url.split('/').pop()?.split('?')[0] ?? '';
+    return id ? { type: 'embed', data: { platform: 'youtube', id } } : null;
+  }
+  if (url.includes('vimeo.com')) {
+    const id = url.split('/').pop()?.split('?')[0] ?? '';
+    return id ? { type: 'embed', data: { platform: 'vimeo', id } } : null;
+  }
+  return null;
+}
+
+function galleryToBlock(editor: Extract<BlockEditor, { type: 'gallery' }>): Block | null {
+  const urls = editor.urls.split('\n').map((u) => u.trim()).filter(Boolean);
+  return urls.length === 0 ? null : { type: 'gallery', data: { urls } };
+}
+
+function spotifyToBlock(editor: Extract<BlockEditor, { type: 'spotify' }>): Block | null {
+  const info = extractSpotifyInfo(editor.url);
+  return info ? { type: 'spotify', data: { url: editor.url, ...info } } : null;
+}
+
 export function toBlock(editor: BlockEditor): Block | null {
   switch (editor.type) {
     case 'text':
       return { type: 'text', data: { html: editor.html } };
     case 'image':
-      if (!editor.url) return null;
-      return { type: 'image', data: { url: editor.url, caption: editor.caption || undefined } };
+      return editor.url ? { type: 'image', data: { url: editor.url, caption: editor.caption || undefined } } : null;
     case 'video':
-      if (!editor.url) return null;
-      return { type: 'video', data: { url: editor.url } };
+      return editor.url ? { type: 'video', data: { url: editor.url } } : null;
     case 'quote':
-      if (!editor.text) return null;
-      return { type: 'quote', data: { text: editor.text, author: editor.author || undefined } };
-    case 'embed': {
-      const url = editor.rawUrl;
-      if (url.includes('youtube.com') || url.includes('youtu.be')) {
-        const id = url.split('v=')[1]?.split('&')[0] ?? url.split('/').pop()?.split('?')[0] ?? '';
-        if (!id) return null;
-        return { type: 'embed', data: { platform: 'youtube', id } };
-      }
-      if (url.includes('vimeo.com')) {
-        const id = url.split('/').pop()?.split('?')[0] ?? '';
-        if (!id) return null;
-        return { type: 'embed', data: { platform: 'vimeo', id } };
-      }
-      return null;
-    }
-    case 'gallery': {
-      const urls = editor.urls.split('\n').map((u) => u.trim()).filter(Boolean);
-      if (urls.length === 0) return null;
-      return { type: 'gallery', data: { urls } };
-    }
+      return editor.text ? { type: 'quote', data: { text: editor.text, author: editor.author || undefined } } : null;
+    case 'embed':
+      return embedToBlock(editor);
+    case 'gallery':
+      return galleryToBlock(editor);
     case 'link':
-      if (!editor.url) return null;
-      return {
-        type: 'link',
-        data: { url: editor.url, title: editor.title || undefined, description: editor.description || undefined },
-      };
-    case 'spotify': {
-      const info = extractSpotifyInfo(editor.url);
-      if (!info) return null;
-      return { type: 'spotify', data: { url: editor.url, ...info } };
-    }
+      return editor.url
+        ? {
+            type: 'link',
+            data: { url: editor.url, title: editor.title || undefined, description: editor.description || undefined },
+          }
+        : null;
+    case 'spotify':
+      return spotifyToBlock(editor);
     default:
       return null;
   }

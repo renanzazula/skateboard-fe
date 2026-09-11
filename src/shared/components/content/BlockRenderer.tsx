@@ -65,18 +65,22 @@ function EmbedBlockView({ platform, id }: { platform: 'youtube' | 'vimeo'; id: s
         const next = event.nativeEvent.layout.width;
         setWidth((current) => (current === next ? current : next));
       }}>
-      {height === undefined ? null : platform === 'youtube' ? (
-        <YoutubePlayer height={height} videoId={id} />
-      ) : (
-        <RNWebView
-          source={{ uri: `https://player.vimeo.com/video/${id}` }}
-          style={{ height }}
-          scrollEnabled={false}
-          allowsInlineMediaPlayback
-          allowsFullscreenVideo
-        />
-      )}
+      {height === undefined ? null : <EmbedPlayer platform={platform} id={id} height={height} />}
     </View>
+  );
+}
+
+function EmbedPlayer({ platform, id, height }: { platform: 'youtube' | 'vimeo'; id: string; height: number }) {
+  return platform === 'youtube' ? (
+    <YoutubePlayer height={height} videoId={id} />
+  ) : (
+    <RNWebView
+      source={{ uri: `https://player.vimeo.com/video/${id}` }}
+      style={{ height }}
+      scrollEnabled={false}
+      allowsInlineMediaPlayback
+      allowsFullscreenVideo
+    />
   );
 }
 
@@ -161,7 +165,11 @@ export function BlockRenderer({ block }: Props) {
 
   switch (block.type) {
     case 'text':
-      return <Text style={[styles.text, { color: colors.textPrimary }]}>{block.data.html.replace(/<[^>]+>/g, '')}</Text>;
+      return (
+        <Text style={[styles.text, { color: colors.textPrimary }]}>
+          {block.data.html.replace(/<[^>]{1,2000}>/g, '')}
+        </Text>
+      );
 
     case 'image':
       return <ImageBlockView url={block.data.url} caption={block.data.caption} />;
@@ -230,8 +238,8 @@ export function BlockRenderer({ block }: Props) {
     case 'gallery':
       return (
         <View style={styles.gallery}>
-          {block.data.urls.map((url, i) => (
-            <Image key={i} source={{ uri: url }} style={styles.galleryImage} resizeMode="cover" />
+          {block.data.urls.map((url) => (
+            <Image key={url} source={{ uri: url }} style={styles.galleryImage} resizeMode="cover" />
           ))}
         </View>
       );

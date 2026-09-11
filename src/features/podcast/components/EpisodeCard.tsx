@@ -45,8 +45,8 @@ export function EpisodeCard({ post, episodeNumber, onPress }: Props) {
   const [thumbFailed, setThumbFailed] = useState(false);
   const duration = getDuration(post);
 
-  const imageUri =
-    post.coverUrl || (youtubeId ? youtubeThumbnail(youtubeId, thumbFailed ? 'hqdefault' : 'maxresdefault') : null);
+  const thumbnailQuality = thumbFailed ? 'hqdefault' : 'maxresdefault';
+  const imageUri = post.coverUrl || (youtubeId ? youtubeThumbnail(youtubeId, thumbnailQuality) : null);
 
   return (
     <Pressable

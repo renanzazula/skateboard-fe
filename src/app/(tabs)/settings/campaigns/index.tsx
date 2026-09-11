@@ -28,48 +28,60 @@ export default function CampaignsListScreen() {
 
   if (!canRead) return <Redirect href="/settings" />;
 
-  return (
-    <ThemedView style={styles.container}>
-      <SettingsHeader title={t('admin.campaigns.title')} />
-      {loading ? (
+  if (loading) {
+    return (
+      <ThemedView style={styles.container}>
+        <SettingsHeader title={t('admin.campaigns.title')} />
         <ActivityIndicator style={styles.loading} color={theme.primary} />
-      ) : error ? (
+      </ThemedView>
+    );
+  }
+
+  if (error) {
+    return (
+      <ThemedView style={styles.container}>
+        <SettingsHeader title={t('admin.campaigns.title')} />
         <ErrorBanner
           message={isBffError(error) ? error.message : t('admin.campaigns.loadError')}
           onRetry={refetch}
         />
-      ) : (
-        <ScrollView contentContainerStyle={styles.content}>
-          {campaigns.length === 0 ? (
-            <EmptyState icon={Megaphone} title={t('admin.campaigns.empty')} />
-          ) : (
-            campaigns.map((c) => (
-              <Pressable
-                key={c.id}
-                onPress={() => router.push(`/settings/campaigns/${c.id}`)}
-                style={[styles.row, { borderColor: theme.border, backgroundColor: theme.surface }]}>
-                <View style={styles.rowMain}>
-                  <ThemedText type="smallBold" numberOfLines={1}>
-                    {c.name}
-                  </ThemedText>
-                  <ThemedText type="small" themeColor="textMuted">
-                    {t('admin.campaigns.priority')} {c.priority} ·{' '}
-                    {(c.screens ?? []).length} {t('admin.campaigns.screens').toLowerCase()}
-                  </ThemedText>
-                </View>
-                <CampaignStatusBadge status={c.status} />
-              </Pressable>
-            ))
-          )}
+      </ThemedView>
+    );
+  }
 
-          {canManage ? (
-            <PrimaryButton
-              title={t('admin.campaigns.newCampaign')}
-              onPress={() => router.push('/settings/campaigns/new')}
-            />
-          ) : null}
-        </ScrollView>
-      )}
+  return (
+    <ThemedView style={styles.container}>
+      <SettingsHeader title={t('admin.campaigns.title')} />
+      <ScrollView contentContainerStyle={styles.content}>
+        {campaigns.length === 0 ? (
+          <EmptyState icon={Megaphone} title={t('admin.campaigns.empty')} />
+        ) : (
+          campaigns.map((c) => (
+            <Pressable
+              key={c.id}
+              onPress={() => router.push(`/settings/campaigns/${c.id}`)}
+              style={[styles.row, { borderColor: theme.border, backgroundColor: theme.surface }]}>
+              <View style={styles.rowMain}>
+                <ThemedText type="smallBold" numberOfLines={1}>
+                  {c.name}
+                </ThemedText>
+                <ThemedText type="small" themeColor="textMuted">
+                  {t('admin.campaigns.priority')} {c.priority} ·{' '}
+                  {(c.screens ?? []).length} {t('admin.campaigns.screens').toLowerCase()}
+                </ThemedText>
+              </View>
+              <CampaignStatusBadge status={c.status} />
+            </Pressable>
+          ))
+        )}
+
+        {canManage ? (
+          <PrimaryButton
+            title={t('admin.campaigns.newCampaign')}
+            onPress={() => router.push('/settings/campaigns/new')}
+          />
+        ) : null}
+      </ScrollView>
     </ThemedView>
   );
 }

@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import { Film } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HomeHeader } from '@/features/home/components/HomeHeader';
 import { HomeVideoGalleryItem, TILE_INSET } from '@/features/home/components/HomeVideoGalleryItem';
@@ -30,7 +29,6 @@ export default function HomeScreen() {
   const theme = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const listRef = useRef<FlashListRef<Video>>(null);
   const { videos, isLoading, error, refresh, reloadHome } = useHomeVideos();
   const { content: featuredContent } = useHomeFeaturedPlayer();

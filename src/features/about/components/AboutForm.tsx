@@ -23,6 +23,7 @@ import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import type { SocialLinkItem } from '@/shared/types/content-blocks';
 import { showAlert } from '@/shared/utils/alert';
+import { nextListKey } from '@/shared/utils/stableListKey';
 
 const STATUSES: AboutPageStatus[] = ['draft', 'published'];
 
@@ -52,6 +53,11 @@ export function AboutForm({ initialPage, submitting, onSubmit, onUploadImage }: 
   const [subtitle, setSubtitle] = useState(initialPage?.subtitle ?? '');
   const [status, setStatus] = useState<AboutPageStatus>(initialPage?.status ?? 'draft');
   const [blocks, setBlocks] = useState<ContentBlock[]>(initialPage?.blocks ?? []);
+  // One generated key per block, kept in lockstep with `blocks` on every
+  // add/remove/move below — ContentBlock has no id of its own, and keying
+  // BlockCard by array index would misattribute a row's identity (and its
+  // focused input) across a reorder or removal (typescript:S6479).
+  const [blockKeys, setBlockKeys] = useState<string[]>(() => (initialPage?.blocks ?? []).map(() => nextListKey('block')));
   const [preview, setPreview] = useState(false);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
 
@@ -75,9 +81,18 @@ export function AboutForm({ initialPage, submitting, onSubmit, onUploadImage }: 
   const setBlock = (index: number, next: ContentBlock) =>
     setBlocks((prev) => prev.map((b, i) => (i === index ? next : b)));
 
-  const handleAddBlock = (type: AboutBlockType) => setBlocks((prev) => [...prev, defaultBlock(type)]);
-  const handleRemove = (index: number) => setBlocks((prev) => prev.filter((_, i) => i !== index));
-  const handleMove = (index: number, dir: -1 | 1) => setBlocks((prev) => moveItem(prev, index, index + dir));
+  const handleAddBlock = (type: AboutBlockType) => {
+    setBlockKeys((prev) => [...prev, nextListKey('block')]);
+    setBlocks((prev) => [...prev, defaultBlock(type)]);
+  };
+  const handleRemove = (index: number) => {
+    setBlockKeys((prev) => prev.filter((_, i) => i !== index));
+    setBlocks((prev) => prev.filter((_, i) => i !== index));
+  };
+  const handleMove = (index: number, dir: -1 | 1) => {
+    setBlockKeys((prev) => moveItem(prev, index, index + dir));
+    setBlocks((prev) => moveItem(prev, index, index + dir));
+  };
   const handleToggleHidden = (index: number) =>
     setBlocks((prev) => prev.map((b, i) => (i === index ? { ...b, hidden: !b.hidden } : b)));
 
@@ -181,7 +196,7 @@ export function AboutForm({ initialPage, submitting, onSubmit, onUploadImage }: 
 
               {blocks.map((block, i) => (
                 <BlockCard
-                  key={i}
+                  key={blockKeys[i] ?? i}
                   block={block}
                   index={i}
                   total={blocks.length}
@@ -512,8 +527,22 @@ function SocialLinksEditor({
     { color: theme.textPrimary, borderColor: theme.border, backgroundColor: theme.background },
   ];
 
+  // links (SocialLinkItem[]) has no id of its own either — see the matching
+  // blockKeys comment above (typescript:S6479).
+  const [keys, setKeys] = useState<string[]>(() => links.map(() => nextListKey('social-link')));
+
   const update = (i: number, patch: Partial<SocialLinkItem>) =>
     onChangeLinks(links.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
+
+  const addLink = () => {
+    setKeys((prev) => [...prev, nextListKey('social-link')]);
+    onChangeLinks([...links, { platform: 'INSTAGRAM', username: '', url: '' }]);
+  };
+
+  const removeLink = (i: number) => {
+    setKeys((prev) => prev.filter((_, idx) => idx !== i));
+    onChangeLinks(links.filter((_, idx) => idx !== i));
+  };
 
   return (
     <>
@@ -526,12 +555,12 @@ function SocialLinksEditor({
         placeholderTextColor={theme.textMuted}
       />
       {links.map((link, i) => (
-        <ThemedView key={i} type="background" style={[styles.socialRow, { borderColor: theme.border }]}>
+        <ThemedView key={keys[i] ?? i} type="background" style={[styles.socialRow, { borderColor: theme.border }]}>
           <View style={styles.blockRowHeader}>
             <ThemedText type="small" themeColor="textSecondary">
               {t('admin.aboutUs.socialLink')} {i + 1}
             </ThemedText>
-            <Pressable onPress={() => onChangeLinks(links.filter((_, idx) => idx !== i))} hitSlop={8}>
+            <Pressable onPress={() => removeLink(i)} hitSlop={8}>
               <Trash2 size={14} color={theme.destructive} />
             </Pressable>
           </View>
@@ -565,8 +594,7 @@ function SocialLinksEditor({
           />
         </ThemedView>
       ))}
-      <Pressable
-        onPress={() => onChangeLinks([...links, { platform: 'INSTAGRAM', username: '', url: '' }])}>
+      <Pressable onPress={addLink}>
         <ThemedView type="surface" style={[styles.addBlockButton, { borderColor: theme.primary }]}>
           <ThemedText type="small" themeColor="primary">
             + {t('admin.aboutUs.addSocialLink')}

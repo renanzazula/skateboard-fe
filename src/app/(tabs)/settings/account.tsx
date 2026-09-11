@@ -24,6 +24,15 @@ function formatMemberSince(createdAt: string | undefined, locale: string): strin
   return date.toLocaleDateString(locale, { year: 'numeric', month: 'long' });
 }
 
+// Only worth a row when it isn't the normal case: printing "Active" to
+// everyone is noise, while saying nothing on a deactivated account hides
+// the one thing that matters.
+function formatAccountStatus(status: string | undefined, t: ReturnType<typeof useTranslation>['t']): string | null {
+  if (status === 'DEACTIVATED') return t('settings.statusDeactivated');
+  if (status === 'DELETED') return t('settings.statusDeleted');
+  return null;
+}
+
 export default function AccountScreen() {
   const { logout, email } = useAuth();
   const { profile, isLoading } = useProfile();
@@ -32,15 +41,7 @@ export default function AccountScreen() {
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
 
   const memberSince = formatMemberSince(profile?.createdAt, language);
-  // Only worth a row when it isn't the normal case: printing "Active" to
-  // everyone is noise, while saying nothing on a deactivated account hides
-  // the one thing that matters.
-  const accountStatus =
-    profile?.status === 'DEACTIVATED'
-      ? t('settings.statusDeactivated')
-      : profile?.status === 'DELETED'
-        ? t('settings.statusDeleted')
-        : null;
+  const accountStatus = formatAccountStatus(profile?.status, t);
 
   const handleDeactivate = useCallback(() => {
     showAlert(t('settings.deactivateAccount'), t('settings.deactivateConfirmMessage'), [

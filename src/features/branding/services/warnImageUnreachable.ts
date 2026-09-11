@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 
 /** Hosts that mean "whichever machine is asking" rather than a fixed address. */
-const LOOPBACK = ['localhost', '127.0.0.1', '::1', '0.0.0.0'];
+const LOOPBACK = new Set(['localhost', '127.0.0.1', '::1', '0.0.0.0']);
 
 /**
  * Host of an absolute http(s) URL, or null if it isn't one.
@@ -37,7 +37,7 @@ function hostOf(url: string): string | null {
 export function warnImageUnreachable(label: string, url: string, error: string): void {
   const host = hostOf(url);
 
-  if (host && LOOPBACK.includes(host) && Platform.OS !== 'web') {
+  if (host && LOOPBACK.has(host) && Platform.OS !== 'web') {
     console.warn(
       `[branding] ${label} failed to load: its URL points at "${host}", which on ` +
         `${Platform.OS} means this device, not your dev machine. Restart ` +

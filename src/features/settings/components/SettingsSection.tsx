@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from 'react';
+import { Fragment, isValidElement, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { SECTION_GAP, SectionLabel } from '@/features/settings/components/SectionLabel';
@@ -53,7 +53,7 @@ export function SettingsSection({ label, tone = 'default', dividerInset = 'icon'
           },
         ]}>
         {rows.map((row, index) => (
-          <Fragment key={index}>
+          <Fragment key={rowKey(row, index)}>
             {row}
             {index < rows.length - 1 ? (
               <View
@@ -69,6 +69,21 @@ export function SettingsSection({ label, tone = 'default', dividerInset = 'icon'
       </View>
     </View>
   );
+}
+
+/**
+ * A row's own key (when the caller set one, e.g. the dynamic sections in
+ * settings/index.tsx) or its title (rows are SettingsRow elements, whose
+ * `title` is a stable, per-row-distinct string) — falling back to the array
+ * index only when neither is available (typescript:S6479).
+ */
+function rowKey(row: ReactNode, index: number): string | number {
+  if (isValidElement(row)) {
+    if (row.key != null) return row.key;
+    const title = (row.props as { title?: unknown } | null)?.title;
+    if (typeof title === 'string') return title;
+  }
+  return index;
 }
 
 const styles = StyleSheet.create({
