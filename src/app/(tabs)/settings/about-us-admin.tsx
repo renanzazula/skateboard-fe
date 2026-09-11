@@ -64,21 +64,33 @@ export default function AboutUsAdminScreen() {
     }
   };
 
+  if (loading) {
+    return (
+      <ThemedView style={styles.container}>
+        <SettingsHeader title={t('admin.aboutUs.title')} />
+        <ActivityIndicator style={styles.loading} color={theme.primary} />
+      </ThemedView>
+    );
+  }
+
+  if (error) {
+    return (
+      <ThemedView style={styles.container}>
+        <SettingsHeader title={t('admin.aboutUs.title')} />
+        <ErrorBanner message={isBffError(error) ? error.message : t('admin.aboutUs.loadError')} onRetry={load} />
+      </ThemedView>
+    );
+  }
+
   return (
     <ThemedView style={styles.container}>
       <SettingsHeader title={t('admin.aboutUs.title')} />
-      {loading ? (
-        <ActivityIndicator style={styles.loading} color={theme.primary} />
-      ) : error ? (
-        <ErrorBanner message={isBffError(error) ? error.message : t('admin.aboutUs.loadError')} onRetry={load} />
-      ) : (
-        <AboutForm
-          initialPage={page}
-          submitting={submitting}
-          onSubmit={handleSubmit}
-          onUploadImage={uploadImage}
-        />
-      )}
+      <AboutForm
+        initialPage={page}
+        submitting={submitting}
+        onSubmit={handleSubmit}
+        onUploadImage={uploadImage}
+      />
     </ThemedView>
   );
 }

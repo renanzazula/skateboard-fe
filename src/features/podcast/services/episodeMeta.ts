@@ -38,7 +38,7 @@ export function getEpisodeNumber(post: Post): number | null {
   if (post.episodeNumber != null) return post.episodeNumber;
   // "#" and the digits are sometimes typed apart ("… Skateboard Podcast # 77").
   const match = post.title.match(/#\s*(\d+)\s*$/) ?? post.title.match(/#\s*(\d+)/);
-  return match ? parseInt(match[1], 10) : null;
+  return match ? Number.parseInt(match[1], 10) : null;
 }
 
 // Prefers the platform link the sync jobs attach (see
@@ -228,9 +228,11 @@ export function getDuration(post: Post): string | null {
 export function textBlockContent(html: string): string {
   return (
     html
-      .replace(/<[^>]+>/g, '')
+      .replace(/<[^>]{1,2000}>/g, '')
       // drop the trailing "date · duration" metadata line if present
-      .replace(/\n*[^\n]*·[^\n]*\d{1,2}:\d{2}[^\n]*$/, '')
+      // (bounded so a pathological/adversarial string can't cause
+      // super-linear backtracking here — typescript:S8786)
+      .replace(/\n{0,5}[^\n]{0,200}·[^\n]{0,200}\d{1,2}:\d{2}[^\n]{0,200}$/, '')
       .trim()
   );
 }

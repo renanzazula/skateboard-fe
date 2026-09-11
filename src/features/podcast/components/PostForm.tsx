@@ -17,6 +17,7 @@ import { MAX_FORM_WIDTH, RADII, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import { showAlert } from '@/shared/utils/alert';
+import { nextListKey } from '@/shared/utils/stableListKey';
 import type { Block, SocialMediaLink } from '@/shared/types/posts';
 
 export interface PostFormValues {
@@ -325,13 +326,25 @@ export function PostForm({ initialValues, submitLabel, submitting, onSubmit, syn
   const [blockEditors, setBlockEditors] = useState<BlockEditor[]>(
     initialValues?.blocks?.map(blockToEditor) ?? []
   );
+  // One generated key per block editor, kept in lockstep with `blockEditors`
+  // below — BlockEditor has no id of its own, and keying BlockEditorRow by
+  // array index would misattribute a row's identity across a removal
+  // (typescript:S6479).
+  const [blockEditorKeys, setBlockEditorKeys] = useState<string[]>(() =>
+    (initialValues?.blocks ?? []).map(() => nextListKey('block'))
+  );
   const [socialLinks, setSocialLinks] = useState<SocialLinkEditor[]>(
     initialValues?.socialMediaLinks?.map((l) => ({ url: l.url })) ?? []
+  );
+  // Same reasoning as blockEditorKeys above.
+  const [socialLinkKeys, setSocialLinkKeys] = useState<string[]>(() =>
+    (initialValues?.socialMediaLinks ?? []).map(() => nextListKey('social-link'))
   );
 
   const canSubmit = title.trim().length > 0 && coverUrl.trim().length > 0 && !submitting;
 
   const handleAddBlock = (type: BlockEditor['type']) => {
+    setBlockEditorKeys((prev) => [...prev, nextListKey('block')]);
     setBlockEditors((prev) => [...prev, defaultEditor(type)]);
   };
 
@@ -340,7 +353,18 @@ export function PostForm({ initialValues, submitLabel, submitting, onSubmit, syn
   };
 
   const handleBlockRemove = (i: number) => {
+    setBlockEditorKeys((prev) => prev.filter((_, idx) => idx !== i));
     setBlockEditors((prev) => prev.filter((_, idx) => idx !== i));
+  };
+
+  const handleAddSocialLink = () => {
+    setSocialLinkKeys((prev) => [...prev, nextListKey('social-link')]);
+    setSocialLinks((prev) => [...prev, { url: '' }]);
+  };
+
+  const handleSocialLinkRemove = (i: number) => {
+    setSocialLinkKeys((prev) => prev.filter((_, idx) => idx !== i));
+    setSocialLinks((prev) => prev.filter((_, idx) => idx !== i));
   };
 
   const handlePickImage = async () => {
@@ -480,12 +504,12 @@ export function PostForm({ initialValues, submitLabel, submitting, onSubmit, syn
         {t('feed.socialMediaLinks')}
       </ThemedText>
       {socialLinks.map((link, i) => (
-        <ThemedView key={i} type="surface" style={[styles.blockRow, { borderColor: theme.border }]}>
+        <ThemedView key={socialLinkKeys[i] ?? i} type="surface" style={[styles.blockRow, { borderColor: theme.border }]}>
           <ThemedView style={styles.blockRowHeader}>
             <ThemedText type="smallBold" themeColor="primary">
               {t('feed.socialUrl')}
             </ThemedText>
-            <Pressable onPress={() => setSocialLinks((prev) => prev.filter((_, idx) => idx !== i))} hitSlop={8}>
+            <Pressable onPress={() => handleSocialLinkRemove(i)} hitSlop={8}>
               <ThemedText type="smallBold" themeColor="destructive">
                 ✕
               </ThemedText>
@@ -502,7 +526,7 @@ export function PostForm({ initialValues, submitLabel, submitting, onSubmit, syn
           />
         </ThemedView>
       ))}
-      <Pressable onPress={() => setSocialLinks((prev) => [...prev, { url: '' }])}>
+      <Pressable onPress={handleAddSocialLink}>
         <ThemedView type="surface" style={[styles.addBlockButton, { borderColor: theme.primary }]}>
           <ThemedText type="small" themeColor="primary">
             + {t('feed.addSocialLink')}
@@ -515,7 +539,7 @@ export function PostForm({ initialValues, submitLabel, submitting, onSubmit, syn
       </ThemedText>
       {blockEditors.map((editor, i) => (
         <BlockEditorRow
-          key={i}
+          key={blockEditorKeys[i] ?? i}
           editor={editor}
           onChange={(e) => handleBlockChange(i, e)}
           onRemove={() => handleBlockRemove(i)}

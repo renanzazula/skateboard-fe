@@ -44,7 +44,7 @@ export function ProfileCard({ onPress }: Props) {
   const { profile, isLoading, refresh } = useProfile();
 
   const displayName = profile?.displayName || profile?.username || t('settings.skater');
-  const isAdmin = ADMIN_AUTHORITIES.some(hasAuthority);
+  const isAdmin = ADMIN_AUTHORITIES.some((authority) => hasAuthority(authority));
 
   return (
     <Pressable

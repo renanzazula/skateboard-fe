@@ -41,6 +41,13 @@ function saveFormatFor(mimeType: string | null | undefined): SaveFormat {
   return SaveFormat.JPEG;
 }
 
+/** Inverse of saveFormatFor, for the mimeType reported back on the processed asset. */
+function mimeTypeFor(format: SaveFormat): string {
+  if (format === SaveFormat.PNG) return 'image/png';
+  if (format === SaveFormat.WEBP) return 'image/webp';
+  return 'image/jpeg';
+}
+
 async function processAsset(
   asset: ImagePickerAsset,
   cropRect: CropRect | null,
@@ -85,7 +92,7 @@ async function processAsset(
     uri: saved.uri,
     width: saved.width,
     height: saved.height,
-    mimeType: format === SaveFormat.PNG ? 'image/png' : format === SaveFormat.WEBP ? 'image/webp' : 'image/jpeg',
+    mimeType: mimeTypeFor(format),
     fileSizeBytes,
   };
 }

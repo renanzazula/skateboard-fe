@@ -46,6 +46,13 @@ export function SettingsRow({ icon: Icon, title, subtitle, trailing = { type: 'n
   const isSwitchRow = trailing.type === 'switch';
   const isPressable = (Boolean(onPress) || isSwitchRow) && !disabled;
 
+  let accessibilityRole: 'switch' | 'button' | undefined;
+  if (isSwitchRow) {
+    accessibilityRole = 'switch';
+  } else if (isPressable) {
+    accessibilityRole = 'button';
+  }
+
   const handleSwitchChange = (next: boolean) => {
     if (trailing.type !== 'switch') return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -64,7 +71,7 @@ export function SettingsRow({ icon: Icon, title, subtitle, trailing = { type: 'n
     <Pressable
       disabled={!isPressable}
       onPress={handleRowPress}
-      accessibilityRole={isSwitchRow ? 'switch' : isPressable ? 'button' : undefined}
+      accessibilityRole={accessibilityRole}
       accessibilityState={trailing.type === 'switch' ? { checked: trailing.value, disabled } : { disabled }}
       style={({ pressed }) => [
         styles.row,

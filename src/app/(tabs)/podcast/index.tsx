@@ -81,48 +81,6 @@ export default function PodcastListScreen() {
     if (category.slug !== selectedCategory?.slug) setSelectedCategory(category);
   };
 
-  // Title and episode count live in the AppHeader above the list now, so
-  // this is just the category rail.
-  const ListHeader = () => (
-    <View style={styles.screenHeader}>
-      <CategorySelector
-        categories={categories}
-        selectedSlug={selectedCategory?.slug}
-        onSelect={handleSelectCategory}
-      />
-    </View>
-  );
-
-  const ListEmpty = () => (
-    <EmptyState
-      icon={Mic}
-      title={t('podcast.noVideosInCategory')}
-      actionLabel={canCreate ? t('podcast.writeFirstPost') : undefined}
-      onAction={canCreate ? handleCreatePress : undefined}
-    />
-  );
-
-  const ListFooter = () => {
-    if (postsLoading) return <ActivityIndicator style={styles.footer} color={colors.primary} />;
-    if (total === 0) return null;
-    return (
-      <View>
-        <Text style={[styles.footerText, { color: colors.textSecondary }]}>
-          {hasMore
-            ? t('podcast.showingPosts', { current: posts.length, total })
-            : t('podcast.allPostsLoaded', { total })}
-        </Text>
-        {hasMore ? (
-          <Pressable
-            style={[styles.loadMoreButton, { borderColor: colors.border, backgroundColor: colors.surface }]}
-            onPress={loadMore}>
-            <Text style={[styles.loadMoreText, { color: colors.textPrimary }]}>{t('podcast.loadMore')}</Text>
-          </Pressable>
-        ) : null}
-      </View>
-    );
-  };
-
   return (
     // No paddingBottom here: it would shrink the list's viewport rather than
     // add scrollable room at its end, leaving a strip of background the list
@@ -147,9 +105,29 @@ export default function PodcastListScreen() {
         contentContainerStyle={styles.listContent}
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.5}
-        ListHeaderComponent={<ListHeader />}
-        ListEmptyComponent={!postsLoading && !categoriesLoading && !error ? <ListEmpty /> : null}
-        ListFooterComponent={<ListFooter />}
+        ListHeaderComponent={
+          <PodcastListHeader
+            categories={categories}
+            selectedSlug={selectedCategory?.slug}
+            onSelectCategory={handleSelectCategory}
+          />
+        }
+        ListEmptyComponent={
+          !postsLoading && !categoriesLoading && !error ? (
+            <PodcastListEmpty canCreate={canCreate} onCreatePress={handleCreatePress} t={t} />
+          ) : null
+        }
+        ListFooterComponent={
+          <PodcastListFooter
+            postsLoading={postsLoading}
+            total={total}
+            postsCount={posts.length}
+            hasMore={hasMore}
+            onLoadMore={loadMore}
+            colors={colors}
+            t={t}
+          />
+        }
         refreshing={refreshing}
         onRefresh={handleRefresh}
       />
@@ -160,6 +138,68 @@ export default function PodcastListScreen() {
           onPress={handleCreatePress}
           accessibilityLabel={t('podcast.createEpisode')}>
           <Plus size={28} color={colors.onPrimary} />
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+// Extracted so these aren't redefined (and remounted) on every render of
+// PodcastListScreen (typescript:S6478).
+type PodcastListHeaderProps = {
+  categories: Category[];
+  selectedSlug?: string;
+  onSelectCategory: (category: Category) => void;
+};
+
+function PodcastListHeader({ categories, selectedSlug, onSelectCategory }: PodcastListHeaderProps) {
+  return (
+    <View style={styles.screenHeader}>
+      <CategorySelector categories={categories} selectedSlug={selectedSlug} onSelect={onSelectCategory} />
+    </View>
+  );
+}
+
+type PodcastListEmptyProps = {
+  canCreate: boolean;
+  onCreatePress: () => void;
+  t: ReturnType<typeof useTranslation>['t'];
+};
+
+function PodcastListEmpty({ canCreate, onCreatePress, t }: PodcastListEmptyProps) {
+  return (
+    <EmptyState
+      icon={Mic}
+      title={t('podcast.noVideosInCategory')}
+      actionLabel={canCreate ? t('podcast.writeFirstPost') : undefined}
+      onAction={canCreate ? onCreatePress : undefined}
+    />
+  );
+}
+
+type PodcastListFooterProps = {
+  postsLoading: boolean;
+  total: number;
+  postsCount: number;
+  hasMore: boolean;
+  onLoadMore: () => void;
+  colors: ReturnType<typeof useTheme>;
+  t: ReturnType<typeof useTranslation>['t'];
+};
+
+function PodcastListFooter({ postsLoading, total, postsCount, hasMore, onLoadMore, colors, t }: PodcastListFooterProps) {
+  if (postsLoading) return <ActivityIndicator style={styles.footer} color={colors.primary} />;
+  if (total === 0) return null;
+  return (
+    <View>
+      <Text style={[styles.footerText, { color: colors.textSecondary }]}>
+        {hasMore ? t('podcast.showingPosts', { current: postsCount, total }) : t('podcast.allPostsLoaded', { total })}
+      </Text>
+      {hasMore ? (
+        <Pressable
+          style={[styles.loadMoreButton, { borderColor: colors.border, backgroundColor: colors.surface }]}
+          onPress={onLoadMore}>
+          <Text style={[styles.loadMoreText, { color: colors.textPrimary }]}>{t('podcast.loadMore')}</Text>
         </Pressable>
       ) : null}
     </View>

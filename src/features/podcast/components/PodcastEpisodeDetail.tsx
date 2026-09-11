@@ -13,6 +13,7 @@ import {
   getSocialLinks,
   getSpotifyEmbedUrl,
   getYoutubeId,
+  type ResolvedSocialLink,
 } from '@/features/podcast/services/episodeMeta';
 import { Badge } from '@/shared/components/Badge';
 import { BlockRenderer } from '@/shared/components/content/BlockRenderer';
@@ -67,6 +68,167 @@ function FloatingButton({
     <Pressable style={styles.floatingButton} onPress={onPress} hitSlop={8} accessibilityLabel={label} accessibilityRole="button">
       {children}
     </Pressable>
+  );
+}
+
+// The sections below are extracted out of PodcastEpisodeDetail's render to
+// keep its cognitive complexity down (typescript:S3776) — each owns one
+// self-contained, independently-toggled piece of the layout.
+
+function EpisodeHero({
+  hasVideo,
+  youtubeId,
+  heroVideoUrl,
+  heroUri,
+  colors,
+}: {
+  hasVideo: boolean;
+  youtubeId: string | null;
+  heroVideoUrl: string | null;
+  heroUri: string | null;
+  colors: ReturnType<typeof useTheme>;
+}) {
+  if (hasVideo) {
+    return <EpisodeVideoPlayer youtubeId={youtubeId} videoUrl={heroVideoUrl} poster={heroUri} height={HERO_HEIGHT} />;
+  }
+  return heroUri ? (
+    <Image source={{ uri: heroUri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+  ) : (
+    <View style={[StyleSheet.absoluteFill, styles.heroPlaceholder, { backgroundColor: colors.surfaceElevated }]}>
+      <Mic size={48} color={colors.textMuted} />
+    </View>
+  );
+}
+
+// Every social link on the post, not just Instagram. Wraps rather than
+// sharing the meta row: the row is a fixed set of facts, and an author can
+// add any number of these.
+function SocialLinksRow({ links, colors }: { links: ResolvedSocialLink[]; colors: ReturnType<typeof useTheme> }) {
+  if (links.length === 0) return null;
+  return (
+    <View style={styles.socialRow}>
+      {links.map((link) => (
+        <Pressable
+          key={link.url}
+          onPress={() => Linking.openURL(link.url)}
+          hitSlop={6}
+          accessibilityRole="link"
+          accessibilityLabel={`Open ${link.label}`}
+          style={({ pressed }) => [
+            styles.socialChip,
+            { borderColor: colors.border, backgroundColor: colors.surface, opacity: pressed ? 0.7 : 1 },
+          ]}>
+          {link.isInstagram ? <InstagramIcon size={14} color={colors.primary} /> : null}
+          <Text style={[styles.socialLabel, { color: colors.textPrimary }]}>{link.label}</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+function SpotifyEmbedSection({
+  url,
+  colors,
+  t,
+}: {
+  url: string;
+  colors: ReturnType<typeof useTheme>;
+  t: ReturnType<typeof useTranslation>['t'];
+}) {
+  return (
+    <View style={styles.section}>
+      <Text style={[styles.eyebrow, { color: colors.textMuted }]}>{t('podcast.listenOnSpotify').toUpperCase()}</Text>
+      <View style={styles.spotifyEmbed}>
+        {Platform.OS === 'web' ? (
+          /* @ts-ignore web-only element */
+          <iframe
+            src={url}
+            style={{ width: '100%', height: 152, border: 'none', borderRadius: 12 }}
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          />
+        ) : (
+          <RNWebView source={{ uri: url }} style={styles.spotifyWebView} scrollEnabled={false} allowsInlineMediaPlayback />
+        )}
+      </View>
+    </View>
+  );
+}
+
+function DescriptionSection({
+  description,
+  shownDescription,
+  collapsible,
+  expanded,
+  onToggle,
+  colors,
+  t,
+}: {
+  description: string;
+  shownDescription: string;
+  collapsible: boolean;
+  expanded: boolean;
+  onToggle: () => void;
+  colors: ReturnType<typeof useTheme>;
+  t: ReturnType<typeof useTranslation>['t'];
+}) {
+  if (!description) return null;
+  return (
+    <View>
+      <Text style={[styles.description, { color: colors.textPrimary }]}>{shownDescription}</Text>
+      {collapsible ? (
+        <Pressable onPress={onToggle} hitSlop={8}>
+          <Text style={[styles.toggle, { color: colors.primary }]}>
+            {expanded ? t('podcast.showLess') : t('podcast.showMore')}
+          </Text>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+// Blocks have no stable id (shared/types/content-blocks.ts), and this list is
+// read-only display of a fixed, already-fetched post — content, not the
+// array index, both satisfies typescript:S6479 and stays stable across
+// re-renders of the same post.
+function ExtraBlocksSection({ blocks }: { blocks: Post['blocks'] }) {
+  if (blocks.length === 0) return null;
+  return (
+    <View style={styles.extraBlocks}>
+      {blocks.map((block) => (
+        <BlockRenderer key={JSON.stringify(block)} block={block} />
+      ))}
+    </View>
+  );
+}
+
+function FloatingActionsBar({
+  canEdit,
+  canDelete,
+  onEdit,
+  onDelete,
+  colors,
+  t,
+}: {
+  canEdit: boolean;
+  canDelete: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+  colors: ReturnType<typeof useTheme>;
+  t: ReturnType<typeof useTranslation>['t'];
+}) {
+  return (
+    <View style={styles.floatingActions}>
+      {canEdit ? (
+        <FloatingButton onPress={onEdit} label={t('podcast.editEpisode')}>
+          <Pencil size={18} color={OVERLAY.white} />
+        </FloatingButton>
+      ) : null}
+      {canDelete ? (
+        <FloatingButton onPress={onDelete} label={t('podcast.deleteEpisode')}>
+          <Trash2 size={18} color={colors.destructive} />
+        </FloatingButton>
+      ) : null}
+    </View>
   );
 }
 
@@ -129,27 +291,6 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
     return true;
   });
 
-  const renderHero = () => {
-    if (hasVideo) {
-      return (
-        <EpisodeVideoPlayer
-          youtubeId={youtubeId}
-          videoUrl={heroVideoUrl}
-          poster={heroUri}
-          height={HERO_HEIGHT}
-        />
-      );
-    }
-
-    return heroUri ? (
-      <Image source={{ uri: heroUri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-    ) : (
-      <View style={[StyleSheet.absoluteFill, styles.heroPlaceholder, { backgroundColor: colors.surfaceElevated }]}>
-        <Mic size={48} color={colors.textMuted} />
-      </View>
-    );
-  };
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -157,7 +298,9 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
         contentContainerStyle={styles.scrollContent}
         scrollEventThrottle={16}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}>
-        <View style={styles.hero}>{renderHero()}</View>
+        <View style={styles.hero}>
+          <EpisodeHero hasVideo={hasVideo} youtubeId={youtubeId} heroVideoUrl={heroVideoUrl} heroUri={heroUri} colors={colors} />
+        </View>
 
         <View style={styles.body}>
           {episodeNumber ? <Badge label={`EP #${episodeNumber}`} style={styles.epBadge} /> : null}
@@ -175,76 +318,23 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
             ) : null}
           </View>
 
-          {/* Every social link on the post, not just Instagram. Wraps rather
-              than sharing the meta row: the row is a fixed set of facts, and
-              an author can add any number of these. */}
-          {socialLinks.length > 0 ? (
-            <View style={styles.socialRow}>
-              {socialLinks.map((link) => (
-                <Pressable
-                  key={link.url}
-                  onPress={() => Linking.openURL(link.url)}
-                  hitSlop={6}
-                  accessibilityRole="link"
-                  accessibilityLabel={`Open ${link.label}`}
-                  style={({ pressed }) => [
-                    styles.socialChip,
-                    { borderColor: colors.border, backgroundColor: colors.surface, opacity: pressed ? 0.7 : 1 },
-                  ]}>
-                  {link.isInstagram ? <InstagramIcon size={14} color={colors.primary} /> : null}
-                  <Text style={[styles.socialLabel, { color: colors.textPrimary }]}>{link.label}</Text>
-                </Pressable>
-              ))}
-            </View>
-          ) : null}
+          <SocialLinksRow links={socialLinks} colors={colors} />
 
-          {spotifyEmbedUrl ? (
-            <View style={styles.section}>
-              <Text style={[styles.eyebrow, { color: colors.textMuted }]}>
-                {t('podcast.listenOnSpotify').toUpperCase()}
-              </Text>
-              <View style={styles.spotifyEmbed}>
-                {Platform.OS === 'web' ? (
-                  /* @ts-ignore web-only element */
-                  <iframe
-                    src={spotifyEmbedUrl}
-                    style={{ width: '100%', height: 152, border: 'none', borderRadius: 12 }}
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                  />
-                ) : (
-                  <RNWebView
-                    source={{ uri: spotifyEmbedUrl }}
-                    style={styles.spotifyWebView}
-                    scrollEnabled={false}
-                    allowsInlineMediaPlayback
-                  />
-                )}
-              </View>
-            </View>
-          ) : null}
+          {spotifyEmbedUrl ? <SpotifyEmbedSection url={spotifyEmbedUrl} colors={colors} t={t} /> : null}
 
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-          {description ? (
-            <View>
-              <Text style={[styles.description, { color: colors.textPrimary }]}>{shownDescription}</Text>
-              {collapsible ? (
-                <Pressable onPress={() => setExpanded((v) => !v)} hitSlop={8}>
-                  <Text style={[styles.toggle, { color: colors.primary }]}>
-                    {expanded ? t('podcast.showLess') : t('podcast.showMore')}
-                  </Text>
-                </Pressable>
-              ) : null}
-            </View>
-          ) : null}
+          <DescriptionSection
+            description={description}
+            shownDescription={shownDescription}
+            collapsible={collapsible}
+            expanded={expanded}
+            onToggle={() => setExpanded((v) => !v)}
+            colors={colors}
+            t={t}
+          />
 
-          {extraBlocks.length > 0 ? (
-            <View style={styles.extraBlocks}>
-              {extraBlocks.map((block, i) => (
-                <BlockRenderer key={i} block={block} />
-              ))}
-            </View>
-          ) : null}
+          <ExtraBlocksSection blocks={extraBlocks} />
 
           <Text style={[styles.footerCaption, { color: colors.textMuted }]}>
             {t('podcast.recordedOn', { date: publishDate })}
@@ -270,18 +360,7 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
         <FloatingButton onPress={onBack} label={t('podcast.back')}>
           <ArrowLeft size={20} color={OVERLAY.white} />
         </FloatingButton>
-        <View style={styles.floatingActions}>
-          {canEdit ? (
-            <FloatingButton onPress={onEdit} label={t('podcast.editEpisode')}>
-              <Pencil size={18} color={OVERLAY.white} />
-            </FloatingButton>
-          ) : null}
-          {canDelete ? (
-            <FloatingButton onPress={onDelete} label={t('podcast.deleteEpisode')}>
-              <Trash2 size={18} color={colors.destructive} />
-            </FloatingButton>
-          ) : null}
-        </View>
+        <FloatingActionsBar canEdit={canEdit} canDelete={canDelete} onEdit={onEdit} onDelete={onDelete} colors={colors} t={t} />
       </View>
     </View>
   );

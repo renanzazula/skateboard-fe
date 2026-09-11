@@ -80,12 +80,16 @@ export function useCampaignAdmin() {
     (id: string, action: 'publish' | 'pause' | 'archive') =>
       run(async () => {
         const params = { params: { path: { campaignId: id } } } as const;
-        const call =
-          action === 'publish'
-            ? bffClient.POST('/api/campaigns/admin/{campaignId}/publish', params)
-            : action === 'pause'
-              ? bffClient.POST('/api/campaigns/admin/{campaignId}/pause', params)
-              : bffClient.POST('/api/campaigns/admin/{campaignId}/archive', params);
+        const call = (() => {
+          switch (action) {
+            case 'publish':
+              return bffClient.POST('/api/campaigns/admin/{campaignId}/publish', params);
+            case 'pause':
+              return bffClient.POST('/api/campaigns/admin/{campaignId}/pause', params);
+            case 'archive':
+              return bffClient.POST('/api/campaigns/admin/{campaignId}/archive', params);
+          }
+        })();
         const { data, error, response } = await call;
         if (error || !data) throw toBffError(error, response.status);
         return data as Campaign;

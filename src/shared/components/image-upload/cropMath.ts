@@ -135,8 +135,9 @@ export function updateFreeFormCorner(
 
   let x = start.x;
   let y = start.y;
-  let w = start.w;
-  let h = start.h;
+  // Always reassigned below (each branch of both ifs sets it) before use.
+  let w: number;
+  let h: number;
 
   if (corner === 'topLeft' || corner === 'bottomLeft') {
     x = clamp(start.x + dx, 0, right - min);

@@ -22,16 +22,28 @@ export default function AboutUsScreen() {
   const { profile } = useProfile();
   const { page, loading, error, refetch } = useAboutPage();
 
+  if (loading) {
+    return (
+      <ThemedView style={styles.container}>
+        <SettingsHeader title={t('aboutUs.title')} handle={profile?.username ? `@${profile.username}` : undefined} />
+        <ActivityIndicator style={styles.loading} color={theme.primary} />
+      </ThemedView>
+    );
+  }
+
+  if (error) {
+    return (
+      <ThemedView style={styles.container}>
+        <SettingsHeader title={t('aboutUs.title')} handle={profile?.username ? `@${profile.username}` : undefined} />
+        <ErrorBanner message={isBffError(error) ? error.message : t('aboutUs.loadError')} onRetry={refetch} />
+      </ThemedView>
+    );
+  }
+
   return (
     <ThemedView style={styles.container}>
       <SettingsHeader title={t('aboutUs.title')} handle={profile?.username ? `@${profile.username}` : undefined} />
-      {loading ? (
-        <ActivityIndicator style={styles.loading} color={theme.primary} />
-      ) : error ? (
-        <ErrorBanner message={isBffError(error) ? error.message : t('aboutUs.loadError')} onRetry={refetch} />
-      ) : (
-        <AboutPageView page={page} />
-      )}
+      <AboutPageView page={page} />
     </ThemedView>
   );
 }
