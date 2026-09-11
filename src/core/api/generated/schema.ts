@@ -1093,6 +1093,11 @@ export interface components {
         /** @enum {string} */
         HomePlayerPosition: "TOP" | "BOTTOM";
         /**
+         * @description MANUAL: the admin explicitly picks contentId, and it never changes on its own. AUTO: contentId is ignored/absent — the BFF resolves the latest imported YouTube video matching the official "Skateboard Podcast #<n>" episode pattern on every read, so there is nothing to pick manually. Defaults to MANUAL for existing configurations.
+         * @enum {string}
+         */
+        HomePlayerSelectionMode: "MANUAL" | "AUTO";
+        /**
          * @description Which distribution platform to prefer when the featured content has more than one available (e.g. a podcast episode with both a Spotify and a YouTube link). Null/omitted means the resolver decides (today: prefer Spotify, fall back to YouTube). Still falls back to whichever platform is actually available if the preferred one isn't.
          * @enum {string}
          */
@@ -1104,6 +1109,7 @@ export interface components {
             playerType?: components["schemas"]["HomePlayerType"];
             position?: components["schemas"]["HomePlayerPosition"];
             preferredPlatform?: components["schemas"]["PreferredPlaybackPlatform"] | null;
+            selectionMode?: components["schemas"]["HomePlayerSelectionMode"];
             /** Format: date-time */
             updatedAt?: string | null;
         };
@@ -1114,6 +1120,7 @@ export interface components {
             playerType: components["schemas"]["HomePlayerType"];
             position: components["schemas"]["HomePlayerPosition"];
             preferredPlatform?: components["schemas"]["PreferredPlaybackPlatform"] | null;
+            selectionMode: components["schemas"]["HomePlayerSelectionMode"];
         };
         HomeFeaturedPlayerPlayback: {
             /** @description Playback adapter the mini player should use, e.g. SPOTIFY_EMBED or YOUTUBE. */

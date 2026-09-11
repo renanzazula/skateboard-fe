@@ -382,6 +382,12 @@ export const es: TranslationKeys = {
       loadError: 'No se pudo cargar la configuración del reproductor destacado.',
       hint: 'Muestra un reproductor compacto para un episodio del podcast en el panel de Inicio. Desactivado por defecto — no se muestra nada hasta elegir y activar un episodio.',
       enable: 'Activar reproductor destacado',
+      selectionMode: 'Modo de selección',
+      manual: 'Manual',
+      auto: 'Automático',
+      manualHint: 'Elige tú mismo el episodio. La sincronización de podcast nunca cambia tu selección.',
+      autoHint:
+        'El último video de YouTube importado que coincida con el patrón oficial "Skateboard Podcast #<número>" se destaca automáticamente después de cada sincronización. Los shorts, clips y demás videos que no sean episodios se omiten.',
       position: 'Posición',
       top: 'Arriba',
       bottom: 'Abajo',

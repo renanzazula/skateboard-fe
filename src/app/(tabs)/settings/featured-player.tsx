@@ -8,6 +8,7 @@ import { CategoryChip } from '@/features/podcast/components/CategoryChip';
 import type {
   FeaturedContentSource,
   HomePlayerPosition,
+  HomePlayerSelectionMode,
   PreferredPlaybackPlatform,
 } from '@/features/home/hooks/useFeaturedPlayerAdmin';
 import { useFeaturedPlayerAdmin } from '@/features/home/hooks/useFeaturedPlayerAdmin';
@@ -31,9 +32,13 @@ const CONTENT_SOURCE: FeaturedContentSource = 'PODCAST';
 // README-home-featured-mini-player.md §8: admin-only screen for the Home
 // dashboard's default Featured Player. Only one source (PODCAST) and one
 // player type (MINI) exist today, so those are fixed rather than rendered as
-// pickers with a single option — position (TOP/BOTTOM) is the one real
-// choice besides enable + episode. Scheduling (§5) is a later phase; this
-// screen only manages the always-on default.
+// pickers with a single option — position (TOP/BOTTOM), selection mode
+// (MANUAL/AUTO) and, under MANUAL, the episode itself are the real choices.
+// Under AUTO there is no episode to pick: the BFF resolves the latest
+// imported YouTube video matching the official "Skateboard Podcast #<n>"
+// pattern on every read, so the episode-picker section is hidden instead.
+// Scheduling (§5) is a later phase; this screen only manages the always-on
+// default.
 export default function FeaturedPlayerScreen() {
   const theme = useTheme();
   const { hasAuthority } = useAuth();
@@ -46,6 +51,10 @@ export default function FeaturedPlayerScreen() {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [position, setPosition] = useState<HomePlayerPosition>('BOTTOM');
   const [preferredPlatform, setPreferredPlatform] = useState<PreferredPlaybackPlatform | null>(null);
+  // MANUAL is the existing/default behavior — an admin who has never touched
+  // this screen (or whose config predates this field) must keep picking the
+  // episode themselves, never be silently switched to AUTO.
+  const [selectionMode, setSelectionMode] = useState<HomePlayerSelectionMode>('MANUAL');
   const [loading, setLoading] = useState(true);
   const [configError, setConfigError] = useState<Error | null>(null);
 
@@ -60,6 +69,7 @@ export default function FeaturedPlayerScreen() {
       setContentId(config.contentId ?? null);
       setPosition(config.position ?? 'BOTTOM');
       setPreferredPlatform(config.preferredPlatform ?? null);
+      setSelectionMode(config.selectionMode ?? 'MANUAL');
     } catch (loadError) {
       setConfigError(loadError as Error);
     } finally {
@@ -92,11 +102,19 @@ export default function FeaturedPlayerScreen() {
     try {
       await updateConfig({
         enabled,
-        contentSource: contentId ? CONTENT_SOURCE : null,
-        contentId,
+        // Only one source exists today; send it whenever the player is
+        // enabled regardless of mode, so app-config-be can dispatch even
+        // before a MANUAL admin has picked an episode or when AUTO never
+        // has one to pick.
+        contentSource: enabled ? CONTENT_SOURCE : null,
+        // AUTO never persists a specific episode — the BFF resolves the
+        // latest official episode on every read. Any contentId left over
+        // from a previous MANUAL selection is dropped here rather than sent.
+        contentId: selectionMode === 'AUTO' ? null : contentId,
         playerType: 'MINI',
         position,
         preferredPlatform,
+        selectionMode,
       });
       showAlert(t('admin.featuredPlayer.savedTitle'), t('admin.featuredPlayer.savedMessage'));
     } catch (saveError) {
@@ -118,7 +136,7 @@ export default function FeaturedPlayerScreen() {
   );
   const selectedHasBothPlatforms = selectedHasSpotify && selectedHasYoutube;
 
-  const canSave = !enabled || Boolean(contentId);
+  const canSave = !enabled || selectionMode === 'AUTO' || Boolean(contentId);
 
   if (loading) {
     return (
@@ -157,6 +175,25 @@ export default function FeaturedPlayerScreen() {
         {enabled ? (
           <>
             <View style={styles.section}>
+              <ThemedText type="smallBold">{t('admin.featuredPlayer.selectionMode')}</ThemedText>
+              <View style={styles.modeRow}>
+                <CategoryChip
+                  label={t('admin.featuredPlayer.manual')}
+                  selected={selectionMode === 'MANUAL'}
+                  onPress={() => setSelectionMode('MANUAL')}
+                />
+                <CategoryChip
+                  label={t('admin.featuredPlayer.auto')}
+                  selected={selectionMode === 'AUTO'}
+                  onPress={() => setSelectionMode('AUTO')}
+                />
+              </View>
+              <ThemedText type="small" themeColor="textSecondary">
+                {selectionMode === 'AUTO' ? t('admin.featuredPlayer.autoHint') : t('admin.featuredPlayer.manualHint')}
+              </ThemedText>
+            </View>
+
+            <View style={styles.section}>
               <ThemedText type="smallBold">{t('admin.featuredPlayer.position')}</ThemedText>
               <View style={styles.modeRow}>
                 <CategoryChip label={t('admin.featuredPlayer.top')} selected={position === 'TOP'} onPress={() => setPosition('TOP')} />
@@ -164,94 +201,124 @@ export default function FeaturedPlayerScreen() {
               </View>
             </View>
 
-            <View style={styles.section}>
-              <ThemedText type="smallBold">{t('admin.featuredPlayer.episodeSection')}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {t('admin.featuredPlayer.episodeHint')}
-              </ThemedText>
-
-              {selectedPost ? (
-                <View style={[styles.selectedRow, { borderColor: theme.primary, backgroundColor: theme.primarySoft }]}>
-                  <EpisodeThumbnail post={selectedPost} />
-                  <ThemedText type="small" style={styles.selectedTitle} numberOfLines={1}>
-                    {selectedPost.title}
-                  </ThemedText>
-                </View>
-              ) : contentId ? (
+            {selectionMode === 'AUTO' ? (
+              // Nothing to pick under AUTO — the BFF resolves the latest
+              // official episode itself. Preferred platform is still a real
+              // choice: whichever episode is auto-selected may have both a
+              // Spotify and a YouTube link, so this isn't gated behind a
+              // known selected post the way MANUAL's is below.
+              <View style={styles.section}>
                 <ThemedText type="small" themeColor="textSecondary">
-                  {t('admin.featuredPlayer.selectedNotInResults')}
+                  {t('admin.featuredPlayer.bothPlatformsHint')}
                 </ThemedText>
-              ) : null}
-
-              {selectedHasBothPlatforms ? (
-                <View style={styles.section}>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {t('admin.featuredPlayer.bothPlatformsHint')}
-                  </ThemedText>
-                  <View style={styles.modeRow}>
-                    <CategoryChip
-                      label={t('admin.featuredPlayer.autoSpotifyFirst')}
-                      selected={preferredPlatform == null}
-                      onPress={() => setPreferredPlatform(null)}
-                    />
-                    <CategoryChip
-                      label={t('admin.featuredPlayer.spotify')}
-                      selected={preferredPlatform === 'SPOTIFY'}
-                      onPress={() => setPreferredPlatform('SPOTIFY')}
-                    />
-                    <CategoryChip
-                      label={t('admin.featuredPlayer.youtube')}
-                      selected={preferredPlatform === 'YOUTUBE'}
-                      onPress={() => setPreferredPlatform('YOUTUBE')}
-                    />
-                  </View>
+                <View style={styles.modeRow}>
+                  <CategoryChip
+                    label={t('admin.featuredPlayer.autoSpotifyFirst')}
+                    selected={preferredPlatform == null}
+                    onPress={() => setPreferredPlatform(null)}
+                  />
+                  <CategoryChip
+                    label={t('admin.featuredPlayer.spotify')}
+                    selected={preferredPlatform === 'SPOTIFY'}
+                    onPress={() => setPreferredPlatform('SPOTIFY')}
+                  />
+                  <CategoryChip
+                    label={t('admin.featuredPlayer.youtube')}
+                    selected={preferredPlatform === 'YOUTUBE'}
+                    onPress={() => setPreferredPlatform('YOUTUBE')}
+                  />
                 </View>
-              ) : null}
+              </View>
+            ) : (
+              <View style={styles.section}>
+                <ThemedText type="smallBold">{t('admin.featuredPlayer.episodeSection')}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {t('admin.featuredPlayer.episodeHint')}
+                </ThemedText>
 
-              <TextInput
-                value={search}
-                onChangeText={setSearch}
-                placeholder={t('admin.featuredPlayer.searchPlaceholder')}
-                placeholderTextColor={theme.textMuted}
-                style={[styles.searchInput, { color: theme.textPrimary, borderColor: theme.border, backgroundColor: theme.surface }]}
-              />
-
-              {searching && posts.length === 0 ? (
-                <ActivityIndicator style={styles.loading} color={theme.primary} />
-              ) : (
-                <>
-                  <View style={[styles.episodeList, { borderColor: theme.border }]}>
-                    {posts.map((post) => (
-                      <EpisodeRow
-                        key={post.id}
-                        post={post}
-                        selected={post.id === contentId}
-                        onPress={() => handleSelectEpisode(post)}
-                      />
-                    ))}
-                    {posts.length === 0 ? (
-                      <ThemedText type="small" themeColor="textSecondary" style={styles.emptyHint}>
-                        {t('admin.featuredPlayer.noEpisodesFound')}
-                      </ThemedText>
-                    ) : null}
+                {selectedPost ? (
+                  <View style={[styles.selectedRow, { borderColor: theme.primary, backgroundColor: theme.primarySoft }]}>
+                    <EpisodeThumbnail post={selectedPost} />
+                    <ThemedText type="small" style={styles.selectedTitle} numberOfLines={1}>
+                      {selectedPost.title}
+                    </ThemedText>
                   </View>
+                ) : contentId ? (
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {t('admin.featuredPlayer.selectedNotInResults')}
+                  </ThemedText>
+                ) : null}
 
-                  {hasMore ? (
-                    <Pressable
-                      style={[styles.loadMoreButton, { borderColor: theme.border, backgroundColor: theme.surface }]}
-                      onPress={loadMore}
-                      disabled={searching}
-                    >
-                      {searching ? (
-                        <ActivityIndicator color={theme.primary} />
-                      ) : (
-                        <Text style={[styles.loadMoreText, { color: theme.textPrimary }]}>{t('admin.featuredPlayer.loadMore')}</Text>
-                      )}
-                    </Pressable>
-                  ) : null}
-                </>
-              )}
-            </View>
+                {selectedHasBothPlatforms ? (
+                  <View style={styles.section}>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {t('admin.featuredPlayer.bothPlatformsHint')}
+                    </ThemedText>
+                    <View style={styles.modeRow}>
+                      <CategoryChip
+                        label={t('admin.featuredPlayer.autoSpotifyFirst')}
+                        selected={preferredPlatform == null}
+                        onPress={() => setPreferredPlatform(null)}
+                      />
+                      <CategoryChip
+                        label={t('admin.featuredPlayer.spotify')}
+                        selected={preferredPlatform === 'SPOTIFY'}
+                        onPress={() => setPreferredPlatform('SPOTIFY')}
+                      />
+                      <CategoryChip
+                        label={t('admin.featuredPlayer.youtube')}
+                        selected={preferredPlatform === 'YOUTUBE'}
+                        onPress={() => setPreferredPlatform('YOUTUBE')}
+                      />
+                    </View>
+                  </View>
+                ) : null}
+
+                <TextInput
+                  value={search}
+                  onChangeText={setSearch}
+                  placeholder={t('admin.featuredPlayer.searchPlaceholder')}
+                  placeholderTextColor={theme.textMuted}
+                  style={[styles.searchInput, { color: theme.textPrimary, borderColor: theme.border, backgroundColor: theme.surface }]}
+                />
+
+                {searching && posts.length === 0 ? (
+                  <ActivityIndicator style={styles.loading} color={theme.primary} />
+                ) : (
+                  <>
+                    <View style={[styles.episodeList, { borderColor: theme.border }]}>
+                      {posts.map((post) => (
+                        <EpisodeRow
+                          key={post.id}
+                          post={post}
+                          selected={post.id === contentId}
+                          onPress={() => handleSelectEpisode(post)}
+                        />
+                      ))}
+                      {posts.length === 0 ? (
+                        <ThemedText type="small" themeColor="textSecondary" style={styles.emptyHint}>
+                          {t('admin.featuredPlayer.noEpisodesFound')}
+                        </ThemedText>
+                      ) : null}
+                    </View>
+
+                    {hasMore ? (
+                      <Pressable
+                        style={[styles.loadMoreButton, { borderColor: theme.border, backgroundColor: theme.surface }]}
+                        onPress={loadMore}
+                        disabled={searching}
+                      >
+                        {searching ? (
+                          <ActivityIndicator color={theme.primary} />
+                        ) : (
+                          <Text style={[styles.loadMoreText, { color: theme.textPrimary }]}>{t('admin.featuredPlayer.loadMore')}</Text>
+                        )}
+                      </Pressable>
+                    ) : null}
+                  </>
+                )}
+              </View>
+            )}
           </>
         ) : null}
 
