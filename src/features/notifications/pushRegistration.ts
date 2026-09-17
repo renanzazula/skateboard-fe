@@ -5,6 +5,10 @@ import { Platform } from 'react-native';
 
 import { bffClient } from '@/core/api/client';
 import { getDeviceIdentifier } from '@/features/notifications/deviceIdentifier';
+import {
+  createRegistrationCoordinator,
+  fingerprintRegistration,
+} from '@/features/notifications/registrationCoordinator';
 
 /**
  * Registering this device to receive push, and unregistering it again.
@@ -77,57 +81,97 @@ export async function requestPushPermission(): Promise<PushPermissionState> {
   return requested.granted ? 'granted' : 'denied';
 }
 
+const coordinator = createRegistrationCoordinator();
+
+/**
+ * Forgets that this device is registered, so the next attempt sends afresh.
+ * Called from the logout sequence — the handset may belong to a different
+ * account next time, and that registration must reach the backend even though
+ * its payload is byte-identical to the one this account already sent.
+ */
+export function resetPushRegistrationState(): void {
+  coordinator.reset();
+}
+
 /**
  * Registers this device against the signed-in user. Returns the push token on
  * success, or null when there is nothing to register (no permission, a
  * simulator, a misconfigured project).
  *
+ * Pass `devicePushToken` when the caller already has one — specifically the
+ * push token listener. Without it `getExpoPushTokenAsync` calls
+ * `getDevicePushTokenAsync` internally, which re-fires that same listener;
+ * expo-notifications documents this as an infinite loop on `PushTokenListener`
+ * and it is what turned one rotation into a burst of identical PUTs.
+ *
  * Never throws: push is an enhancement, and a failure here must not break
  * sign-in or app start. The backend treats registration as idempotent, so the
  * next call retries for free.
  */
-export async function registerPushDevice(): Promise<string | null> {
-  try {
-    if ((await requestPushPermission()) !== 'granted') return null;
+export async function registerPushDevice(
+  devicePushToken?: Notifications.DevicePushToken
+): Promise<string | null> {
+  // The whole body is coalesced, not just the PUT: the permission prompt and
+  // the Expo token fetch are themselves slow enough for a foreground event to
+  // land mid-flight and start a second attempt.
+  return coordinator.coalesce(async () => {
+    try {
+      if ((await requestPushPermission()) !== 'granted') return null;
 
-    // Android delivers nothing unless a channel exists; the backend sends
-    // channelId "default", so this is what makes those messages land.
-    if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('default', {
-        name: 'Default',
-        importance: Notifications.AndroidImportance.DEFAULT,
+      // Android delivers nothing unless a channel exists; the backend sends
+      // channelId "default", so this is what makes those messages land.
+      if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'Default',
+          importance: Notifications.AndroidImportance.DEFAULT,
+        });
+      }
+
+      const id = projectId();
+      if (!id) {
+        console.warn('[push] no EAS projectId configured; skipping device registration');
+        return null;
+      }
+
+      const { data: pushToken } = await Notifications.getExpoPushTokenAsync({
+        projectId: id,
+        ...(devicePushToken ? { devicePushToken } : {}),
       });
-    }
+      const deviceIdentifier = await getDeviceIdentifier();
 
-    const id = projectId();
-    if (!id) {
-      console.warn('[push] no EAS projectId configured; skipping device registration');
-      return null;
-    }
+      const platform = Platform.OS === 'ios' ? 'IOS' : 'ANDROID';
+      const appVersion = Constants.expoConfig?.version ?? undefined;
+      const deviceName = Device.deviceName ?? undefined;
 
-    const { data: pushToken } = await Notifications.getExpoPushTokenAsync({ projectId: id });
-    const deviceIdentifier = await getDeviceIdentifier();
-
-    const { error, response } = await bffClient.PUT('/api/me/devices/{deviceIdentifier}', {
-      params: { path: { deviceIdentifier } },
-      body: {
-        platform: Platform.OS === 'ios' ? 'IOS' : 'ANDROID',
-        provider: 'EXPO',
+      const fingerprint = fingerprintRegistration({
+        deviceIdentifier,
+        platform,
         pushToken,
-        appVersion: Constants.expoConfig?.version ?? undefined,
-        deviceName: Device.deviceName ?? undefined,
-      },
-    });
+        appVersion,
+        deviceName,
+      });
 
-    if (error) {
-      console.warn('[push] device registration rejected', response?.status);
+      const outcome = await coordinator.send(fingerprint, async () => {
+        const { error, response } = await bffClient.PUT('/api/me/devices/{deviceIdentifier}', {
+          params: { path: { deviceIdentifier } },
+          body: { platform, provider: 'EXPO', pushToken, appVersion, deviceName },
+        });
+
+        if (error) {
+          console.warn('[push] device registration rejected', response?.status);
+          return false;
+        }
+        return true;
+      });
+
+      // 'skipped' means the backend already has exactly this registration, so
+      // the caller is as registered as it would have been after a send.
+      return outcome === 'failed' ? null : pushToken;
+    } catch (err) {
+      console.warn('[push] device registration failed', err);
       return null;
     }
-    return pushToken;
-  } catch (err) {
-    console.warn('[push] device registration failed', err);
-    return null;
-  }
+  });
 }
 
 /**

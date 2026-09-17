@@ -6,7 +6,7 @@ import { Platform } from 'react-native';
 import { env } from '@/core/config/env';
 import { secureStorage } from '@/core/storage/secureStorage';
 import { forgetCachedDeviceIdentifier } from '@/features/notifications/deviceIdentifier';
-import { unregisterPushDevice } from '@/features/notifications/pushRegistration';
+import { resetPushRegistrationState, unregisterPushDevice } from '@/features/notifications/pushRegistration';
 import { withTimeout } from '@/shared/utils/withTimeout';
 
 // Required once at module load so the in-app browser sheet closes itself and
@@ -266,6 +266,11 @@ export async function logout(): Promise<void> {
   // anyway the next time this push token is claimed by another account.
   await unregisterPushDevice();
   forgetCachedDeviceIdentifier();
+  // The next account on this handset gets a new device identifier, but the
+  // push token and app version are unchanged — without this the de-duplication
+  // in registerPushDevice could mistake that registration for one already
+  // accepted and never send it.
+  resetPushRegistrationState();
 
   await signOutLocal();
 
