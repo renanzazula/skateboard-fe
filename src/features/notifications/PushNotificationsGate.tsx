@@ -1,5 +1,5 @@
 import * as Notifications from 'expo-notifications';
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { AppState, Platform } from 'react-native';
 
 import { useAuth } from '@/core/auth';
@@ -51,49 +51,51 @@ export function PushNotificationsGate() {
 
 function NativePushNotificationsGate() {
   const { status } = useAuth();
-  const registeredRef = useRef(false);
-
-  const attemptRegistration = useCallback(async () => {
-    if (registeredRef.current) return;
-    const token = await registerPushDevice();
-    // Only latched on success. Marking it done regardless would strand anyone
-    // who declined the prompt, or whose registration failed while the backend
-    // was down, with no way back short of signing out and in again.
-    registeredRef.current = token !== null;
-  }, []);
 
   useEffect(() => {
-    if (status !== 'signedIn') {
-      // Allow a re-register on the next sign-in — the device may now belong
-      // to a different account.
-      registeredRef.current = false;
-      return;
-    }
-    attemptRegistration();
-  }, [status, attemptRegistration]);
+    if (status !== 'signedIn') return;
+    // Repeat calls are absorbed by registerPushDevice itself — it coalesces
+    // overlapping attempts and skips a resend of an already-accepted payload —
+    // so this no longer needs a latch of its own. The previous one guarded only
+    // the window before the first attempt *finished*, which is precisely the
+    // window the foreground and token-rotation triggers fired in.
+    registerPushDevice();
+  }, [status]);
 
   /**
    * Granting permission means leaving for the OS settings app and coming back,
    * and enabling it there fires no notification event of any kind. Retrying on
    * foreground is what turns that into a working registration instead of one
    * that only happens at the next sign-in.
+   *
+   * Only background/inactive -> active counts. iOS reports 'active' again after
+   * anything that merely covered the app — the notification permission prompt
+   * this very flow raises, Control Centre, an incoming call banner — so
+   * retrying on every 'active' event retried during our own permission prompt.
    */
   useEffect(() => {
     if (status !== 'signedIn') return;
+    let previous = AppState.currentState;
     const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active') {
-        attemptRegistration();
+      const returnedToForeground = previous !== 'active' && state === 'active';
+      previous = state;
+      if (returnedToForeground) {
+        registerPushDevice();
       }
     });
     return () => subscription.remove();
-  }, [status, attemptRegistration]);
+  }, [status]);
 
   // Expo rotates push tokens without warning (an OS update, a restored
   // backup). Re-registering on rotation is what stops delivery from silently
   // stopping for that device.
+  //
+  // The token is handed straight to registerPushDevice. Letting it fetch its
+  // own would call getDevicePushTokenAsync, which re-fires this listener —
+  // the infinite loop expo-notifications warns about on PushTokenListener.
   useEffect(() => {
-    const subscription = Notifications.addPushTokenListener(() => {
-      registerPushDevice();
+    const subscription = Notifications.addPushTokenListener((token) => {
+      registerPushDevice(token);
     });
     return () => subscription.remove();
   }, []);
