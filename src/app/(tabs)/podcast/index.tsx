@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Mic, Plus } from 'lucide-react-native';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '@/core/auth';
@@ -45,11 +45,20 @@ export default function PodcastListScreen() {
 
   // This screen stays mounted while the user is on a detail/admin screen, so
   // deletes/edits/creates (and category renames/reorders) made there would
-  // otherwise keep showing stale data here. Refetch on every regained focus;
-  // usePodcastFeed's in-flight guard collapses this with the category-change
-  // load on mount.
+  // otherwise keep showing stale data here. Refetch on every *regained* focus.
+  //
+  // The first focus is skipped: useCategories loads on mount and usePodcastFeed
+  // loads as soon as a category is selected, so refetching here duplicated the
+  // category request on the cold path — two identical /api/categories calls
+  // competing for the connection the feed request is waiting behind, on exactly
+  // the load the user is watching a spinner for.
+  const hasFocusedOnce = useRef(false);
   useFocusEffect(
     useCallback(() => {
+      if (!hasFocusedOnce.current) {
+        hasFocusedOnce.current = true;
+        return;
+      }
       refreshCategories();
       refreshPosts();
     }, [refreshCategories, refreshPosts])
@@ -104,7 +113,16 @@ export default function PodcastListScreen() {
         }}
         contentContainerStyle={styles.listContent}
         onEndReached={handleEndReached}
-        onEndReachedThreshold={0.5}
+        // A page is six cards now, so start the next request a full viewport
+        // out — it lands before the user reaches the end instead of parking
+        // them on the footer spinner.
+        onEndReachedThreshold={1}
+        // Each card is a full-bleed 16:9 image plus a gradient and two icons,
+        // and only ~2.5 fit on a phone. Mounting the whole page up front
+        // delays first paint for rows nobody has scrolled to yet.
+        initialNumToRender={3}
+        maxToRenderPerBatch={4}
+        windowSize={7}
         ListHeaderComponent={
           <PodcastListHeader
             categories={categories}
