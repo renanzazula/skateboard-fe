@@ -255,7 +255,11 @@ export default function BrandingScreen() {
           <Section
             title={t('admin.branding.brandingAssetsSection')}
             action={
-              <Pressable onPress={handleAddAssetPress} disabled={admin.submitting} hitSlop={8}>
+              <Pressable
+                onPress={handleAddAssetPress}
+                disabled={admin.submitting}
+                hitSlop={8}
+                testID="add-branding-asset">
                 <Plus color={theme.primary} size={20} />
               </Pressable>
             }>
@@ -276,7 +280,11 @@ export default function BrandingScreen() {
                       {t('admin.branding.replace')}
                     </ThemedText>
                   </Pressable>
-                  <Pressable onPress={() => handleRemoveAsset(asset)} disabled={admin.submitting} hitSlop={8}>
+                  <Pressable
+                    onPress={() => handleRemoveAsset(asset)}
+                    disabled={admin.submitting}
+                    hitSlop={8}
+                    testID={`remove-branding-asset-${asset.id ?? asset.name}`}>
                     <Trash2 color={theme.destructive} size={18} />
                   </Pressable>
                 </View>

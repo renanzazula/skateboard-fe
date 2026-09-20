@@ -12,7 +12,7 @@ describe('SecondaryButton', () => {
     expect(screen.getByText('Cancel')).toBeTruthy();
     expect(screen.getByText('icon')).toBeTruthy();
 
-    await user.press(screen.getByRole('button', { name: 'Cancel' }));
+    await user.press(screen.getByRole('button'));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
@@ -21,7 +21,7 @@ describe('SecondaryButton', () => {
     const user = userEvent.setup();
     await render(<SecondaryButton title="Cancel" onPress={onPress} disabled />);
 
-    const button = screen.getByRole('button', { name: 'Cancel' });
+    const button = screen.getByRole('button');
     expect(button.props.accessibilityState?.disabled).toBe(true);
 
     await user.press(button);

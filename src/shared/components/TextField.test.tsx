@@ -4,11 +4,12 @@ import { TextField } from '@/shared/components/TextField';
 import { Colors } from '@/shared/constants/theme';
 
 describe('TextField', () => {
-  it('renders a label when given and omits it otherwise', async () => {
+  it('renders a label when given', async () => {
     await render(<TextField label="Username" placeholder="username" />);
     expect(screen.getByText('Username')).toBeTruthy();
+  });
 
-    screen.unmount();
+  it('omits the label when none is given', async () => {
     await render(<TextField placeholder="no label field" />);
     expect(screen.queryByText('Username')).toBeNull();
   });
