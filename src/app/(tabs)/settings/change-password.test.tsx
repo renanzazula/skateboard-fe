@@ -31,7 +31,7 @@ describe('ChangePasswordScreen', () => {
 
     await user.type(screen.getByPlaceholderText('At least 8 characters'), 'short');
     await user.type(screen.getByPlaceholderText('Re-enter your new password'), 'short');
-    await user.press(screen.getByText('Change password'));
+    await user.press(screen.getByRole('button', { name: 'Change password' }));
 
     expect(alertSpy).toHaveBeenCalledWith(
       'Password too short',
@@ -48,7 +48,7 @@ describe('ChangePasswordScreen', () => {
 
     await user.type(screen.getByPlaceholderText('At least 8 characters'), 'password1');
     await user.type(screen.getByPlaceholderText('Re-enter your new password'), 'password2');
-    await user.press(screen.getByText('Change password'));
+    await user.press(screen.getByRole('button', { name: 'Change password' }));
 
     expect(alertSpy).toHaveBeenCalledWith(
       'Passwords do not match',
@@ -66,7 +66,7 @@ describe('ChangePasswordScreen', () => {
 
     await user.type(screen.getByPlaceholderText('At least 8 characters'), 'password1');
     await user.type(screen.getByPlaceholderText('Re-enter your new password'), 'password1');
-    await user.press(screen.getByText('Change password'));
+    await user.press(screen.getByRole('button', { name: 'Change password' }));
 
     expect(changePassword).toHaveBeenCalledWith('password1');
     expect(alertSpy).toHaveBeenCalledTimes(1);
@@ -83,16 +83,18 @@ describe('ChangePasswordScreen', () => {
 
     await user.type(screen.getByPlaceholderText('At least 8 characters'), 'password1');
     await user.type(screen.getByPlaceholderText('Re-enter your new password'), 'password1');
-    await user.press(screen.getByText('Change password'));
+    await user.press(screen.getByRole('button', { name: 'Change password' }));
 
-    expect(await screen.findByText('Change password')).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Change password' })).toBeTruthy();
     expect(alertSpy).toHaveBeenCalledWith('Could not change password', 'Try again.', undefined);
   });
 
-  it('shows the submitting state and disables the button', async () => {
+  it('shows the submitting state with a busy, disabled button', async () => {
     mockUseAccountActions.mockReturnValue({ changePassword, submitting: true });
     await render(<ChangePasswordScreen />);
 
-    expect(screen.getByText('Saving…')).toBeTruthy();
+    const submitButton = screen.getAllByRole('button').find((b) => b.props.accessibilityState?.busy);
+    expect(submitButton).toBeTruthy();
+    expect(submitButton?.props.accessibilityState?.disabled).toBe(true);
   });
 });

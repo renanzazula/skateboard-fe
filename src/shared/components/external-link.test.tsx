@@ -11,15 +11,16 @@ jest.mock('expo-web-browser', () => ({
 const mockOpenBrowserAsync = openBrowserAsync as jest.Mock;
 
 describe('ExternalLink', () => {
-  const originalExpoOs = process.env.EXPO_OS;
-
   afterEach(() => {
-    process.env.EXPO_OS = originalExpoOs;
     jest.clearAllMocks();
   });
 
-  it('opens an in-app browser and prevents default navigation on native', async () => {
-    process.env.EXPO_OS = 'ios';
+  // process.env.EXPO_OS is inlined to a literal by babel-preset-expo at
+  // transform time (see getInlinesFromOptions in babel-preset-expo), so it
+  // can't be toggled at runtime in this test — the suite always runs under
+  // whatever single platform jest-expo transforms for, which exercises the
+  // "native" (non-web) branch below.
+  it('opens an in-app browser and prevents default navigation', async () => {
     const user = userEvent.setup();
     await render(<ExternalLink href="https://example.com">Visit</ExternalLink>);
 
@@ -29,15 +30,5 @@ describe('ExternalLink', () => {
       'https://example.com',
       expect.objectContaining({ presentationStyle: 'AUTOMATIC' })
     );
-  });
-
-  it('does not open an in-app browser on web (default link navigation applies)', async () => {
-    process.env.EXPO_OS = 'web';
-    const user = userEvent.setup();
-    await render(<ExternalLink href="https://example.com">Visit</ExternalLink>);
-
-    await user.press(screen.getByText('Visit'));
-
-    expect(mockOpenBrowserAsync).not.toHaveBeenCalled();
   });
 });
