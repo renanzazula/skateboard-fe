@@ -128,7 +128,7 @@ describe('BrandingScreen', () => {
     await render(<BrandingScreen />);
     await screen.findByText('Login background');
 
-    await user.press(screen.getByText('Upload'));
+    await user.press(screen.getAllByText('Upload')[0]);
 
     expect(mockRequestPermission).toHaveBeenCalledTimes(1);
     expect(brandingAdmin.uploadLoginBackground).toHaveBeenCalledWith(PICKED_ASSET);
@@ -146,7 +146,7 @@ describe('BrandingScreen', () => {
     await render(<BrandingScreen />);
     await screen.findByText('Login background');
 
-    await user.press(screen.getByText('Upload'));
+    await user.press(screen.getAllByText('Upload')[0]);
 
     expect(alertSpy).toHaveBeenCalledWith(
       'Could not update login background',
@@ -198,7 +198,7 @@ describe('BrandingScreen', () => {
     await render(<BrandingScreen />);
     await screen.findByText('Login background');
 
-    await user.press(screen.getByText('Upload'));
+    await user.press(screen.getAllByText('Upload')[0]);
 
     expect(brandingAdmin.uploadLoginBackground).not.toHaveBeenCalled();
   });
