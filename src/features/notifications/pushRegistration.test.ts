@@ -47,6 +47,10 @@ jest.mock('@/core/api/client', () => ({
   bffClient: { PUT: jest.fn(), DELETE: jest.fn() },
 }));
 
+jest.mock('@/core/auth/authStore', () => ({
+  getState: jest.fn(() => ({ status: 'signedIn', accessToken: 'test-token' })),
+}));
+
 jest.mock('@/features/notifications/deviceIdentifier', () => ({
   getDeviceIdentifier: jest.fn().mockResolvedValue('device-1'),
 }));
