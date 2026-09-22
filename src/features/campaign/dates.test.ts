@@ -13,4 +13,8 @@ describe('localDay', () => {
     expect(localDay(afterMidnight)).toBe('2026-07-01');
     expect(localDay(beforeMidnight)).not.toBe(localDay(afterMidnight));
   });
+
+  it('defaults to the current date when none is passed', () => {
+    expect(localDay()).toBe(localDay(new Date()));
+  });
 });

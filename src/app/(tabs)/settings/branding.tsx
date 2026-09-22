@@ -92,7 +92,7 @@ export default function BrandingScreen() {
       setConfig(updated);
       refreshAppConfig();
     } catch (uploadError) {
-      showAlert(t('admin.branding.uploadLoginBackgroundError'), isBffError(uploadError) ? uploadError.message : t('common.tryAgain'));
+      showAlert(t('admin.branding.uploadLoginBackgroundError'), uploadError instanceof Error ? uploadError.message : t('common.tryAgain'));
     }
   };
 
@@ -114,7 +114,7 @@ export default function BrandingScreen() {
       setConfig(updated);
       refreshAppConfig();
     } catch (uploadError) {
-      showAlert(t('admin.branding.uploadAppLogoError'), isBffError(uploadError) ? uploadError.message : t('common.tryAgain'));
+      showAlert(t('admin.branding.uploadAppLogoError'), uploadError instanceof Error ? uploadError.message : t('common.tryAgain'));
     }
   };
 
@@ -136,7 +136,7 @@ export default function BrandingScreen() {
       setNewAssetName('');
       setNewAssetPromptVisible(true);
     } catch (pickError) {
-      showAlert(t('admin.branding.pickImageError'), isBffError(pickError) ? pickError.message : t('common.tryAgain'));
+      showAlert(t('admin.branding.pickImageError'), pickError instanceof Error ? pickError.message : t('common.tryAgain'));
     }
   };
 
@@ -161,7 +161,7 @@ export default function BrandingScreen() {
       await admin.replaceBrandingAsset(asset.id, picked);
       await refresh();
     } catch (replaceError) {
-      showAlert(t('admin.branding.replaceAssetError'), isBffError(replaceError) ? replaceError.message : t('common.tryAgain'));
+      showAlert(t('admin.branding.replaceAssetError'), replaceError instanceof Error ? replaceError.message : t('common.tryAgain'));
     }
   };
 
@@ -255,7 +255,11 @@ export default function BrandingScreen() {
           <Section
             title={t('admin.branding.brandingAssetsSection')}
             action={
-              <Pressable onPress={handleAddAssetPress} disabled={admin.submitting} hitSlop={8}>
+              <Pressable
+                onPress={handleAddAssetPress}
+                disabled={admin.submitting}
+                hitSlop={8}
+                testID="add-branding-asset">
                 <Plus color={theme.primary} size={20} />
               </Pressable>
             }>
@@ -276,7 +280,11 @@ export default function BrandingScreen() {
                       {t('admin.branding.replace')}
                     </ThemedText>
                   </Pressable>
-                  <Pressable onPress={() => handleRemoveAsset(asset)} disabled={admin.submitting} hitSlop={8}>
+                  <Pressable
+                    onPress={() => handleRemoveAsset(asset)}
+                    disabled={admin.submitting}
+                    hitSlop={8}
+                    testID={`remove-branding-asset-${asset.id ?? asset.name}`}>
                     <Trash2 color={theme.destructive} size={18} />
                   </Pressable>
                 </View>
