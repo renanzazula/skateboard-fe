@@ -1,6 +1,8 @@
 import {
   createRegistrationCoordinator,
   fingerprintRegistration,
+  isAuthReadyForRegistration,
+  type AuthSnapshot,
   type RegistrationIdentity,
 } from '@/features/notifications/registrationCoordinator';
 
@@ -226,5 +228,159 @@ describe('the reported burst', () => {
     await expect(register('ExponentPushToken[rotated]')).resolves.toBe('sent');
 
     expect(put).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('isAuthReadyForRegistration', () => {
+  const token = 'header.payload.signature';
+
+  it('allows a registration once a session is restored', () => {
+    expect(isAuthReadyForRegistration({ status: 'signedIn', accessToken: token })).toBe(true);
+  });
+
+  it('blocks the cold-start window, where bootstrap() has not resolved yet', () => {
+    // The reported failure: not signed out, just not signed in *yet*.
+    expect(isAuthReadyForRegistration({ status: 'loading', accessToken: null })).toBe(false);
+  });
+
+  it('blocks a signed-out app', () => {
+    expect(isAuthReadyForRegistration({ status: 'signedOut', accessToken: null })).toBe(false);
+  });
+
+  it('blocks a signedIn status that carries no token', () => {
+    // Should not occur — applyTokenResponse sets both — but the request would
+    // go out unauthenticated if it ever did, so it is not assumed away.
+    expect(isAuthReadyForRegistration({ status: 'signedIn', accessToken: null })).toBe(false);
+  });
+
+  it('blocks an empty-string token', () => {
+    expect(isAuthReadyForRegistration({ status: 'signedIn', accessToken: '' })).toBe(false);
+  });
+});
+
+describe('the cold-start 401', () => {
+  /**
+   * Stands in for registerPushDevice at its current shape: the auth gate first,
+   * then the coalesced body, then the de-duplicated PUT. `auth` is read on every
+   * call rather than captured, mirroring `getAuthState()` inside the real one.
+   */
+  function registrar(
+    coordinator: ReturnType<typeof createRegistrationCoordinator>,
+    put: () => Promise<boolean>,
+    auth: () => AuthSnapshot
+  ) {
+    return async (token = identity.pushToken) => {
+      if (!isAuthReadyForRegistration(auth())) return 'blocked' as const;
+      return coordinator.coalesce(async () => {
+        // The permission check and the Expo token fetch.
+        await Promise.resolve();
+        await Promise.resolve();
+        return coordinator.send(fingerprintRegistration({ ...identity, pushToken: token }), put);
+      });
+    };
+  }
+
+  const signedOut: AuthSnapshot = { status: 'loading', accessToken: null };
+  const signedIn: AuthSnapshot = { status: 'signedIn', accessToken: 'header.payload.signature' };
+
+  it('sends nothing while the session is still being restored', async () => {
+    const coordinator = createRegistrationCoordinator();
+    const put = jest.fn(async () => true);
+    const register = registrar(coordinator, put, () => signedOut);
+
+    // Every launch trigger: the gate mounting, the APNs token arriving, the
+    // app settling into the foreground — all before bootstrap() resolves.
+    await register();
+    await register('ExponentPushToken[apns-at-launch]');
+    await register();
+
+    expect(put).not.toHaveBeenCalled();
+  });
+
+  it('produces exactly one registration across a full cold start', async () => {
+    const coordinator = createRegistrationCoordinator();
+    const put = jest.fn(async () => true);
+    let auth = signedOut;
+    const register = registrar(coordinator, put, () => auth);
+
+    // Launch: gate mount + push token listener, both while 'loading'.
+    await Promise.all([register(), register('ExponentPushToken[apns-at-launch]')]);
+    expect(put).not.toHaveBeenCalled();
+
+    // bootstrap() resolves and the sign-in effect re-runs registration.
+    auth = signedIn;
+    await register();
+
+    expect(put).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps de-duplicating once authenticated', async () => {
+    const coordinator = createRegistrationCoordinator();
+    const put = jest.fn(async () => true);
+    const register = registrar(coordinator, put, () => signedIn);
+
+    await register();
+    for (let i = 0; i < 20; i += 1) {
+      await expect(register()).resolves.toBe('skipped');
+    }
+
+    expect(put).toHaveBeenCalledTimes(1);
+  });
+
+  it('still collapses a post-authentication burst into one PUT', async () => {
+    const coordinator = createRegistrationCoordinator();
+    const put = jest.fn(async () => true);
+    const register = registrar(coordinator, put, () => signedIn);
+
+    await Promise.all(Array.from({ length: 50 }, () => register()));
+
+    expect(put).toHaveBeenCalledTimes(1);
+  });
+
+  it('delivers a token that rotates after sign-in', async () => {
+    const coordinator = createRegistrationCoordinator();
+    const put = jest.fn(async () => true);
+    const register = registrar(coordinator, put, () => signedIn);
+
+    await register();
+    await expect(register('ExponentPushToken[rotated]')).resolves.toBe('sent');
+
+    expect(put).toHaveBeenCalledTimes(2);
+  });
+
+  it('registers a token that arrived before sign-in once the session exists', async () => {
+    const coordinator = createRegistrationCoordinator();
+    const put = jest.fn(async () => true);
+    let auth = signedOut;
+    const register = registrar(coordinator, put, () => auth);
+
+    // A rotation delivered under the splash screen is dropped, not queued...
+    await expect(register('ExponentPushToken[rotated-at-launch]')).resolves.toBe('blocked');
+    expect(put).not.toHaveBeenCalled();
+
+    // ...and the sign-in effect picks up the current token, so nothing is lost.
+    auth = signedIn;
+    await expect(register('ExponentPushToken[rotated-at-launch]')).resolves.toBe('sent');
+    expect(put).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not send when the session ends mid-registration', async () => {
+    const coordinator = createRegistrationCoordinator();
+    const put = jest.fn(async () => true);
+    let auth = signedIn;
+
+    // The re-check inside send(): sign-out lands between the permission prompt
+    // and the PUT, so the payload must not go out unauthenticated.
+    const outcome = await coordinator.coalesce(async () => {
+      await Promise.resolve();
+      auth = { status: 'signedOut', accessToken: null };
+      return coordinator.send(fingerprintRegistration(identity), async () => {
+        if (!isAuthReadyForRegistration(auth)) return false;
+        return put();
+      });
+    });
+
+    expect(outcome).toBe('failed');
+    expect(put).not.toHaveBeenCalled();
   });
 });

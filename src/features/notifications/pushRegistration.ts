@@ -4,10 +4,12 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import { bffClient } from '@/core/api/client';
+import { getState as getAuthState } from '@/core/auth/authStore';
 import { getDeviceIdentifier } from '@/features/notifications/deviceIdentifier';
 import {
   createRegistrationCoordinator,
   fingerprintRegistration,
+  isAuthReadyForRegistration,
 } from '@/features/notifications/registrationCoordinator';
 
 /**
@@ -104,6 +106,18 @@ export function resetPushRegistrationState(): void {
  * expo-notifications documents this as an infinite loop on `PushTokenListener`
  * and it is what turned one rotation into a burst of identical PUTs.
  *
+ * Returns null without touching the network while the session is unresolved.
+ * This is the gate for every trigger, not just the ones in
+ * PushNotificationsGate: the push token listener fires at launch whatever the
+ * session state, and a caller that reached here during `bootstrap()` would
+ * otherwise send a PUT the API client has no token to sign, for a guaranteed
+ * 401. The gate is here rather than in each caller because it is the one point
+ * all of them funnel through.
+ *
+ * Nothing is lost by returning early — the sign-in effect in
+ * PushNotificationsGate re-runs this as soon as `status` becomes 'signedIn',
+ * which is the same moment the dropped attempt could first have succeeded.
+ *
  * Never throws: push is an enhancement, and a failure here must not break
  * sign-in or app start. The backend treats registration as idempotent, so the
  * next call retries for free.
@@ -111,6 +125,12 @@ export function resetPushRegistrationState(): void {
 export async function registerPushDevice(
   devicePushToken?: Notifications.DevicePushToken
 ): Promise<string | null> {
+  // Checked before coalescing, so a launch-time trigger neither occupies the
+  // in-flight slot nor raises the iOS permission prompt over the splash screen
+  // — that prompt is the one chance we get, and spending it before the user
+  // has even signed in is its own bug.
+  if (!isAuthReadyForRegistration(getAuthState())) return null;
+
   // The whole body is coalesced, not just the PUT: the permission prompt and
   // the Expo token fetch are themselves slow enough for a foreground event to
   // land mid-flight and start a second attempt.
@@ -152,6 +172,12 @@ export async function registerPushDevice(
       });
 
       const outcome = await coordinator.send(fingerprint, async () => {
+        // Re-read rather than trusting the check above: the permission prompt
+        // and the Expo token fetch are seconds of wall clock, and a sign-out or
+        // a refresh Keycloak rejected in that window would leave this sending
+        // the same unauthenticated PUT the early return exists to prevent.
+        if (!isAuthReadyForRegistration(getAuthState())) return false;
+
         const { error, response } = await bffClient.PUT('/api/me/devices/{deviceIdentifier}', {
           params: { path: { deviceIdentifier } },
           body: { platform, provider: 'EXPO', pushToken, appVersion, deviceName },
