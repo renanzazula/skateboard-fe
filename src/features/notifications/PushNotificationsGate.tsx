@@ -93,6 +93,17 @@ function NativePushNotificationsGate() {
   // The token is handed straight to registerPushDevice. Letting it fetch its
   // own would call getDevicePushTokenAsync, which re-fires this listener —
   // the infinite loop expo-notifications warns about on PushTokenListener.
+  //
+  // Deliberately not gated on `status`, unlike the two effects above. iOS
+  // delivers the APNs token during launch, while bootstrap() is still restoring
+  // the session, so this fires with status 'loading' on every cold start; that
+  // is what made each launch open with a 401 on the registration PUT. The guard
+  // lives inside registerPushDevice rather than here because subscribing on
+  // `status` would tear down and re-attach the listener on every auth
+  // transition, and a rotation arriving in that gap is simply lost. Registering
+  // once and letting the call itself decline while unauthenticated keeps the
+  // subscription stable; the sign-in effect above re-registers with the current
+  // token the moment a session exists.
   useEffect(() => {
     const subscription = Notifications.addPushTokenListener((token) => {
       registerPushDevice(token);
