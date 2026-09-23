@@ -25,6 +25,12 @@ interface ResolverState {
   campaign: CampaignRuntime | null;
 }
 
+/** What the async resolve effect has produced so far, independent of `enabled`. */
+interface ResolveResult {
+  resolved: boolean;
+  campaign: CampaignRuntime | null;
+}
+
 /**
  * Prefetches the chosen campaign's first screen background so `phase: 'ready'`
  * means "safe to render atomically" — `CampaignScreenView`'s `expo-image`
@@ -51,31 +57,38 @@ async function pickCampaign(campaigns: CampaignRuntime[]): Promise<CampaignRunti
 }
 
 /**
+ * Fire-and-forget: refreshes the on-disk config cache for next launch and
+ * warms the image cache for whichever campaign that fresh config would pick,
+ * so a newly-published campaign's image is already on disk by the time it's
+ * actually shown (never mid-session — see the caller). Never awaited by the
+ * resolver itself; failures are swallowed since this is purely a next-launch
+ * optimization.
+ */
+function revalidateInBackground(): void {
+  fetchActiveCampaigns()
+    .then(async (campaigns) => {
+      await writeCampaignConfigCache(campaigns);
+      const next = await pickCampaign(campaigns);
+      await preloadFirstScreenImage(next);
+    })
+    .catch(() => undefined);
+}
+
+/**
  * Resolves which campaign (if any) to show at startup. Stale-while-revalidate:
- * a fresh cache renders immediately while a new copy is fetched for next
- * launch; a cold cache waits on the network, bounded by RESOLVE_BUDGET_MS.
- * Any failure resolves to `{ phase: 'ready', campaign: null }` — campaigns
- * never block app start (spec §12).
+ * a fresh cache renders immediately while a new copy is fetched (config *and*
+ * its image) for next launch; a cold cache waits on the network, bounded by
+ * RESOLVE_BUDGET_MS. Any failure resolves to `{ phase: 'ready', campaign: null }`
+ * — campaigns never block app start (spec §12).
  */
 export function useCampaignResolver(enabled: boolean): ResolverState & { markShown: (id: string) => void } {
-  const [state, setState] = useState<ResolverState>({
-    phase: enabled ? 'resolving' : 'ready',
-    campaign: null,
-  });
+  const [result, setResult] = useState<ResolveResult>({ resolved: false, campaign: null });
   const done = useRef(false);
 
   useEffect(() => {
     if (!enabled || done.current) return;
     done.current = true;
     let cancelled = false;
-
-    // `enabled` starts false while auth is still loading, so the initial
-    // `phase` above was computed as 'ready' (nothing to resolve yet). Once
-    // auth resolves and `enabled` flips true, announce 'resolving' before
-    // the async work starts — otherwise `phase` stays stale at 'ready' for a
-    // render or two, which would let a caller gating on `phase === 'ready'`
-    // alone (e.g. the splash-hide check in `_layout.tsx`) act too early.
-    setState((s) => (s.phase === 'ready' ? { ...s, phase: 'resolving' } : s));
 
     (async () => {
       try {
@@ -85,11 +98,9 @@ export function useCampaignResolver(enabled: boolean): ResolverState & { markSho
         if (cacheFresh) {
           const campaign = await pickCampaign(cache!.campaigns);
           await preloadFirstScreenImage(campaign);
-          if (!cancelled) setState({ phase: 'ready', campaign });
+          if (!cancelled) setResult({ resolved: true, campaign });
           // Revalidate for next launch, don't swap mid-session.
-          fetchActiveCampaigns()
-            .then(writeCampaignConfigCache)
-            .catch(() => undefined);
+          revalidateInBackground();
           return;
         }
 
@@ -97,10 +108,10 @@ export function useCampaignResolver(enabled: boolean): ResolverState & { markSho
         writeCampaignConfigCache(campaigns).catch(() => undefined);
         const campaign = await pickCampaign(campaigns);
         await preloadFirstScreenImage(campaign);
-        if (!cancelled) setState({ phase: 'ready', campaign });
+        if (!cancelled) setResult({ resolved: true, campaign });
       } catch (err) {
         console.warn('[campaign] resolve failed, skipping', err);
-        if (!cancelled) setState({ phase: 'ready', campaign: null });
+        if (!cancelled) setResult({ resolved: true, campaign: null });
       }
     })();
 
@@ -114,5 +125,13 @@ export function useCampaignResolver(enabled: boolean): ResolverState & { markSho
     recordShown(id).catch(() => undefined);
   }, []);
 
-  return { ...state, markShown };
+  // Derived from `enabled` every render rather than stored in state: storing
+  // it meant the render where `enabled` first flips true still read the old
+  // 'ready' value (the effect above hadn't committed 'resolving' yet), which
+  // let `_layout.tsx` hide the native splash a beat before resolution had
+  // even started — dashboard flashes, campaign pops in on top a moment later.
+  const phase: Phase = !enabled || result.resolved ? 'ready' : 'resolving';
+  const campaign = enabled ? result.campaign : null;
+
+  return { phase, campaign, markShown };
 }

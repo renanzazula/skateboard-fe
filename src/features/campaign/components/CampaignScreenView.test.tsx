@@ -3,6 +3,17 @@ import { act, render, screen, userEvent } from '@testing-library/react-native';
 import { CampaignScreenView } from '@/features/campaign/components/CampaignScreenView';
 import type { CampaignScreen } from '@/features/campaign/types';
 
+// expo-image's Image doesn't forward onError to a plain prop on the native
+// view (it wires it up as a native event subscription), so it can't be
+// triggered by walking the rendered tree the way a plain RN <Image> can —
+// stand in a host View that exposes the handler as a normal prop instead.
+jest.mock('expo-image', () => {
+  const { View } = require('react-native');
+  return {
+    Image: ({ onError }: { onError?: () => void }) => <View testID="campaign-background-image" onError={onError} />,
+  };
+});
+
 function makeScreen(overrides: Partial<CampaignScreen> = {}): CampaignScreen {
   return {
     id: 's1',
@@ -71,6 +82,23 @@ describe('CampaignScreenView', () => {
     );
 
     expect(screen.queryByLabelText('Close')).toBeNull();
+  });
+
+  it('calls onImageError when the background image fails to load', async () => {
+    const onImageError = jest.fn();
+    const view = await render(
+      <CampaignScreenView
+        screen={makeScreen({ backgroundUrl: 'https://example.com/broken.png' })}
+        onCtaPress={jest.fn()}
+        onClose={jest.fn()}
+        onImageError={onImageError}
+      />
+    );
+
+    const image = view.getByTestId('campaign-background-image');
+    await act(async () => image.props.onError());
+
+    expect(onImageError).toHaveBeenCalledTimes(1);
   });
 
   it('reveals the close button after the configured delay', async () => {

@@ -104,4 +104,35 @@ describe('useCampaignResolver', () => {
 
     expect(mockRecordShown).toHaveBeenCalledWith('c1');
   });
+
+  it('flips straight to resolving on the same render `enabled` turns true, never a stale ready', async () => {
+    // Never resolves within this test, so we can inspect the phase before
+    // any async work finishes — this is the exact window the splash-hide
+    // race used to slip through.
+    mockReadCache.mockReturnValue(new Promise(() => undefined));
+
+    const { result, rerender } = await renderHook((props: { enabled: boolean }) => useCampaignResolver(props.enabled), {
+      initialProps: { enabled: false },
+    });
+    expect(result.current.phase).toBe('ready');
+
+    await rerender({ enabled: true });
+
+    expect(result.current.phase).toBe('resolving');
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('prefetches the image for the campaign a background revalidation would pick, for next launch', async () => {
+    const NEXT_CAMPAIGN = { id: 'c2', screens: [{ backgroundUrl: 'https://example.com/next.png' }] };
+    mockReadCache.mockResolvedValueOnce({ campaigns: [CAMPAIGN], fetchedAt: Date.now() });
+    mockResolve.mockReturnValueOnce(CAMPAIGN); // picked for the immediate render
+    mockFetch.mockResolvedValueOnce([NEXT_CAMPAIGN]); // background revalidation fetch
+    mockResolve.mockReturnValueOnce(NEXT_CAMPAIGN); // picked from the revalidated set
+
+    const { result } = await renderHook(() => useCampaignResolver(true));
+    await waitFor(() => expect(result.current.phase).toBe('ready'));
+
+    await waitFor(() => expect(mockWriteCache).toHaveBeenCalledWith([NEXT_CAMPAIGN]));
+    await waitFor(() => expect(Image.prefetch).toHaveBeenCalledWith(NEXT_CAMPAIGN.screens[0].backgroundUrl));
+  });
 });

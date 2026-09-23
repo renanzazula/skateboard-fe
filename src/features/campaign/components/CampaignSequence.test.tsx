@@ -17,7 +17,17 @@ jest.mock('@/features/campaign/cta', () => ({
 jest.mock('@/features/campaign/components/CampaignScreenView', () => {
   const { Pressable, Text, View } = require('react-native');
   return {
-    CampaignScreenView: ({ screen, onCtaPress, onClose }: { screen: { title: string }; onCtaPress: () => void; onClose: () => void }) => (
+    CampaignScreenView: ({
+      screen,
+      onCtaPress,
+      onClose,
+      onImageError,
+    }: {
+      screen: { title: string };
+      onCtaPress: () => void;
+      onClose: () => void;
+      onImageError: () => void;
+    }) => (
       <View>
         <Text>{screen.title}</Text>
         <Pressable onPress={onCtaPress}>
@@ -25,6 +35,9 @@ jest.mock('@/features/campaign/components/CampaignScreenView', () => {
         </Pressable>
         <Pressable onPress={onClose}>
           <Text>close</Text>
+        </Pressable>
+        <Pressable onPress={onImageError}>
+          <Text>image-error</Text>
         </Pressable>
       </View>
     ),
@@ -156,5 +169,31 @@ describe('CampaignSequence', () => {
 
     expect(mockRunCta).not.toHaveBeenCalled();
     expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it('advances to the next screen immediately when the background image fails, without waiting for the timer', async () => {
+    const user = userEvent.setup();
+    await render(<CampaignSequence campaign={campaign()} onDone={jest.fn()} />);
+
+    await user.press(screen.getByText('image-error'));
+
+    expect(screen.getByText('Second')).toBeTruthy();
+    expect(mockRecordEvent).toHaveBeenCalledWith({ campaignId: 'c1', eventType: 'CAMPAIGN_SCREEN_SKIPPED', screenId: 's1' });
+  });
+
+  it('ends the sequence instead of a stuck black screen when the last screen image fails', async () => {
+    const onDone = jest.fn();
+    const user = userEvent.setup();
+    await render(
+      <CampaignSequence
+        campaign={campaign({ screens: [{ id: 's1', position: 1, title: 'Only', durationSeconds: 5, actionType: 'NONE' } as never] })}
+        onDone={onDone}
+      />
+    );
+
+    await user.press(screen.getByText('image-error'));
+
+    expect(onDone).toHaveBeenCalledTimes(1);
+    expect(mockRecordEvent).toHaveBeenCalledWith({ campaignId: 'c1', eventType: 'CAMPAIGN_COMPLETED', screenId: 's1' });
   });
 });

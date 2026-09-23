@@ -15,6 +15,8 @@ type Props = {
   onCtaPress: () => void;
   /** Fired when the user taps the close button. */
   onClose: () => void;
+  /** Fired if the background image fails to load, so the caller can skip this screen instead of leaving it stuck. */
+  onImageError?: () => void;
 };
 
 const TEXT_SIZE_PX: Record<CampaignTextSize, number> = {
@@ -43,7 +45,7 @@ function textAlign(alignment: CampaignScreen['textAlignment']): 'left' | 'center
  * opacity come from the screen config. The close button only appears after
  * `closeAfterSeconds` (default 1s when enabled).
  */
-export function CampaignScreenView({ screen, onCtaPress, onClose }: Props) {
+export function CampaignScreenView({ screen, onCtaPress, onClose, onImageError }: Props) {
   const { t } = useTranslation();
   const [closeVisible, setCloseVisible] = useState(!screen.closeEnabled ? false : (screen.closeAfterSeconds ?? 1) <= 0);
 
@@ -71,6 +73,7 @@ export function CampaignScreenView({ screen, onCtaPress, onClose }: Props) {
           }}
           cachePolicy="memory-disk"
           transition={200}
+          onError={onImageError}
         />
       ) : null}
 

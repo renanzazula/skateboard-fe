@@ -59,6 +59,28 @@ export function CampaignSequence({ campaign, onDone, preview = false }: Props) {
 
   const current = screens[index];
 
+  /** Advances past the current screen (or ends the sequence on the last one) — shared by the timer and a broken image. */
+  const advance = useCallback(
+    (screenId: string | undefined, eventType: Parameters<typeof recordCampaignEvent>[0]['eventType']) => {
+      if (finished.current) return;
+      if (timerRef.current) clearTimeout(timerRef.current);
+      emit(eventType, { screenId });
+      if (index + 1 >= screens.length) {
+        end('CAMPAIGN_COMPLETED', screenId);
+      } else {
+        setIndex((i) => i + 1);
+      }
+    },
+    [emit, end, index, screens.length]
+  );
+
+  // A screen with no displayable image must not strand the user — skip it
+  // (or end the sequence, if it's the last one) instead of leaving a blank
+  // full-screen overlay with no way off it.
+  const handleImageError = useCallback(() => {
+    advance(current?.id, 'CAMPAIGN_SCREEN_SKIPPED');
+  }, [advance, current?.id]);
+
   // Per-screen timing + impression + preload-next. Pauses while backgrounded.
   useEffect(() => {
     if (!current || finished.current) return;
@@ -75,12 +97,7 @@ export function CampaignSequence({ campaign, onDone, preview = false }: Props) {
     const arm = () => {
       startedAt = Date.now();
       timerRef.current = setTimeout(() => {
-        emit('CAMPAIGN_SCREEN_COMPLETED', { screenId: current.id });
-        if (index + 1 >= screens.length) {
-          end('CAMPAIGN_COMPLETED', current.id);
-        } else {
-          setIndex((i) => i + 1);
-        }
+        advance(current.id, 'CAMPAIGN_SCREEN_COMPLETED');
       }, remainingMs);
     };
 
@@ -119,7 +136,7 @@ export function CampaignSequence({ campaign, onDone, preview = false }: Props) {
 
   return (
     <View style={styles.root}>
-      <CampaignScreenView screen={current} onCtaPress={handleCta} onClose={handleClose} />
+      <CampaignScreenView screen={current} onCtaPress={handleCta} onClose={handleClose} onImageError={handleImageError} />
     </View>
   );
 }
