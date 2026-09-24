@@ -254,6 +254,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me/notifications/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send a test push to the caller's own devices
+         * @description Diagnostic. Sends a fixed "Test notification" to every enabled device the caller has registered — never to anyone else; the recipient is the JWT subject. Notification preferences are ignored. The counts are the push provider's immediate answer (accepted, not yet confirmed delivered); devicesTargeted 0 means this account has no registered device to send to.
+         */
+        post: operations["sendTestNotification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/me/profile-picture": {
         parameters: {
             query?: never;
@@ -1018,6 +1038,13 @@ export interface components {
             pushToken: string;
             appVersion?: string | null;
             deviceName?: string | null;
+        };
+        TestNotificationResponse: {
+            devicesTargeted: number;
+            sent: number;
+            retryable: number;
+            failed: number;
+            invalidTokens: number;
         };
         DeviceResponse: {
             /** Format: uuid */
@@ -2168,6 +2195,53 @@ export interface operations {
             };
             /** @description Missing required permission */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    sendTestNotification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Provider outcome per device */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestNotificationResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Missing required permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Notification service unavailable */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

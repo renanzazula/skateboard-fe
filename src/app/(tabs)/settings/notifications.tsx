@@ -1,4 +1,4 @@
-import { Bell, Mic } from 'lucide-react-native';
+import { Bell, BellRing, Mic } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { AppState, ScrollView, StyleSheet } from 'react-native';
 
@@ -7,15 +7,20 @@ import { useProfile } from '@/features/account/hooks/useProfile';
 import {
   getPushPermissionState,
   registerPushDevice,
+  resolveTestNotificationOutcome,
+  sendTestNotification,
   type PushPermissionState,
+  type TestNotificationOutcome,
 } from '@/features/notifications';
 import { SettingsHeader } from '@/features/settings/components/SettingsHeader';
 import { SettingsRow } from '@/features/settings/components/SettingsRow';
 import { SettingsSection } from '@/features/settings/components/SettingsSection';
 import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
+import { isBffError } from '@/shared/api/errors';
 import { Spacing } from '@/shared/constants/theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
+import { showAlert } from '@/shared/utils/alert';
 
 export default function NotificationsScreen() {
   const { profile } = useProfile();
@@ -62,6 +67,46 @@ export default function NotificationsScreen() {
     [setPushEnabled, refreshPermission]
   );
 
+  const [sendingTest, setSendingTest] = useState(false);
+
+  const outcomeMessage = useCallback(
+    (outcome: TestNotificationOutcome) => {
+      switch (outcome.key) {
+        case 'sent':
+          return t('settings.testNotificationSent', { count: outcome.count });
+        case 'noDevice':
+          return t('settings.testNotificationNoDevice');
+        case 'expired':
+          return t('settings.testNotificationExpired');
+        case 'retrying':
+          return t('settings.testNotificationRetrying');
+        case 'rejected':
+          return t('settings.testNotificationRejected');
+      }
+    },
+    [t]
+  );
+
+  /**
+   * Registers first so the test goes to this handset's current token — a
+   * device that never registered, or whose token rotated, would otherwise
+   * report "no device" or a dead token for a problem one tap here fixes.
+   * A resend of an unchanged registration is skipped by registerPushDevice.
+   */
+  const handleSendTest = useCallback(async () => {
+    setSendingTest(true);
+    try {
+      await registerPushDevice();
+      refreshPermission();
+      const outcome = resolveTestNotificationOutcome(await sendTestNotification());
+      showAlert(t('settings.testNotificationTitle'), outcomeMessage(outcome));
+    } catch (err) {
+      showAlert(t('settings.testNotificationError'), isBffError(err) ? err.message : t('common.tryAgain'));
+    } finally {
+      setSendingTest(false);
+    }
+  }, [outcomeMessage, refreshPermission, t]);
+
   return (
     <ThemedView style={styles.container}>
       <SettingsHeader title={t('settings.notifications')} handle={profile?.username ? `@${profile.username}` : undefined} />
@@ -69,6 +114,11 @@ export default function NotificationsScreen() {
         {permission === 'denied' && (
           <ThemedText type="small" themeColor="textSecondary" style={styles.blockedHint}>
             {t('settings.notificationsBlocked')}
+          </ThemedText>
+        )}
+        {permission === 'unsupported' && (
+          <ThemedText type="small" themeColor="textSecondary" style={styles.blockedHint}>
+            {t('settings.notificationsUnsupported')}
           </ThemedText>
         )}
         <SettingsSection label={t('settings.alerts')}>
@@ -89,6 +139,19 @@ export default function NotificationsScreen() {
             trailing={{ type: 'switch', value: preferences?.newPodcastEnabled ?? false, onChange: setNewPodcastEnabled }}
           />
         </SettingsSection>
+        {/* Nothing to test where this build cannot hold a push token (web, simulator). */}
+        {permission !== null && permission !== 'unsupported' && (
+          <SettingsSection label={t('settings.troubleshooting')}>
+            <SettingsRow
+              icon={BellRing}
+              title={t('settings.sendTestNotification')}
+              subtitle={t('settings.sendTestNotificationSubtitle')}
+              trailing={{ type: 'chevron' }}
+              onPress={handleSendTest}
+              disabled={sendingTest}
+            />
+          </SettingsSection>
+        )}
       </ScrollView>
     </ThemedView>
   );
