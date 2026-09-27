@@ -1,4 +1,4 @@
-import { ActivityIndicator, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { AboutPageView } from '@/features/about/components/AboutPageView';
 import { useAboutPage } from '@/features/about/hooks/useAboutPage';
@@ -8,8 +8,8 @@ import { isBffError } from '@/shared/api/errors';
 import { ErrorBanner } from '@/shared/components/ErrorBanner';
 import { ThemedView } from '@/shared/components/themed-view';
 import { Spacing } from '@/shared/constants/theme';
-import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
+import { SkateLoader } from '@/shared/components/loader';
 
 /**
  * Read-only About Us page for every authenticated user, reached from
@@ -17,7 +17,6 @@ import { useTranslation } from '@/shared/hooks/useTranslation';
  * /settings/about-us-admin. See .docs/ABOUT_US_README.md.
  */
 export default function AboutUsScreen() {
-  const theme = useTheme();
   const { t } = useTranslation();
   const { profile } = useProfile();
   const { page, loading, error, refetch } = useAboutPage();
@@ -26,7 +25,7 @@ export default function AboutUsScreen() {
     return (
       <ThemedView style={styles.container}>
         <SettingsHeader title={t('aboutUs.title')} handle={profile?.username ? `@${profile.username}` : undefined} />
-        <ActivityIndicator style={styles.loading} color={theme.primary} />
+        <SkateLoader style={styles.loading} />
       </ThemedView>
     );
   }

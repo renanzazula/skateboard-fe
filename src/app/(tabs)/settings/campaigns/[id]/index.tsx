@@ -1,7 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { useAuth } from '@/core/auth';
 import { CampaignForm } from '@/features/campaign/admin/components/CampaignForm';
@@ -17,16 +17,15 @@ import { PrimaryButton } from '@/shared/components/PrimaryButton';
 import { SecondaryButton } from '@/shared/components/SecondaryButton';
 import { ThemedView } from '@/shared/components/themed-view';
 import { MAX_CONTENT_WIDTH, Spacing } from '@/shared/constants/theme';
-import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import type { Campaign, CampaignScreen, CampaignScreenRequest } from '@/features/campaign/types';
 import { showAlert } from '@/shared/utils/alert';
+import { SkateLoader } from '@/shared/components/loader';
 
 type Panel = { kind: 'campaign' } | { kind: 'screen'; screen?: CampaignScreen };
 
 export default function CampaignEditorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const theme = useTheme();
   const { t } = useTranslation();
   const { hasAuthority } = useAuth();
   const admin = useCampaignAdmin();
@@ -151,7 +150,7 @@ export default function CampaignEditorScreen() {
     return (
       <ThemedView style={styles.container}>
         <SettingsHeader title={t('admin.campaigns.title')} />
-        <ActivityIndicator style={styles.loading} color={theme.primary} />
+        <SkateLoader style={styles.loading} />
       </ThemedView>
     );
   }

@@ -1,7 +1,7 @@
 import { Redirect } from 'expo-router';
 import { ChevronDown, ChevronUp, Star } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '@/core/auth';
 import { useCategoryAdmin, type AdminCategory } from '@/features/podcast/hooks/useCategoryAdmin';
@@ -15,6 +15,7 @@ import { MAX_CONTENT_WIDTH, RADII, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import { showAlert } from '@/shared/utils/alert';
+import { SkateLoader } from '@/shared/components/loader';
 
 /**
  * Admin management of the category rail (README_CATEGORY_MANAGEMENT_PLAN.md
@@ -101,7 +102,7 @@ export default function ManageCategoriesScreen() {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <SettingsHeader title={t('admin.manageCategories.title')} />
-        <ActivityIndicator style={styles.loading} color={colors.primary} />
+        <SkateLoader style={styles.loading} />
       </View>
     );
   }

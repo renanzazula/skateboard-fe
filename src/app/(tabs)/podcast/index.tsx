@@ -1,7 +1,7 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Mic, Plus } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '@/core/auth';
 import { AppHeader } from '@/shared/components/AppHeader';
@@ -19,6 +19,7 @@ import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import type { Category } from '@/shared/types/category';
 import type { Post } from '@/shared/types/posts';
+import { SkateLoader } from '@/shared/components/loader';
 
 // Ported from rork-standard-app/expo's modules/feed/screens/PodcastScreen.tsx
 // (via migrate/podcast/screens/PodcastScreen.tsx), then reworked for
@@ -188,7 +189,7 @@ type PodcastListFooterProps = {
 };
 
 function PodcastListFooter({ postsLoading, total, postsCount, hasMore, onLoadMore, colors, t }: PodcastListFooterProps) {
-  if (postsLoading) return <ActivityIndicator style={styles.footer} color={colors.primary} />;
+  if (postsLoading) return <SkateLoader size={56} style={styles.footer} />;
   if (total === 0) return null;
   return (
     <View>

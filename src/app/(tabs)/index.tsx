@@ -2,7 +2,7 @@ import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { Film } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { HomeHeader } from '@/features/home/components/HomeHeader';
 import { HomeVideoGalleryItem, TILE_INSET } from '@/features/home/components/HomeVideoGalleryItem';
@@ -15,9 +15,9 @@ import { EmptyState } from '@/shared/components/EmptyState';
 import { ErrorBanner } from '@/shared/components/ErrorBanner';
 import { ThemedView } from '@/shared/components/themed-view';
 import { BottomTabInset, MAX_CONTENT_WIDTH, Spacing } from '@/shared/constants/theme';
-import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import type { Video } from '@/shared/types/video';
+import { SkateLoader } from '@/shared/components/loader';
 
 // README_HOME_DASHBOARD.md: random visual wall of video thumbnails — the
 // main dashboard. Reselecting the Home tab reshuffles + scrolls to top (see
@@ -26,7 +26,6 @@ import type { Video } from '@/shared/types/video';
 // since reshuffling only happens on first load, explicit reselect, or
 // pull-to-refresh — never on refocus.
 export default function HomeScreen() {
-  const theme = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
   const listRef = useRef<FlashListRef<Video>>(null);
@@ -79,7 +78,7 @@ export default function HomeScreen() {
 
       {isLoading && videos.length === 0 ? (
         <View style={styles.loading}>
-          <ActivityIndicator color={theme.primary} />
+          <SkateLoader />
         </View>
       ) : (
         <FlashList

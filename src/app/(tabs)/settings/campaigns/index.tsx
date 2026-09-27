@@ -1,6 +1,6 @@
 import { Redirect, router } from 'expo-router';
 import { Megaphone } from 'lucide-react-native';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { useAuth } from '@/core/auth';
 import { CampaignStatusBadge } from '@/features/campaign/admin/components/CampaignStatusBadge';
@@ -15,6 +15,7 @@ import { ThemedView } from '@/shared/components/themed-view';
 import { MAX_CONTENT_WIDTH, RADII, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
+import { SkateLoader } from '@/shared/components/loader';
 
 /** Settings → Administration → Startup Campaigns. Gated by FUNC_CAMPAIGN_READ. */
 export default function CampaignsListScreen() {
@@ -32,7 +33,7 @@ export default function CampaignsListScreen() {
     return (
       <ThemedView style={styles.container}>
         <SettingsHeader title={t('admin.campaigns.title')} />
-        <ActivityIndicator style={styles.loading} color={theme.primary} />
+        <SkateLoader style={styles.loading} />
       </ThemedView>
     );
   }

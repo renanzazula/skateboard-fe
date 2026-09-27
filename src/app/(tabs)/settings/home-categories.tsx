@@ -1,7 +1,7 @@
 import { Redirect } from 'expo-router';
 import { Tag } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { useAuth } from '@/core/auth';
 import { CategoryChip } from '@/features/podcast/components/CategoryChip';
@@ -19,6 +19,7 @@ import { MAX_CONTENT_WIDTH, RADII, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import { showAlert } from '@/shared/utils/alert';
+import { SkateLoader } from '@/shared/components/loader';
 
 // README_HOME_DASHBOARD.md §22.9: admin-only screen controlling which video
 // categories are eligible for the mobile Home dashboard. Default is ALL
@@ -95,7 +96,7 @@ export default function HomeCategoriesScreen() {
     return (
       <ThemedView style={styles.container}>
         <SettingsHeader title={t('admin.homeCategories.title')} />
-        <ActivityIndicator style={styles.loading} color={theme.primary} />
+        <SkateLoader style={styles.loading} />
       </ThemedView>
     );
   }

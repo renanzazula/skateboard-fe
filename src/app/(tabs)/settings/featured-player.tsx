@@ -26,6 +26,7 @@ import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import type { Post } from '@/shared/types/posts';
 import { showAlert } from '@/shared/utils/alert';
+import { SkateLoader } from '@/shared/components/loader';
 
 const CONTENT_SOURCE: FeaturedContentSource = 'PODCAST';
 
@@ -142,7 +143,7 @@ export default function FeaturedPlayerScreen() {
     return (
       <ThemedView style={styles.container}>
         <SettingsHeader title={t('admin.featuredPlayer.title')} />
-        <ActivityIndicator style={styles.loading} color={theme.primary} />
+        <SkateLoader style={styles.loading} />
       </ThemedView>
     );
   }
@@ -421,7 +422,7 @@ function EpisodePickerSection({
       />
 
       {searching && posts.length === 0 ? (
-        <ActivityIndicator style={styles.loading} color={theme.primary} />
+        <SkateLoader style={styles.loading} />
       ) : (
         <>
           <View style={[styles.episodeList, { borderColor: theme.border }]}>
