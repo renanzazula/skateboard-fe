@@ -190,9 +190,7 @@ export default function BrandingScreen() {
     return (
       <ThemedView style={styles.screen}>
         <SettingsHeader title={t('admin.branding.title')} />
-        <ThemedView style={styles.loading}>
-          <SkateLoader />
-        </ThemedView>
+        <SkateLoader fullScreen />
       </ThemedView>
     );
   }
@@ -378,7 +376,6 @@ function RemoveButton({ onPress, disabled }: { onPress: () => void; disabled?: b
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   safeArea: { flex: 1 },
   content: {
     gap: Spacing.five,

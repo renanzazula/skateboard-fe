@@ -36,6 +36,12 @@ type Props = {
   size?: number;
   /** Optional caption under the loader; also used as the accessibility label. */
   label?: string;
+  /**
+   * Covers the nearest screen container and sits dead centre of it — for a
+   * page's initial load. Touches pass through, so a header's back button
+   * stays usable while it spins.
+   */
+  fullScreen?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
@@ -47,7 +53,7 @@ type Props = {
  * mic and a map pin — riding an orbit around it. Fades in rather than
  * popping; static when the OS "reduce motion" setting is on.
  */
-export function SkateLoader({ size = 120, label, style, testID = 'skate-loader' }: Props) {
+export function SkateLoader({ size = 120, label, fullScreen = false, style, testID = 'skate-loader' }: Props) {
   const theme = useTheme();
   const { t } = useTranslation();
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -115,7 +121,7 @@ export function SkateLoader({ size = 120, label, style, testID = 'skate-loader' 
 
   return (
     <View
-      style={[styles.container, style]}
+      style={[styles.container, fullScreen && styles.fullScreen, style]}
       testID={testID}
       accessible
       accessibilityRole="progressbar"
@@ -147,7 +153,7 @@ export function SkateLoader({ size = 120, label, style, testID = 'skate-loader' 
           <Animated.View style={[styles.layer, wheelStyle]}>
             <SvgXml xml={art.wheel} width={m.wheel} height={m.wheel} />
           </Animated.View>
-          <View style={styles.layer} pointerEvents="none">
+          <View style={[styles.layer, styles.passThrough]}>
             <SvgXml xml={art.shine} width={m.wheel} height={m.wheel} />
           </View>
         </View>
@@ -190,6 +196,17 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  fullScreen: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    pointerEvents: 'none',
+  },
+  passThrough: {
+    pointerEvents: 'none',
   },
   track: {
     position: 'absolute',

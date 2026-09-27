@@ -33,7 +33,7 @@ export default function CampaignsListScreen() {
     return (
       <ThemedView style={styles.container}>
         <SettingsHeader title={t('admin.campaigns.title')} />
-        <SkateLoader style={styles.loading} />
+        <SkateLoader fullScreen />
       </ThemedView>
     );
   }
@@ -89,7 +89,6 @@ export default function CampaignsListScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  loading: { marginTop: Spacing.six },
   content: {
     padding: Spacing.four,
     gap: Spacing.two,

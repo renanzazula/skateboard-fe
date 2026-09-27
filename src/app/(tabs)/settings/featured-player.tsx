@@ -143,7 +143,7 @@ export default function FeaturedPlayerScreen() {
     return (
       <ThemedView style={styles.container}>
         <SettingsHeader title={t('admin.featuredPlayer.title')} />
-        <SkateLoader style={styles.loading} />
+        <SkateLoader fullScreen />
       </ThemedView>
     );
   }
@@ -422,7 +422,7 @@ function EpisodePickerSection({
       />
 
       {searching && posts.length === 0 ? (
-        <SkateLoader style={styles.loading} />
+        <SkateLoader size={72} style={styles.loading} />
       ) : (
         <>
           <View style={[styles.episodeList, { borderColor: theme.border }]}>
@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   loading: {
-    marginTop: Spacing.six,
+    marginTop: Spacing.four,
   },
   content: {
     padding: Spacing.four,

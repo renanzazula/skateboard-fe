@@ -10,7 +10,6 @@ import { SettingsHeader } from '@/features/settings/components/SettingsHeader';
 import { isBffError } from '@/shared/api/errors';
 import { ErrorBanner } from '@/shared/components/ErrorBanner';
 import { ThemedView } from '@/shared/components/themed-view';
-import { Spacing } from '@/shared/constants/theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import { showAlert } from '@/shared/utils/alert';
 import { SkateLoader } from '@/shared/components/loader';
@@ -67,7 +66,7 @@ export default function AboutUsAdminScreen() {
     return (
       <ThemedView style={styles.container}>
         <SettingsHeader title={t('admin.aboutUs.title')} />
-        <SkateLoader style={styles.loading} />
+        <SkateLoader fullScreen />
       </ThemedView>
     );
   }
@@ -96,5 +95,4 @@ export default function AboutUsAdminScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  loading: { marginTop: Spacing.six },
 });

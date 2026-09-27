@@ -1,4 +1,3 @@
-import { StyleSheet } from 'react-native';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 
 import { useAuth } from '@/core/auth';
@@ -7,7 +6,6 @@ import { usePodcastAdmin } from '@/features/podcast/hooks/usePodcastAdmin';
 import { usePodcastPost } from '@/features/podcast/hooks/usePodcastPost';
 import { isBffError } from '@/shared/api/errors';
 import { ErrorBanner } from '@/shared/components/ErrorBanner';
-import { Spacing } from '@/shared/constants/theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import { showAlert } from '@/shared/utils/alert';
 import { SkateLoader } from '@/shared/components/loader';
@@ -37,7 +35,7 @@ export default function EditPodcastPostScreen() {
   };
 
   if (loading) {
-    return <SkateLoader style={styles.loading} />;
+    return <SkateLoader fullScreen />;
   }
 
   if (error || !post) {
@@ -63,9 +61,3 @@ export default function EditPodcastPostScreen() {
     />
   );
 }
-
-const styles = StyleSheet.create({
-  loading: {
-    marginTop: Spacing.six,
-  },
-});

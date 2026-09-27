@@ -77,9 +77,7 @@ export default function HomeScreen() {
       ) : null}
 
       {isLoading && videos.length === 0 ? (
-        <View style={styles.loading}>
-          <SkateLoader />
-        </View>
+        <SkateLoader fullScreen />
       ) : (
         <FlashList
           ref={listRef}
@@ -125,11 +123,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  loading: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   list: {
     width: '100%',

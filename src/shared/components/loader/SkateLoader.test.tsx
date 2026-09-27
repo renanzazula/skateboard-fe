@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react-native';
-import { AccessibilityInfo } from 'react-native';
+import { AccessibilityInfo, StyleSheet } from 'react-native';
 
 import { SkateLoader } from '@/shared/components/loader';
 
@@ -17,6 +17,27 @@ describe('SkateLoader', () => {
     for (const kind of ['deck', 'barcelona', 'mic', 'pin']) {
       expect(screen.getByTestId(`skate-loader-${kind}`)).toBeTruthy();
     }
+  });
+
+  it('fills its screen and centres itself when fullScreen, letting touches through', async () => {
+    await render(<SkateLoader fullScreen />);
+    const style = StyleSheet.flatten(screen.getByTestId('skate-loader').props.style);
+    expect(style).toMatchObject({
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+      alignItems: 'center',
+      justifyContent: 'center',
+      pointerEvents: 'none',
+    });
+  });
+
+  it('stays in the layout flow by default', async () => {
+    await render(<SkateLoader />);
+    const style = StyleSheet.flatten(screen.getByTestId('skate-loader').props.style);
+    expect(style.position).toBeUndefined();
   });
 
   it('shows and announces a custom label', async () => {

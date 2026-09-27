@@ -11,7 +11,7 @@ import { ErrorBanner } from '@/shared/components/ErrorBanner';
 import { PrimaryButton } from '@/shared/components/PrimaryButton';
 import { SecondaryButton } from '@/shared/components/SecondaryButton';
 import { TextField } from '@/shared/components/TextField';
-import { MAX_CONTENT_WIDTH, RADII, Spacing } from '@/shared/constants/theme';
+import { MAX_CONTENT_WIDTH, RADII } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import { showAlert } from '@/shared/utils/alert';
@@ -102,7 +102,7 @@ export default function ManageCategoriesScreen() {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <SettingsHeader title={t('admin.manageCategories.title')} />
-        <SkateLoader style={styles.loading} />
+        <SkateLoader fullScreen />
       </View>
     );
   }
@@ -237,9 +237,6 @@ function CategorySeparator() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  loading: {
-    marginTop: Spacing.six,
   },
   listContent: {
     padding: 16,
