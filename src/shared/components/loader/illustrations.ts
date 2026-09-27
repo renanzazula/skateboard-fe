@@ -19,13 +19,17 @@ export type IllustrationPalette = {
 };
 
 /**
- * The nucleus scenes, in the order the loader cycles through them. `brand`
- * is the app icon itself (a raster image, see SkateLoader); the rest are
- * drawn here.
+ * What the nucleus wheel's hub shows, in the order the loader cycles
+ * through them. `brand` is the app icon itself (a raster image, see
+ * SkateLoader); the rest are drawn here, and each of those also rides an
+ * orbit as a badge (`ORBIT_OBJECTS`) until it's its turn in the hub.
  */
-export const SCENES = ['brand', 'skate', 'barcelona', 'podcast', 'places'] as const;
+export const SCENES = ['brand', 'barcelona', 'podcast', 'places'] as const;
 export type Scene = (typeof SCENES)[number];
 export type DrawnScene = Exclude<Scene, 'brand'>;
+
+/** The objects riding the orbits, one per orbit. */
+export const ORBIT_OBJECTS: readonly DrawnScene[] = ['barcelona', 'podcast', 'places'];
 
 const svg = (body: string) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${body}</svg>`;
@@ -139,64 +143,6 @@ function sticker(id: string, p: IllustrationPalette, scene: string, defs = ''): 
       `<circle cx="50" cy="50" r="48" fill="${p.background}"/>` +
       `<g clip-path="url(#${id}-clip)">${scene}</g>`,
   );
-}
-
-/**
- * Skate: a board in three-quarter view, like the app icon's — black grip,
- * yellow ply edge, gold wheels — with sparks flying off it.
- */
-function skateXml(p: IllustrationPalette): string {
-  // The board is drawn top-down, then rotated and squashed into perspective;
-  // `project` puts a top-down point where that transform lands it.
-  const tilt = (-18 * Math.PI) / 180;
-  const squash = 0.55;
-  const project = (x: number, y: number): [number, number] => {
-    const dx = x - 50;
-    const dy = y - 50;
-    return [n(50 + dx * Math.cos(tilt) - dy * Math.sin(tilt)), n(48 + squash * (dx * Math.sin(tilt) + dy * Math.cos(tilt)))];
-  };
-  const board = (dy: number, fill: string, stroke = '') =>
-    `<rect x="13" y="37" width="74" height="26" rx="13" transform="translate(50 ${48 + dy}) scale(1 ${squash}) rotate(-18) translate(-50 -50)" ` +
-    `fill="${fill}"${stroke}/>`;
-  const wheel = ([x, y]: [number, number], r: number, fill: string) =>
-    `<ellipse cx="${x}" cy="${n(y + 9)}" rx="${n(r * 0.75)}" ry="${r}" fill="${fill}" stroke="${p.background}" stroke-width="1.6"/>` +
-    `<ellipse cx="${n(x - r * 0.12)}" cy="${n(y + 9)}" rx="${n(r * 0.28)}" ry="${n(r * 0.4)}" fill="${p.background}"/>` +
-    `<path d="M${n(x - r * 0.45)} ${n(y + 9 - r * 0.5)} Q${n(x - r * 0.6)} ${n(y + 9)} ${n(x - r * 0.45)} ${n(y + 9 + r * 0.45)}" ` +
-    `stroke="${p.textPrimary}" stroke-width="1" fill="none" stroke-linecap="round"/>`;
-  const axle = (a: [number, number], b: [number, number]) =>
-    `<path d="M${a[0]} ${n(a[1] + 9)} L${b[0]} ${n(b[1] + 9)}" stroke="${p.textPrimary}" stroke-width="2.4" stroke-linecap="round"/>` +
-    `<path d="M${n((a[0] + b[0]) / 2)} ${n((a[1] + b[1]) / 2 + 9)} L${n((a[0] + b[0]) / 2)} ${n((a[1] + b[1]) / 2 + 3)}" stroke="${p.primary}" stroke-width="3.4" stroke-linecap="round"/>`;
-
-  const backLeft = project(27, 39);
-  const backRight = project(73, 39);
-  const frontLeft = project(27, 61);
-  const frontRight = project(73, 61);
-
-  const scene =
-    brush(18, 14, 52, 13, -38, p.primary, 11, 0.9) +
-    brush(86, 90, 50, 12, -38, p.primary, 12, 0.85) +
-    bolt(30, 24, 1.25, -20, p.primary, p.background) +
-    bolt(19, 34, 0.85, -40, p.primary, p.background) +
-    bolt(70, 20, 1.25, 20, p.primary, p.background) +
-    bolt(81, 29, 0.85, 40, p.primary, p.background) +
-    brush(50, 84, 76, 6, -3, p.textPrimary, 14, 0.95) +
-    `<ellipse cx="50" cy="76" rx="34" ry="4.5" fill="${p.primary}" fill-opacity="0.18"/>` +
-    // undercarriage: back wheels, axles, front wheels
-    wheel(backLeft, 6.4, p.primaryPressed) +
-    wheel(backRight, 6.4, p.primaryPressed) +
-    axle(backLeft, frontLeft) +
-    axle(backRight, frontRight) +
-    wheel(frontLeft, 7.8, p.primary) +
-    wheel(frontRight, 7.8, p.primary) +
-    // board: yellow ply edge showing under the black grip top
-    board(4, p.primary, ` stroke="${p.background}" stroke-width="2.4"`) +
-    board(0, p.background, ` stroke="${p.primary}" stroke-width="2.6"`) +
-    `<path d="M${project(24, 60).join(' ')} L${project(76, 60).join(' ')}" stroke="${p.textPrimary}" stroke-opacity="0.7" stroke-width="0.9" stroke-linecap="round"/>` +
-    [project(25, 45), project(25, 55), project(75, 45), project(75, 55)]
-      .map(([x, y]) => `<circle cx="${x}" cy="${y}" r="0.9" fill="${p.textPrimary}"/>`)
-      .join('');
-
-  return sticker('sls', p, scene);
 }
 
 /**
@@ -320,7 +266,6 @@ function placesXml(p: IllustrationPalette): string {
 }
 
 const SCENE_BUILDERS: Record<DrawnScene, (p: IllustrationPalette) => string> = {
-  skate: skateXml,
   barcelona: barcelonaXml,
   podcast: podcastXml,
   places: placesXml,
@@ -328,39 +273,6 @@ const SCENE_BUILDERS: Record<DrawnScene, (p: IllustrationPalette) => string> = {
 
 export function sceneXml(scene: DrawnScene, p: IllustrationPalette): string {
   return SCENE_BUILDERS[scene](p);
-}
-
-/**
- * Skateboard wheel, face on — the atom's electrons, in the icon's gold:
- * yellow urethane with a heavy black outline, a black core and a white
- * bearing. A lightning bolt printed on the tyre makes the roll readable.
- * No highlight: that's `wheelShineXml`, layered on top and kept still so
- * the light doesn't spin with the wheel.
- */
-export function wheelXml(p: IllustrationPalette): string {
-  const spokes = Array.from({ length: 6 }, (_, i) => {
-    const [x1, y1] = polar(50, 50, 7, i * 60);
-    const [x2, y2] = polar(50, 50, 14, i * 60);
-    return `M${x1} ${y1} L${x2} ${y2}`;
-  }).join(' ');
-
-  return svg(
-    `<circle cx="50" cy="50" r="45" fill="${p.primary}" stroke="${p.background}" stroke-width="6"/>` +
-      `<circle cx="50" cy="50" r="36" fill="none" stroke="${p.primaryPressed}" stroke-width="3"/>` +
-      bolt(50, 19, 1, 90, p.background, p.background) +
-      `<circle cx="50" cy="50" r="27" fill="${p.background}"/>` +
-      `<circle cx="50" cy="50" r="17" fill="${p.textPrimary}" stroke="${p.background}" stroke-width="2.5"/>` +
-      `<path d="${spokes}" stroke="${p.background}" stroke-width="2.6" stroke-linecap="round"/>` +
-      `<circle cx="50" cy="50" r="5" fill="${p.background}"/>`,
-  );
-}
-
-/** Static highlight for a wheel: sits over it and doesn't rotate. */
-export function wheelShineXml(p: IllustrationPalette): string {
-  return svg(
-    `<path d="${arc(50, 50, 39, 200, 250)}" fill="none" stroke="${p.textPrimary}" stroke-opacity="0.85" stroke-width="4.5" stroke-linecap="round"/>` +
-      `<path d="${arc(50, 50, 39, 258, 266)}" fill="none" stroke="${p.textPrimary}" stroke-opacity="0.7" stroke-width="4.5" stroke-linecap="round"/>`,
-  );
 }
 
 /**
@@ -419,5 +331,62 @@ export function orbitsXml(p: IllustrationPalette, orbitCount = 3): string {
         `<ellipse cx="50" cy="50" rx="42" ry="17" transform="rotate(${n((i * 180) / orbitCount)} 50 50)" ` +
         `fill="none" stroke="${p.primary}" stroke-opacity="0.6" stroke-width="1.3"/>`,
     ).join(''),
+  );
+}
+
+/**
+ * A scene as an orbiting badge: the same drawing, with the logo's thick
+ * yellow rim so it reads as a sticker at small sizes. Ids get a `-b`
+ * suffix so a badge and the same scene in the hub can share a web page.
+ */
+export function badgeXml(scene: DrawnScene, p: IllustrationPalette): string {
+  const body = sceneXml(scene, p)
+    .replace(/id="([^"]+)"/g, 'id="$1-b"')
+    .replace(/url\(#([^)]+)\)/g, 'url(#$1-b)');
+  return body.replace(
+    '</svg>',
+    `<circle cx="50" cy="50" r="47" fill="none" stroke="${p.background}" stroke-width="2"/>` +
+      `<circle cx="50" cy="50" r="47" fill="none" stroke="${p.primary}" stroke-width="5"/>` +
+      `<circle cx="50" cy="50" r="44" fill="none" stroke="${p.textPrimary}" stroke-opacity="0.35" stroke-width="0.8"/></svg>`,
+  );
+}
+
+/**
+ * The paint splash that covers the swap between two hub images: an
+ * irregular yellow splat with a white core, flung droplets and drips, like
+ * the spray-paint around the logo. The loader scales it up out of the
+ * wheel and fades it away.
+ */
+export function splashXml(p: IllustrationPalette): string {
+  const blob = (radius: number, spikes: number, jag: number, seed: number) => {
+    const rand = random(seed);
+    const points: string[] = [];
+    for (let i = 0; i < spikes * 2; i++) {
+      const deg = (i / (spikes * 2)) * 360 + (rand() - 0.5) * 8;
+      const r = i % 2 === 0 ? radius * (1 + jag * (0.4 + rand() * 0.6)) : radius * (0.82 + rand() * 0.12);
+      points.push(polar(50, 50, r, deg).join(' '));
+    }
+    return `M${points.join(' L')} Z`;
+  };
+  const rand = random(71);
+  const droplets = Array.from({ length: 16 }, (_, i) => {
+    const deg = (i / 16) * 360 + rand() * 18;
+    const [x, y] = polar(50, 50, 38 + rand() * 10, deg);
+    const colour = i % 3 === 0 ? p.textPrimary : p.primary;
+    return `<circle cx="${x}" cy="${y}" r="${n(0.8 + rand() * 2)}" fill="${colour}"/>`;
+  }).join('');
+  const drips = [30, 110, 200, 290]
+    .map((deg) => {
+      const [x1, y1] = polar(50, 50, 30, deg);
+      const [x2, y2] = polar(50, 50, 42, deg + 4);
+      return `<path d="M${x1} ${y1} L${x2} ${y2}" stroke="${p.primary}" stroke-width="3.4" stroke-linecap="round"/>`;
+    })
+    .join('');
+
+  return svg(
+    drips +
+      `<path d="${blob(32, 11, 0.35, 72)}" fill="${p.primary}" stroke="${p.background}" stroke-width="1.6" stroke-linejoin="round"/>` +
+      `<path d="${blob(17, 8, 0.4, 73)}" fill="${p.textPrimary}"/>` +
+      droplets,
   );
 }

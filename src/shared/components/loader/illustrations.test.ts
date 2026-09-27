@@ -1,13 +1,14 @@
 import {
   NUCLEUS_HUB,
+  ORBIT_OBJECTS,
   SCENES,
+  badgeXml,
   nucleusShineXml,
   nucleusWheelXml,
   orbitsXml,
   type DrawnScene,
   sceneXml,
-  wheelShineXml,
-  wheelXml,
+  splashXml,
   type IllustrationPalette,
 } from '@/shared/components/loader/illustrations';
 
@@ -21,17 +22,17 @@ const palette: IllustrationPalette = {
 const DRAWN = SCENES.filter((scene): scene is DrawnScene => scene !== 'brand');
 
 const all: [string, string][] = [
-  ['wheel', wheelXml(palette)],
-  ['shine', wheelShineXml(palette)],
+  ['splash', splashXml(palette)],
   ['orbits', orbitsXml(palette)],
   ['nucleus tyre', nucleusWheelXml(palette)],
   ['nucleus shine', nucleusShineXml(palette)],
   ...DRAWN.map((scene): [string, string] => [scene, sceneXml(scene, palette)]),
+  ...DRAWN.map((scene): [string, string] => [`${scene} badge`, badgeXml(scene, palette)]),
 ];
 
 describe('loader illustrations', () => {
-  it('opens on the brand icon, then cycles skate → Barcelona → podcast → places', () => {
-    expect(SCENES).toEqual(['brand', 'skate', 'barcelona', 'podcast', 'places']);
+  it('opens on the brand icon, then cycles Barcelona → podcast → places', () => {
+    expect(SCENES).toEqual(['brand', 'barcelona', 'podcast', 'places']);
   });
 
   it.each(all)('%s is a single 100×100 svg document', (_, xml) => {
@@ -83,6 +84,23 @@ describe('loader illustrations', () => {
 
   it('prints three bolts on the nucleus tyre so its roll reads', () => {
     expect(nucleusWheelXml(palette).match(/M0 -7 L4.5 -7/g)).toHaveLength(3);
+  });
+
+  it('puts every drawn scene on an orbit, one per orbit', () => {
+    expect([...ORBIT_OBJECTS].sort()).toEqual([...DRAWN].sort());
+    expect(ORBIT_OBJECTS).toHaveLength(3);
+  });
+
+  it('gives a badge the scene plus a thick yellow sticker rim', () => {
+    const badge = badgeXml('podcast', palette);
+    expect(badge).toContain(`stroke="${palette.primary}" stroke-width="5"`);
+    expect(badge.length).toBeGreaterThan(sceneXml('podcast', palette).length);
+  });
+
+  it('paints the splash in yellow with a white core', () => {
+    const splash = splashXml(palette);
+    expect(splash).toContain(`fill="${palette.primary}"`);
+    expect(splash).toContain(`fill="${palette.textPrimary}"`);
   });
 
   it('draws one ring per orbit', () => {

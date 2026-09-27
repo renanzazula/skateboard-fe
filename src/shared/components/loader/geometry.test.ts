@@ -1,6 +1,7 @@
 import {
   SWAP_AT,
   atomMetrics,
+  divePose,
   electronPoint,
   flashOpacity,
   nucleusBurst,
@@ -8,6 +9,7 @@ import {
   orbitTiltDeg,
   shockwave,
   sparkPoint,
+  splashFrame,
 } from '@/shared/components/loader/geometry';
 
 const close = (value: number) => Number(value.toFixed(6));
@@ -16,7 +18,8 @@ describe('atomMetrics', () => {
   it('keeps the orbits and sparks inside a sensible envelope', () => {
     const m = atomMetrics(200);
     expect(m.nucleus).toBe(100);
-    expect(m.orbitRx + m.wheel / 2).toBeLessThanOrEqual(100);
+    expect(m.orbitRx + m.badge / 2).toBeLessThanOrEqual(100);
+    expect(m.splash).toBeGreaterThan(m.nucleus);
     expect(m.orbitRy).toBeLessThan(m.orbitRx);
     expect(m.spark).toBeGreaterThanOrEqual(3);
     // sparks leave from about the nucleus tyre
@@ -111,5 +114,57 @@ describe('explosion', () => {
   it('launches sparks from the nucleus rim, not its centre', () => {
     const s = sparkPoint(0.001, 0, 14, 100, 30);
     expect(Math.hypot(s.x, s.y)).toBeCloseTo(30, 0);
+  });
+});
+
+describe('splashFrame', () => {
+  it('is hidden outside a burst', () => {
+    expect(splashFrame(0)).toEqual({ scale: 0, opacity: 0, rotate: 0 });
+    expect(splashFrame(1)).toEqual({ scale: 0, opacity: 0, rotate: 0 });
+  });
+
+  it('is at full cover while the hub image swaps', () => {
+    expect(splashFrame(SWAP_AT).opacity).toBe(1);
+    expect(splashFrame(SWAP_AT).scale).toBeGreaterThan(0.9);
+  });
+
+  it('keeps spreading as it fades away', () => {
+    expect(splashFrame(0.9).scale).toBeGreaterThan(splashFrame(SWAP_AT).scale);
+    expect(splashFrame(0.9).opacity).toBeLessThan(0.5);
+    expect(splashFrame(0.06).opacity).toBeCloseTo(0.5);
+  });
+});
+
+describe('divePose', () => {
+  const near = { x: 40, y: 10, depth: 1 };
+  const far = { x: -40, y: -10, depth: -1 };
+
+  it('rides the orbit at rest, bigger and in front on the near side', () => {
+    const front = divePose(near, 0, 2);
+    const back = divePose(far, 0, 2);
+    expect(front).toMatchObject({ x: 40, y: 10, zIndex: 3 });
+    expect(back.zIndex).toBe(1);
+    expect(front.scale).toBeGreaterThan(back.scale);
+    expect(front.opacity).toBeGreaterThan(back.opacity);
+  });
+
+  it('lands in the hub at hub size, faded out into the splash', () => {
+    const landed = divePose(near, 1, 2);
+    expect(close(landed.x)).toBe(0);
+    expect(close(landed.y)).toBe(0);
+    expect(landed.scale).toBeCloseTo(2);
+    expect(landed.opacity).toBe(0);
+  });
+
+  it('flies over everything while travelling', () => {
+    const midway = divePose(far, 0.5, 2);
+    expect(midway.zIndex).toBe(5);
+    expect(Math.abs(midway.x)).toBeLessThan(40);
+    expect(midway.opacity).toBeGreaterThan(0);
+  });
+
+  it('clamps out-of-range progress', () => {
+    expect(divePose(near, -0.2, 2).x).toBe(40);
+    expect(close(divePose(near, 1.2, 2).x)).toBe(0);
   });
 });

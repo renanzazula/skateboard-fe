@@ -2,7 +2,7 @@ import { act, render, screen } from '@testing-library/react-native';
 import { AccessibilityInfo, StyleSheet } from 'react-native';
 
 import { SkateLoader } from '@/shared/components/loader';
-import { BURST_MS, CYCLE_MS } from '@/shared/components/loader/SkateLoader';
+import { BURST_MS, CYCLE_MS, DIVE_MS } from '@/shared/components/loader/SkateLoader';
 
 describe('SkateLoader', () => {
   afterEach(() => {
@@ -17,29 +17,44 @@ describe('SkateLoader', () => {
     expect(loader.props.accessibilityState).toEqual({ busy: true });
   });
 
-  it('opens on the brand icon in the nucleus, with three wheels on the orbits', async () => {
+  it('opens on the brand icon in the spinning wheel, with Barcelona, the mic and the pin on the orbits', async () => {
     await render(<SkateLoader />);
     expect(screen.getByTestId('skate-loader-scene-brand')).toBeTruthy();
     expect(screen.getByTestId('skate-loader-tyre')).toBeTruthy();
-    for (const i of [0, 1, 2]) expect(screen.getByTestId(`skate-loader-wheel-${i}`)).toBeTruthy();
+    expect(screen.getByTestId('skate-loader-splash')).toBeTruthy();
+    for (const object of ['barcelona', 'podcast', 'places']) {
+      expect(screen.getByTestId(`skate-loader-orbit-${object}`)).toBeTruthy();
+    }
   });
 
-  it('explodes into the next scene every cycle, and wraps round', async () => {
+  it('keeps the hub image until the diving object lands in the splash', async () => {
+    jest.useFakeTimers();
+    await render(<SkateLoader />);
+    await act(async () => {});
+    await act(async () => {
+      jest.advanceTimersByTime(CYCLE_MS + DIVE_MS);
+    });
+    expect(screen.getByTestId('skate-loader-scene-brand')).toBeTruthy();
+    await act(async () => {
+      jest.advanceTimersByTime(BURST_MS);
+    });
+    expect(screen.getByTestId('skate-loader-scene-barcelona')).toBeTruthy();
+  });
+
+  it('cycles the hub through each orbit object, then back to the icon', async () => {
     jest.useFakeTimers();
     await render(<SkateLoader />);
     await act(async () => {});
 
-    // First explosion lands CYCLE_MS in; step one cycle at a time after it.
+    // The first object dives in CYCLE_MS in; step one cycle at a time after it.
     await act(async () => {
-      jest.advanceTimersByTime(CYCLE_MS + BURST_MS);
+      jest.advanceTimersByTime(CYCLE_MS + DIVE_MS + BURST_MS);
     });
-    expect(screen.getByTestId('skate-loader-scene-skate')).toBeTruthy();
     const nextScene = async () => {
       await act(async () => {
         jest.advanceTimersByTime(CYCLE_MS);
       });
     };
-    await nextScene();
     expect(screen.getByTestId('skate-loader-scene-barcelona')).toBeTruthy();
     await nextScene();
     expect(screen.getByTestId('skate-loader-scene-podcast')).toBeTruthy();

@@ -8,8 +8,9 @@
 export function atomMetrics(size: number) {
   return {
     nucleus: Math.round(size * 0.5),
-    wheel: Math.round(size * 0.15),
-    orbitRx: size * 0.42,
+    badge: Math.round(size * 0.2),
+    splash: Math.round(size * 0.7),
+    orbitRx: size * 0.4,
     orbitRy: size * 0.17,
     spark: Math.max(3, Math.round(size * 0.035)),
     sparkFrom: size * 0.23,
@@ -98,6 +99,53 @@ export function shockwave(b: number): { scale: number; opacity: number } {
   'worklet';
   if (idle(b)) return { scale: 0, opacity: 0 };
   return { scale: 0.4 + 1.8 * easeOutCubic(b), opacity: 0.9 * (1 - b) };
+}
+
+/**
+ * The paint splash through one explosion: bursts out of the wheel, is at
+ * full cover as the hub image swaps (so the swap itself is never seen), then
+ * fades while still spreading.
+ */
+export function splashFrame(b: number): { scale: number; opacity: number; rotate: number } {
+  'worklet';
+  if (idle(b)) return { scale: 0, opacity: 0, rotate: 0 };
+  const grow = easeOutCubic(Math.min(1, b / 0.45));
+  let opacity = 1;
+  if (b < 0.12) opacity = b / 0.12;
+  else if (b > SWAP_AT + 0.15) opacity = Math.max(0, 1 - (b - SWAP_AT - 0.15) / 0.35);
+  return { scale: 0.25 + 0.95 * grow + 0.15 * b, opacity, rotate: 30 * b };
+}
+
+function easeInOutCubic(k: number): number {
+  'worklet';
+  return k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+}
+
+/**
+ * An orbiting badge on its way into (dive 0 → 1) or back out of (1 → 0)
+ * the wheel's hub. At 0 it's wherever its orbit puts it, sized and dimmed
+ * by depth; at 1 it's centred at `hubScale` — the size of the hub image it
+ * turns into — and faded out into the splash that covers the swap. While
+ * travelling it's drawn above everything else.
+ */
+export function divePose(
+  orbit: ElectronPoint,
+  dive: number,
+  hubScale: number,
+): { x: number; y: number; scale: number; opacity: number; zIndex: number } {
+  'worklet';
+  const near = (orbit.depth + 1) / 2;
+  const restScale = 0.75 + 0.3 * near;
+  const restOpacity = 0.7 + 0.3 * near;
+  const e = easeInOutCubic(Math.min(1, Math.max(0, dive)));
+  const fade = dive > 0.85 ? 1 - (dive - 0.85) / 0.15 : 1;
+  return {
+    x: orbit.x * (1 - e),
+    y: orbit.y * (1 - e),
+    scale: restScale + (hubScale - restScale) * e,
+    opacity: restOpacity * Math.max(0, fade),
+    zIndex: dive > 0.01 ? 5 : orbit.depth >= 0 ? 3 : 1,
+  };
 }
 
 /** 0 → 1 → 0 over an explosion: how far the orbits are blown outwards. */
