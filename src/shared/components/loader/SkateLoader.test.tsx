@@ -20,6 +20,7 @@ describe('SkateLoader', () => {
   it('opens on the brand icon in the nucleus, with three wheels on the orbits', async () => {
     await render(<SkateLoader />);
     expect(screen.getByTestId('skate-loader-scene-brand')).toBeTruthy();
+    expect(screen.getByTestId('skate-loader-tyre')).toBeTruthy();
     for (const i of [0, 1, 2]) expect(screen.getByTestId(`skate-loader-wheel-${i}`)).toBeTruthy();
   });
 

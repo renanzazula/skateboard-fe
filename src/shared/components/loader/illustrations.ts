@@ -129,16 +129,15 @@ function equaliser(x0: number, x1: number, baseY: number, maxH: number, color: s
 }
 
 /**
- * The round sticker every scene sits in: black disc, then the logo's thick
- * yellow outline, with a thin white inner keyline.
+ * The round disc every scene is drawn on: black, clipped, with a thin white
+ * keyline. It has no rim of its own — it sits in the hub of the nucleus
+ * wheel (`nucleusWheelXml`), whose tyre is the frame.
  */
 function sticker(id: string, p: IllustrationPalette, scene: string, defs = ''): string {
   return svg(
-    `<defs>${defs}<clipPath id="${id}-clip"><circle cx="50" cy="50" r="46"/></clipPath></defs>` +
+    `<defs>${defs}<clipPath id="${id}-clip"><circle cx="50" cy="50" r="48"/></clipPath></defs>` +
       `<circle cx="50" cy="50" r="48" fill="${p.background}"/>` +
-      `<g clip-path="url(#${id}-clip)">${scene}</g>` +
-      `<circle cx="50" cy="50" r="46.4" fill="none" stroke="${p.textPrimary}" stroke-opacity="0.25" stroke-width="0.7"/>` +
-      `<circle cx="50" cy="50" r="48" fill="none" stroke="${p.primary}" stroke-width="3.6"/>`,
+      `<g clip-path="url(#${id}-clip)">${scene}</g>`,
   );
 }
 
@@ -361,6 +360,50 @@ export function wheelShineXml(p: IllustrationPalette): string {
   return svg(
     `<path d="${arc(50, 50, 39, 200, 250)}" fill="none" stroke="${p.textPrimary}" stroke-opacity="0.85" stroke-width="4.5" stroke-linecap="round"/>` +
       `<path d="${arc(50, 50, 39, 258, 266)}" fill="none" stroke="${p.textPrimary}" stroke-opacity="0.7" stroke-width="4.5" stroke-linecap="round"/>`,
+  );
+}
+
+/**
+ * The nucleus: a big skateboard wheel whose hub is left open for the
+ * current scene. Yellow urethane tyre with a heavy black outline, a bevel,
+ * printed lightning bolts and tread marks (these turn with the tyre, which
+ * is what makes it read as rolling), then the black core lip that frames
+ * the scene. On the same 100×100 canvas; the open hub is `NUCLEUS_HUB` of
+ * the diameter.
+ */
+export const NUCLEUS_HUB = 0.66;
+
+export function nucleusWheelXml(p: IllustrationPalette): string {
+  const bolts = [0, 120, 240]
+    .map((deg) => {
+      const [x, y] = polar(50, 50, 41.5, deg - 90);
+      return bolt(x, y, 0.95, deg + 90, p.background, p.background);
+    })
+    .join('');
+  const treads = [0, 120, 240]
+    .flatMap((deg) => [deg + 38, deg + 60, deg + 82])
+    .map((deg) => `<path d="${arc(50, 50, 41.5, deg - 4, deg + 4)}" stroke="${p.background}" stroke-opacity="0.4" stroke-width="2.2" stroke-linecap="round" fill="none"/>`)
+    .join('');
+
+  return svg(
+    // tyre, outlined inside and out
+    `<circle cx="50" cy="50" r="41.5" fill="none" stroke="${p.primary}" stroke-width="13"/>` +
+      `<circle cx="50" cy="50" r="47.5" fill="none" stroke="${p.background}" stroke-width="2.6"/>` +
+      `<circle cx="50" cy="50" r="38" fill="none" stroke="${p.primaryPressed}" stroke-width="2.4"/>` +
+      bolts +
+      treads +
+      // core lip framing the hub
+      `<circle cx="50" cy="50" r="34.2" fill="none" stroke="${p.background}" stroke-width="3.6"/>` +
+      `<circle cx="50" cy="50" r="32.3" fill="none" stroke="${p.textPrimary}" stroke-opacity="0.55" stroke-width="0.7"/>`,
+  );
+}
+
+/** Static highlight for the nucleus tyre: sits over it and doesn't rotate. */
+export function nucleusShineXml(p: IllustrationPalette): string {
+  return svg(
+    `<path d="${arc(50, 50, 44, 198, 248)}" fill="none" stroke="${p.textPrimary}" stroke-opacity="0.8" stroke-width="3" stroke-linecap="round"/>` +
+      `<path d="${arc(50, 50, 44, 256, 263)}" fill="none" stroke="${p.textPrimary}" stroke-opacity="0.65" stroke-width="3" stroke-linecap="round"/>` +
+      `<path d="${arc(50, 50, 44, 20, 75)}" fill="none" stroke="${p.background}" stroke-opacity="0.35" stroke-width="3" stroke-linecap="round"/>`,
   );
 }
 

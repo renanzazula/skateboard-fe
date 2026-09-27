@@ -15,10 +15,12 @@ const close = (value: number) => Number(value.toFixed(6));
 describe('atomMetrics', () => {
   it('keeps the orbits and sparks inside a sensible envelope', () => {
     const m = atomMetrics(200);
-    expect(m.nucleus).toBe(84);
+    expect(m.nucleus).toBe(100);
     expect(m.orbitRx + m.wheel / 2).toBeLessThanOrEqual(100);
     expect(m.orbitRy).toBeLessThan(m.orbitRx);
     expect(m.spark).toBeGreaterThanOrEqual(3);
+    // sparks leave from about the nucleus tyre
+    expect(m.sparkFrom).toBeCloseTo(m.nucleus / 2, -1);
   });
 
   it('never makes a spark smaller than 3px', () => {

@@ -1,5 +1,8 @@
 import {
+  NUCLEUS_HUB,
   SCENES,
+  nucleusShineXml,
+  nucleusWheelXml,
   orbitsXml,
   type DrawnScene,
   sceneXml,
@@ -21,6 +24,8 @@ const all: [string, string][] = [
   ['wheel', wheelXml(palette)],
   ['shine', wheelShineXml(palette)],
   ['orbits', orbitsXml(palette)],
+  ['nucleus tyre', nucleusWheelXml(palette)],
+  ['nucleus shine', nucleusShineXml(palette)],
   ...DRAWN.map((scene): [string, string] => [scene, sceneXml(scene, palette)]),
 ];
 
@@ -63,6 +68,21 @@ describe('loader illustrations', () => {
 
   it('draws the hand-made wobble the same way every time', () => {
     for (const scene of DRAWN) expect(sceneXml(scene, palette)).toBe(sceneXml(scene, palette));
+  });
+
+  it('leaves the nucleus hub open for the scene, framed by the core lip', () => {
+    const xml = nucleusWheelXml(palette);
+    // Nothing in the tyre is filled — it's all strokes and printed marks on
+    // the ring — so the scene underneath shows through the hub.
+    expect(xml).not.toMatch(/<circle[^>]*fill="#/);
+    // The lip's inner edge sits just inside the hub, covering the scene's edge.
+    const lip = xml.match(/r="34.2"[^>]*stroke-width="3.6"/);
+    expect(lip).not.toBeNull();
+    expect(34.2 - 3.6 / 2).toBeLessThan(NUCLEUS_HUB * 50);
+  });
+
+  it('prints three bolts on the nucleus tyre so its roll reads', () => {
+    expect(nucleusWheelXml(palette).match(/M0 -7 L4.5 -7/g)).toHaveLength(3);
   });
 
   it('draws one ring per orbit', () => {

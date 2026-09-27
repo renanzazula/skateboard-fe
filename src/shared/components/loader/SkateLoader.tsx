@@ -24,7 +24,10 @@ import {
   sparkPoint,
 } from '@/shared/components/loader/geometry';
 import {
+  NUCLEUS_HUB,
   SCENES,
+  nucleusShineXml,
+  nucleusWheelXml,
   orbitsXml,
   sceneXml,
   wheelShineXml,
@@ -40,6 +43,8 @@ const BRAND_IMAGE = require('@/assets/images/loader-brand.jpg');
 const ORBITS = 3;
 const SPARKS = 14;
 
+/** One turn of the nucleus tyre. */
+const TYRE_TURN_MS = 1600;
 /** One lap of an electron. */
 const LAP_MS = 2200;
 /** One slow turn of the whole atom. */
@@ -69,9 +74,10 @@ type Props = {
 };
 
 /**
- * Brand loading indicator, built like the React atom: a nucleus showing the
- * app icon and then the app's four worlds (skate, Barcelona, the podcast,
- * places), drawn in the logo's black/yellow/white sticker style, with
+ * Brand loading indicator, built like the React atom. The nucleus is a big
+ * skateboard wheel whose rolling tyre frames the app icon and then the
+ * app's four worlds (skate, Barcelona, the podcast, places), drawn in the
+ * logo's black/yellow/white sticker style, with
  * three skateboard wheels rolling round it on tilted orbits, passing in
  * front of and behind it. Every few seconds the nucleus explodes — sparks,
  * shockwave, the orbits blown outwards — and re-forms as the next world.
@@ -85,6 +91,7 @@ export function SkateLoader({ size, label, fullScreen = false, style, testID = '
   const [sceneIndex, setSceneIndex] = useState(0);
 
   const lap = useSharedValue(0);
+  const tyre = useSharedValue(0);
   const spin = useSharedValue(0);
   const burst = useSharedValue(1);
   const pulse = useSharedValue(0);
@@ -96,6 +103,8 @@ export function SkateLoader({ size, label, fullScreen = false, style, testID = '
   const art = useMemo(
     () => ({
       orbits: orbitsXml(theme, ORBITS),
+      tyre: nucleusWheelXml(theme),
+      tyreShine: nucleusShineXml(theme),
       wheel: wheelXml(theme),
       shine: wheelShineXml(theme),
       scenes: SCENES.map((scene) => (scene === 'brand' ? null : sceneXml(scene, theme))),
@@ -123,6 +132,7 @@ export function SkateLoader({ size, label, fullScreen = false, style, testID = '
     }
     enter.value = withTiming(1, { duration: ENTER_MS, easing: Easing.out(Easing.cubic) });
     lap.value = withRepeat(withTiming(1, { duration: LAP_MS, easing: Easing.linear }), -1, false);
+    tyre.value = withRepeat(withTiming(360, { duration: TYRE_TURN_MS, easing: Easing.linear }), -1, false);
     spin.value = withRepeat(withTiming(360, { duration: ATOM_SPIN_MS, easing: Easing.linear }), -1, false);
     pulse.value = withRepeat(withTiming(1, { duration: PULSE_MS, easing: Easing.inOut(Easing.ease) }), -1, true);
 
@@ -138,7 +148,7 @@ export function SkateLoader({ size, label, fullScreen = false, style, testID = '
     return () => {
       clearInterval(cycle);
       swaps.forEach(clearTimeout);
-      [lap, spin, pulse, burst].forEach((value) => cancelAnimation(value));
+      [lap, tyre, spin, pulse, burst].forEach((value) => cancelAnimation(value));
     };
     // Shared values are stable refs — safe to omit from deps.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -155,6 +165,7 @@ export function SkateLoader({ size, label, fullScreen = false, style, testID = '
     const { scale, opacity } = nucleusBurst(burst.value);
     return { opacity, transform: [{ scale: scale * (1 + 0.035 * pulse.value) }] };
   });
+  const tyreStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${tyre.value}deg` }] }));
   const haloStyle = useAnimatedStyle(() => ({
     opacity: 0.45 + 0.4 * pulse.value + 0.5 * orbitKick(burst.value),
     transform: [{ scale: 1.05 + 0.12 * pulse.value + 0.4 * orbitKick(burst.value) }],
@@ -167,6 +178,8 @@ export function SkateLoader({ size, label, fullScreen = false, style, testID = '
 
   const scene = SCENES[sceneIndex];
   const nucleusBox = { width: m.nucleus, height: m.nucleus, borderRadius: m.nucleus / 2 };
+  const hub = Math.round(m.nucleus * NUCLEUS_HUB);
+  const hubBox = { width: hub, height: hub, borderRadius: hub / 2 };
 
   return (
     <View
@@ -185,16 +198,22 @@ export function SkateLoader({ size, label, fullScreen = false, style, testID = '
         <Animated.View
           style={[styles.layer, styles.middle, nucleusBox, { borderWidth: 2, borderColor: theme.primary }, shockStyle]}
         />
-        <Animated.View style={[styles.layer, styles.middle, nucleusStyle]} testID={`skate-loader-scene-${scene}`}>
-          {art.scenes[sceneIndex] === null ? (
-            <Image
-              source={BRAND_IMAGE}
-              resizeMode="cover"
-              style={[nucleusBox, { borderWidth: Math.max(2, m.nucleus * 0.036), borderColor: theme.primary }]}
-            />
-          ) : (
-            <SvgXml xml={art.scenes[sceneIndex]} width={m.nucleus} height={m.nucleus} />
-          )}
+        {/* The nucleus is itself a skate wheel: the scene sits in its hub,
+            the tyre rolls round it, and the light on the tyre stays put. */}
+        <Animated.View style={[styles.layer, styles.middle, nucleusBox, nucleusStyle]} testID={`skate-loader-scene-${scene}`}>
+          <View style={[styles.layer, hubBox, styles.hub, { backgroundColor: theme.background }]}>
+            {art.scenes[sceneIndex] === null ? (
+              <Image source={BRAND_IMAGE} resizeMode="cover" style={hubBox} />
+            ) : (
+              <SvgXml xml={art.scenes[sceneIndex]} width={hub} height={hub} />
+            )}
+          </View>
+          <Animated.View style={[StyleSheet.absoluteFill, tyreStyle]} testID="skate-loader-tyre">
+            <SvgXml xml={art.tyre} width={m.nucleus} height={m.nucleus} />
+          </Animated.View>
+          <View style={[StyleSheet.absoluteFill, styles.passThrough]}>
+            <SvgXml xml={art.tyreShine} width={m.nucleus} height={m.nucleus} />
+          </View>
         </Animated.View>
         <Animated.View
           style={[styles.layer, styles.middle, styles.passThrough, nucleusBox, { backgroundColor: theme.textPrimary }, flashStyle]}
@@ -330,6 +349,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  hub: {
+    overflow: 'hidden',
   },
   back: {
     zIndex: 0,

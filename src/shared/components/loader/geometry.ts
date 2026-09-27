@@ -7,12 +7,12 @@
 /** Sizes of every layer, derived from the loader's square size. */
 export function atomMetrics(size: number) {
   return {
-    nucleus: Math.round(size * 0.42),
+    nucleus: Math.round(size * 0.5),
     wheel: Math.round(size * 0.15),
     orbitRx: size * 0.42,
     orbitRy: size * 0.17,
     spark: Math.max(3, Math.round(size * 0.035)),
-    sparkFrom: size * 0.17,
+    sparkFrom: size * 0.23,
     sparkReach: size * 0.36,
   };
 }
