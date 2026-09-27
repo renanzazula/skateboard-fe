@@ -1,6 +1,6 @@
 import { Redirect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { useAuth } from '@/core/auth';
 import { AboutForm } from '@/features/about/components/AboutForm';
@@ -10,10 +10,9 @@ import { SettingsHeader } from '@/features/settings/components/SettingsHeader';
 import { isBffError } from '@/shared/api/errors';
 import { ErrorBanner } from '@/shared/components/ErrorBanner';
 import { ThemedView } from '@/shared/components/themed-view';
-import { Spacing } from '@/shared/constants/theme';
-import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import { showAlert } from '@/shared/utils/alert';
+import { SkateLoader } from '@/shared/components/loader';
 
 /**
  * About Us management, reached from Settings → Administration. Gated by
@@ -21,7 +20,6 @@ import { showAlert } from '@/shared/utils/alert';
  * edits through PUT /api/about-us. See .docs/ABOUT_US_README.md.
  */
 export default function AboutUsAdminScreen() {
-  const theme = useTheme();
   const { t } = useTranslation();
   const { hasAuthority } = useAuth();
   const { submitting, getAboutPage, saveAboutPage, uploadImage } = useAboutAdmin();
@@ -68,7 +66,7 @@ export default function AboutUsAdminScreen() {
     return (
       <ThemedView style={styles.container}>
         <SettingsHeader title={t('admin.aboutUs.title')} />
-        <ActivityIndicator style={styles.loading} color={theme.primary} />
+        <SkateLoader fullScreen />
       </ThemedView>
     );
   }
@@ -97,5 +95,4 @@ export default function AboutUsAdminScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  loading: { marginTop: Spacing.six },
 });

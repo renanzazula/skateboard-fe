@@ -1,6 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback } from 'react';
-import { ActivityIndicator, StyleSheet } from 'react-native';
 
 import { useAuth } from '@/core/auth';
 import { PodcastEpisodeDetail } from '@/features/podcast/components/PodcastEpisodeDetail';
@@ -9,9 +8,9 @@ import { usePodcastPost } from '@/features/podcast/hooks/usePodcastPost';
 import { getEpisodeNumber } from '@/features/podcast/services/episodeMeta';
 import { isBffError } from '@/shared/api/errors';
 import { ErrorBanner } from '@/shared/components/ErrorBanner';
-import { Spacing } from '@/shared/constants/theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import { showAlert } from '@/shared/utils/alert';
+import { SkateLoader } from '@/shared/components/loader';
 
 /**
  * Episode/video detail screen body, shared by the Podcast tab's own
@@ -78,7 +77,7 @@ export function PodcastPostScreen() {
   };
 
   if (loading) {
-    return <ActivityIndicator style={styles.loading} />;
+    return <SkateLoader fullScreen />;
   }
 
   if (error || !post) {
@@ -97,9 +96,3 @@ export function PodcastPostScreen() {
     />
   );
 }
-
-const styles = StyleSheet.create({
-  loading: {
-    marginTop: Spacing.six,
-  },
-});

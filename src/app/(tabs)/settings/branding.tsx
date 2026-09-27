@@ -3,7 +3,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Redirect } from 'expo-router';
 import { Plus, Trash2 } from 'lucide-react-native';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { useAuth } from '@/core/auth';
 import { refreshAppConfig } from '@/core/config';
@@ -19,6 +19,7 @@ import { RADII, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import { showAlert } from '@/shared/utils/alert';
+import { SkateLoader } from '@/shared/components/loader';
 
 const PREVIEW_HEIGHT = 140;
 
@@ -189,9 +190,7 @@ export default function BrandingScreen() {
     return (
       <ThemedView style={styles.screen}>
         <SettingsHeader title={t('admin.branding.title')} />
-        <ThemedView style={styles.loading}>
-          <ActivityIndicator color={theme.primary} />
-        </ThemedView>
+        <SkateLoader fullScreen />
       </ThemedView>
     );
   }
@@ -377,7 +376,6 @@ function RemoveButton({ onPress, disabled }: { onPress: () => void; disabled?: b
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   safeArea: { flex: 1 },
   content: {
     gap: Spacing.five,

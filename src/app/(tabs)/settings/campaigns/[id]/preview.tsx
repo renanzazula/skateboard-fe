@@ -1,6 +1,6 @@
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { useAuth } from '@/core/auth';
 import { CampaignScreenInspector } from '@/features/campaign/admin/components/CampaignScreenInspector';
@@ -14,9 +14,9 @@ import { PrimaryButton } from '@/shared/components/PrimaryButton';
 import { ThemedText } from '@/shared/components/themed-text';
 import { ThemedView } from '@/shared/components/themed-view';
 import { MAX_CONTENT_WIDTH, Spacing } from '@/shared/constants/theme';
-import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import type { CampaignRuntime } from '@/features/campaign/types';
+import { SkateLoader } from '@/shared/components/loader';
 
 type Mode = 'inspect' | 'play';
 
@@ -27,7 +27,6 @@ type Mode = 'inspect' | 'play';
  */
 export default function CampaignPreviewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const theme = useTheme();
   const { t } = useTranslation();
   const { hasAuthority } = useAuth();
   const { getCampaign } = useCampaignAdmin();
@@ -70,7 +69,7 @@ export default function CampaignPreviewScreen() {
     return (
       <ThemedView style={styles.container}>
         <SettingsHeader title={t('admin.campaigns.preview')} />
-        <ActivityIndicator style={styles.loading} color={theme.primary} />
+        <SkateLoader fullScreen />
       </ThemedView>
     );
   }
@@ -126,7 +125,6 @@ export default function CampaignPreviewScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  loading: { marginTop: Spacing.six },
   content: {
     padding: Spacing.four,
     gap: Spacing.four,
