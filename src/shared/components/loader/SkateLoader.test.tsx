@@ -17,9 +17,9 @@ describe('SkateLoader', () => {
     expect(loader.props.accessibilityState).toEqual({ busy: true });
   });
 
-  it('renders the skate scene in the nucleus and three wheels on the orbits', async () => {
+  it('opens on the brand icon in the nucleus, with three wheels on the orbits', async () => {
     await render(<SkateLoader />);
-    expect(screen.getByTestId('skate-loader-scene-skate')).toBeTruthy();
+    expect(screen.getByTestId('skate-loader-scene-brand')).toBeTruthy();
     for (const i of [0, 1, 2]) expect(screen.getByTestId(`skate-loader-wheel-${i}`)).toBeTruthy();
   });
 
@@ -32,21 +32,23 @@ describe('SkateLoader', () => {
     await act(async () => {
       jest.advanceTimersByTime(CYCLE_MS + BURST_MS);
     });
-    expect(screen.getByTestId('skate-loader-scene-barcelona')).toBeTruthy();
+    expect(screen.getByTestId('skate-loader-scene-skate')).toBeTruthy();
     const nextScene = async () => {
       await act(async () => {
         jest.advanceTimersByTime(CYCLE_MS);
       });
     };
     await nextScene();
+    expect(screen.getByTestId('skate-loader-scene-barcelona')).toBeTruthy();
+    await nextScene();
     expect(screen.getByTestId('skate-loader-scene-podcast')).toBeTruthy();
     await nextScene();
     expect(screen.getByTestId('skate-loader-scene-places')).toBeTruthy();
     await nextScene();
-    expect(screen.getByTestId('skate-loader-scene-skate')).toBeTruthy();
+    expect(screen.getByTestId('skate-loader-scene-brand')).toBeTruthy();
   });
 
-  it('holds still on the first scene when reduce motion is on', async () => {
+  it('holds still on the brand icon when reduce motion is on', async () => {
     jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
     jest.useFakeTimers();
     await render(<SkateLoader />);
@@ -54,7 +56,7 @@ describe('SkateLoader', () => {
     await act(async () => {
       jest.advanceTimersByTime(CYCLE_MS * 3);
     });
-    expect(screen.getByTestId('skate-loader-scene-skate')).toBeTruthy();
+    expect(screen.getByTestId('skate-loader-scene-brand')).toBeTruthy();
   });
 
   it('fills its screen and centres itself when fullScreen, letting touches through', async () => {

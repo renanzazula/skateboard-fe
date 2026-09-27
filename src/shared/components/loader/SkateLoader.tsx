@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AccessibilityInfo, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { AccessibilityInfo, Image, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, {
   Easing,
   cancelAnimation,
@@ -29,11 +29,13 @@ import {
   sceneXml,
   wheelShineXml,
   wheelXml,
-  type IllustrationPalette,
 } from '@/shared/components/loader/illustrations';
-import { IllustrationColors, Spacing } from '@/shared/constants/theme';
+import { Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
+
+// The app icon — mic on a skateboard — cropped to its centre for the nucleus.
+const BRAND_IMAGE = require('@/assets/images/loader-brand.jpg');
 
 const ORBITS = 3;
 const SPARKS = 14;
@@ -67,12 +69,13 @@ type Props = {
 };
 
 /**
- * Brand loading indicator, built like the React atom: a nucleus showing one
- * of the app's four worlds (skate, Barcelona, the podcast, places) with
+ * Brand loading indicator, built like the React atom: a nucleus showing the
+ * app icon and then the app's four worlds (skate, Barcelona, the podcast,
+ * places), drawn in the logo's black/yellow/white sticker style, with
  * three skateboard wheels rolling round it on tilted orbits, passing in
  * front of and behind it. Every few seconds the nucleus explodes — sparks,
  * shockwave, the orbits blown outwards — and re-forms as the next world.
- * Fades in rather than popping; holds still on the first scene when the OS
+ * Fades in rather than popping; holds still on the app icon when the OS
  * "reduce motion" setting is on.
  */
 export function SkateLoader({ size, label, fullScreen = false, style, testID = 'skate-loader' }: Props) {
@@ -90,15 +93,14 @@ export function SkateLoader({ size, label, fullScreen = false, style, testID = '
   const px = size ?? (fullScreen ? 200 : 140);
   const m = atomMetrics(px);
 
-  const palette: IllustrationPalette = useMemo(() => ({ ...theme, ...IllustrationColors }), [theme]);
   const art = useMemo(
     () => ({
-      orbits: orbitsXml(palette, ORBITS),
-      wheel: wheelXml(palette),
-      shine: wheelShineXml(palette),
-      scenes: SCENES.map((scene) => sceneXml(scene, palette)),
+      orbits: orbitsXml(theme, ORBITS),
+      wheel: wheelXml(theme),
+      shine: wheelShineXml(theme),
+      scenes: SCENES.map((scene) => (scene === 'brand' ? null : sceneXml(scene, theme))),
     }),
-    [palette],
+    [theme],
   );
 
   useEffect(() => {
@@ -184,10 +186,18 @@ export function SkateLoader({ size, label, fullScreen = false, style, testID = '
           style={[styles.layer, styles.middle, nucleusBox, { borderWidth: 2, borderColor: theme.primary }, shockStyle]}
         />
         <Animated.View style={[styles.layer, styles.middle, nucleusStyle]} testID={`skate-loader-scene-${scene}`}>
-          <SvgXml xml={art.scenes[sceneIndex]} width={m.nucleus} height={m.nucleus} />
+          {art.scenes[sceneIndex] === null ? (
+            <Image
+              source={BRAND_IMAGE}
+              resizeMode="cover"
+              style={[nucleusBox, { borderWidth: Math.max(2, m.nucleus * 0.036), borderColor: theme.primary }]}
+            />
+          ) : (
+            <SvgXml xml={art.scenes[sceneIndex]} width={m.nucleus} height={m.nucleus} />
+          )}
         </Animated.View>
         <Animated.View
-          style={[styles.layer, styles.middle, styles.passThrough, nucleusBox, { backgroundColor: IllustrationColors.urethaneLight }, flashStyle]}
+          style={[styles.layer, styles.middle, styles.passThrough, nucleusBox, { backgroundColor: theme.textPrimary }, flashStyle]}
         />
 
         {Array.from({ length: ORBITS }, (_, i) => (
@@ -213,7 +223,7 @@ export function SkateLoader({ size, label, fullScreen = false, style, testID = '
             size={m.spark}
             from={m.sparkFrom}
             reach={m.sparkReach}
-            color={i % 3 === 0 ? IllustrationColors.urethaneLight : theme.primary}
+            color={i % 3 === 0 ? theme.textPrimary : theme.primary}
           />
         ))}
       </Animated.View>

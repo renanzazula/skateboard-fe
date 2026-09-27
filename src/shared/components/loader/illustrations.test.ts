@@ -1,29 +1,32 @@
 import {
   SCENES,
   orbitsXml,
+  type DrawnScene,
   sceneXml,
   wheelShineXml,
   wheelXml,
   type IllustrationPalette,
 } from '@/shared/components/loader/illustrations';
-import { Colors, IllustrationColors } from '@/shared/constants/theme';
 
 // Distinct sentinel per token, so a test can tell which one ended up where.
-const keys = Object.keys({ ...Colors, ...IllustrationColors });
-const palette = Object.fromEntries(
-  keys.map((key, i) => [key, `#00${i.toString(16).padStart(4, '0')}`]),
-) as unknown as IllustrationPalette;
+const palette: IllustrationPalette = {
+  primary: '#000001',
+  primaryPressed: '#000002',
+  background: '#000003',
+  textPrimary: '#000004',
+};
+const DRAWN = SCENES.filter((scene): scene is DrawnScene => scene !== 'brand');
 
 const all: [string, string][] = [
   ['wheel', wheelXml(palette)],
   ['shine', wheelShineXml(palette)],
   ['orbits', orbitsXml(palette)],
-  ...SCENES.map((scene): [string, string] => [scene, sceneXml(scene, palette)]),
+  ...DRAWN.map((scene): [string, string] => [scene, sceneXml(scene, palette)]),
 ];
 
 describe('loader illustrations', () => {
-  it('cycles skate → Barcelona → podcast → places', () => {
-    expect(SCENES).toEqual(['skate', 'barcelona', 'podcast', 'places']);
+  it('opens on the brand icon, then cycles skate → Barcelona → podcast → places', () => {
+    expect(SCENES).toEqual(['brand', 'skate', 'barcelona', 'podcast', 'places']);
   });
 
   it.each(all)('%s is a single 100×100 svg document', (_, xml) => {
@@ -51,8 +54,15 @@ describe('loader illustrations', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('draws the brand yellow on every scene', () => {
-    for (const scene of SCENES) expect(sceneXml(scene, palette)).toContain(palette.primary);
+  it('draws every scene in the logo colours: yellow, white and black', () => {
+    for (const scene of DRAWN) {
+      const xml = sceneXml(scene, palette);
+      for (const colour of [palette.primary, palette.textPrimary, palette.background]) expect(xml).toContain(colour);
+    }
+  });
+
+  it('draws the hand-made wobble the same way every time', () => {
+    for (const scene of DRAWN) expect(sceneXml(scene, palette)).toBe(sceneXml(scene, palette));
   });
 
   it('draws one ring per orbit', () => {
