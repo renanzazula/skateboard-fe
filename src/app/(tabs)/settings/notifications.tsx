@@ -2,6 +2,7 @@ import { Bell, BellRing, Mic } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { AppState, ScrollView, StyleSheet } from 'react-native';
 
+import { useAuth } from '@/core/auth';
 import { useNotificationPreferences } from '@/features/account/hooks/useNotificationPreferences';
 import { useProfile } from '@/features/account/hooks/useProfile';
 import {
@@ -26,6 +27,9 @@ export default function NotificationsScreen() {
   const { profile } = useProfile();
   const { preferences, setPushEnabled, setNewPodcastEnabled } = useNotificationPreferences();
   const { t } = useTranslation();
+  // UX only — the BFF enforces the same authority. Admin-only diagnostic.
+  const { hasAuthority } = useAuth();
+  const canSendTest = hasAuthority('FUNC_NOTIFICATION_DEVICE_MANAGE_TEST');
 
   // These switches are an app-level preference; the OS has its own, and it
   // wins. Without this a user who denied the system prompt sees both switches
@@ -140,7 +144,7 @@ export default function NotificationsScreen() {
           />
         </SettingsSection>
         {/* Nothing to test where this build cannot hold a push token (web, simulator). */}
-        {permission !== null && permission !== 'unsupported' && (
+        {canSendTest && permission !== null && permission !== 'unsupported' && (
           <SettingsSection label={t('settings.troubleshooting')}>
             <SettingsRow
               icon={BellRing}

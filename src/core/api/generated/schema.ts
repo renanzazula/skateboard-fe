@@ -265,7 +265,7 @@ export interface paths {
         put?: never;
         /**
          * Send a test push to the caller's own devices
-         * @description Diagnostic. Sends a fixed "Test notification" to every enabled device the caller has registered — never to anyone else; the recipient is the JWT subject. Notification preferences are ignored. The counts are the push provider's immediate answer (accepted, not yet confirmed delivered); devicesTargeted 0 means this account has no registered device to send to.
+         * @description Admin-only diagnostic (FUNC_NOTIFICATION_DEVICE_MANAGE_TEST is granted to ADMIN, not STANDARD). Sends a fixed "Test notification" to every enabled device the caller has registered — never to anyone else; the recipient is the JWT subject. Notification preferences are ignored. The counts are the push provider's immediate answer (accepted, not yet confirmed delivered); devicesTargeted 0 means this account has no registered device to send to.
          */
         post: operations["sendTestNotification"];
         delete?: never;
