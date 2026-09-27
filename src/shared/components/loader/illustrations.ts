@@ -5,7 +5,8 @@
  * the artwork. Every colour comes from the palette argument: pass the theme's
  * `Colors` and `IllustrationColors` in, never hex literals.
  *
- * All pieces are drawn on a 64×64 canvas, lit from the top left.
+ * Scenes are round medallions on a 100×100 canvas, lit from the top left.
+ * Ids carry a per-piece prefix so several pieces can share one web page.
  */
 
 export type IllustrationPalette = {
@@ -27,246 +28,376 @@ export type IllustrationPalette = {
   urethaneDark: string;
   shine: string;
   shadow: string;
+  skyDusk: string;
+  skySunset: string;
+  asphalt: string;
+  asphaltLight: string;
 };
 
-export type OrbitIllustration = 'deck' | 'barcelona' | 'mic' | 'pin';
+/** The nucleus scenes, in the order the loader cycles through them. */
+export const SCENES = ['skate', 'barcelona', 'podcast', 'places'] as const;
+export type Scene = (typeof SCENES)[number];
 
 const svg = (body: string) =>
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">${body}</svg>`;
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${body}</svg>`;
 
-/** A urethane gradient shared by the loader wheel and the deck's wheels. */
+const n = (value: number) => Number(value.toFixed(2));
+
+function polar(cx: number, cy: number, r: number, deg: number): [number, number] {
+  const rad = (deg * Math.PI) / 180;
+  return [n(cx + r * Math.cos(rad)), n(cy + r * Math.sin(rad))];
+}
+
+/** Clockwise arc path, angles in degrees (0 = 3 o'clock). */
+function arc(cx: number, cy: number, r: number, from: number, to: number): string {
+  const [x1, y1] = polar(cx, cy, r, from);
+  const [x2, y2] = polar(cx, cy, r, to);
+  const large = Math.abs(to - from) > 180 ? 1 : 0;
+  return `M${x1} ${y1} A${r} ${r} 0 ${large} 1 ${x2} ${y2}`;
+}
+
 const urethaneStops = (p: IllustrationPalette) =>
   `<stop offset="0" stop-color="${p.urethaneLight}"/>` +
-  `<stop offset="0.55" stop-color="${p.primary}"/>` +
+  `<stop offset="0.5" stop-color="${p.primary}"/>` +
   `<stop offset="1" stop-color="${p.urethaneDark}"/>`;
 
-const metalStops = (p: IllustrationPalette) =>
-  `<stop offset="0" stop-color="${p.metalLight}"/>` +
-  `<stop offset="0.6" stop-color="${p.metalMid}"/>` +
-  `<stop offset="1" stop-color="${p.metalDark}"/>`;
+const chromeStops = (p: IllustrationPalette) =>
+  `<stop offset="0" stop-color="${p.metalMid}"/>` +
+  `<stop offset="0.28" stop-color="${p.metalLight}"/>` +
+  `<stop offset="0.55" stop-color="${p.metalMid}"/>` +
+  `<stop offset="0.8" stop-color="${p.metalDark}"/>` +
+  `<stop offset="1" stop-color="${p.metalMid}"/>`;
 
 /**
- * Point on a circle, for arcs. Angles in degrees, 0 = 3 o'clock, clockwise.
+ * The medallion every scene sits in: clipped to a circle, with a rim that
+ * catches the light at the top left and falls into shadow at the bottom
+ * right, and a soft glass sheen across the top.
  */
-function polar(cx: number, cy: number, r: number, deg: number): string {
-  const rad = (deg * Math.PI) / 180;
-  return `${(cx + r * Math.cos(rad)).toFixed(2)} ${(cy + r * Math.sin(rad)).toFixed(2)}`;
+function medallion(id: string, p: IllustrationPalette, defs: string, scene: string): string {
+  return svg(
+    `<defs>${defs}` +
+      `<clipPath id="${id}-clip"><circle cx="50" cy="50" r="48"/></clipPath>` +
+      `<linearGradient id="${id}-rim" x1="0" y1="0" x2="1" y2="1">` +
+      `<stop offset="0" stop-color="${p.urethaneLight}"/><stop offset="0.45" stop-color="${p.primary}"/>` +
+      `<stop offset="1" stop-color="${p.urethaneDark}"/>` +
+      `</linearGradient>` +
+      `<linearGradient id="${id}-sheen" x1="0" y1="0" x2="0" y2="1">` +
+      `<stop offset="0" stop-color="${p.shine}" stop-opacity="0.22"/><stop offset="1" stop-color="${p.shine}" stop-opacity="0"/>` +
+      `</linearGradient>` +
+      `</defs>` +
+      `<g clip-path="url(#${id}-clip)">${scene}` +
+      `<ellipse cx="42" cy="14" rx="40" ry="18" fill="url(#${id}-sheen)"/>` +
+      `</g>` +
+      `<circle cx="50" cy="50" r="47.5" fill="none" stroke="url(#${id}-rim)" stroke-width="3"/>` +
+      `<circle cx="50" cy="50" r="45.6" fill="none" stroke="${p.shadow}" stroke-opacity="0.45" stroke-width="0.8"/>`,
+  );
 }
 
-function arc(cx: number, cy: number, r: number, from: number, to: number): string {
-  const large = Math.abs(to - from) > 180 ? 1 : 0;
-  return `M${polar(cx, cy, r, from)} A${r} ${r} 0 ${large} 1 ${polar(cx, cy, r, to)}`;
+/** Skate: a board seen from above on a spotlit concrete floor. */
+function skateXml(p: IllustrationPalette): string {
+  const id = 'sls';
+  const wheel = (x: number, y: number) =>
+    `<rect x="${x - 5}" y="${y - 4}" width="10" height="8" rx="3" fill="url(#${id}-ure)"/>` +
+    `<rect x="${x - 3.6}" y="${y - 2.8}" width="3" height="1.6" rx="0.8" fill="${p.shine}" fill-opacity="0.6"/>`;
+  const bolts = (x: number) =>
+    [-4, 4]
+      .flatMap((dx) => [-4, 4].map((dy) => `<circle cx="${x + dx}" cy="${50 + dy}" r="1.1" fill="url(#${id}-bolt)"/>`))
+      .join('');
+
+  const defs =
+    `<radialGradient id="${id}-floor" cx="0.45" cy="0.4" r="0.7">` +
+    `<stop offset="0" stop-color="${p.asphaltLight}"/><stop offset="1" stop-color="${p.background}"/>` +
+    `</radialGradient>` +
+    `<radialGradient id="${id}-spot" cx="0.5" cy="0.5" r="0.5">` +
+    `<stop offset="0" stop-color="${p.primary}" stop-opacity="0.35"/><stop offset="1" stop-color="${p.primary}" stop-opacity="0"/>` +
+    `</radialGradient>` +
+    `<radialGradient id="${id}-ure" cx="0.35" cy="0.3" r="0.9">${urethaneStops(p)}</radialGradient>` +
+    `<radialGradient id="${id}-bolt" cx="0.35" cy="0.3" r="0.8">` +
+    `<stop offset="0" stop-color="${p.metalLight}"/><stop offset="1" stop-color="${p.metalDark}"/>` +
+    `</radialGradient>` +
+    `<linearGradient id="${id}-grip" x1="0" y1="0" x2="0" y2="1">` +
+    `<stop offset="0" stop-color="${p.asphaltLight}"/><stop offset="0.35" stop-color="${p.gripTape}"/>` +
+    `<stop offset="1" stop-color="${p.gripTape}"/>` +
+    `</linearGradient>` +
+    `<radialGradient id="${id}-shadow" cx="0.5" cy="0.5" r="0.5">` +
+    `<stop offset="0" stop-color="${p.shadow}" stop-opacity="0.7"/><stop offset="1" stop-color="${p.shadow}" stop-opacity="0"/>` +
+    `</radialGradient>`;
+
+  const scene =
+    `<rect width="100" height="100" fill="url(#${id}-floor)"/>` +
+    `<circle cx="50" cy="50" r="42" fill="url(#${id}-spot)"/>` +
+    // expansion joints in the concrete
+    `<path d="M0 78 L100 58 M22 0 L40 100" stroke="${p.shadow}" stroke-opacity="0.35" stroke-width="0.8"/>` +
+    `<g transform="rotate(-32 50 50)">` +
+    `<ellipse cx="53" cy="56" rx="46" ry="16" fill="url(#${id}-shadow)"/>` +
+    wheel(26, 34) +
+    wheel(26, 66) +
+    wheel(74, 34) +
+    wheel(74, 66) +
+    // hangers peeking out from under the deck
+    `<rect x="24.5" y="36" width="3" height="28" rx="1.2" fill="${p.metalMid}"/>` +
+    `<rect x="72.5" y="36" width="3" height="28" rx="1.2" fill="${p.metalMid}"/>` +
+    // maple ply edge, then grip tape
+    `<rect x="6" y="36.5" width="88" height="27" rx="13.5" fill="${p.mapleLight}"/>` +
+    `<rect x="7" y="37.3" width="86" height="25.4" rx="12.7" fill="url(#${id}-grip)"/>` +
+    // nose and tail kick lines
+    `<path d="M17 38.5 Q14 50 17 61.5 M83 38.5 Q86 50 83 61.5" fill="none" stroke="${p.shine}" stroke-opacity="0.14" stroke-width="0.9"/>` +
+    // grip graphic: a yellow wheel mark and a stripe
+    `<circle cx="50" cy="50" r="5.2" fill="none" stroke="${p.primary}" stroke-width="1.8"/>` +
+    `<circle cx="50" cy="50" r="1.6" fill="${p.primary}"/>` +
+    `<path d="M36 50 H43.5 M56.5 50 H64" stroke="${p.primary}" stroke-width="1.2" stroke-linecap="round" stroke-opacity="0.8"/>` +
+    bolts(26) +
+    bolts(74) +
+    `</g>`;
+
+  return medallion(id, p, defs, scene);
 }
 
 /**
- * Skateboard wheel, face on: urethane tyre with a printed graphic (the mark
- * that makes the spin readable), a riding lip, a dark core and a steel
- * bearing with its shield rings and axle nut. No lighting highlight here —
- * that's `wheelShineXml`, drawn over the top and kept still so the light
- * doesn't spin with the wheel.
- */
-export function wheelXml(p: IllustrationPalette): string {
-  const bearingBalls = Array.from({ length: 8 }, (_, i) => {
-    const [x, y] = polar(32, 32, 9.5, i * 45).split(' ');
-    return `<circle cx="${x}" cy="${y}" r="1.2" fill="${p.metalDark}" fill-opacity="0.55"/>`;
-  }).join('');
-
-  return svg(
-    `<defs>` +
-      `<radialGradient id="slw-ure" cx="0.35" cy="0.3" r="0.8">${urethaneStops(p)}</radialGradient>` +
-      `<radialGradient id="slw-core" cx="0.4" cy="0.35" r="0.75">` +
-      `<stop offset="0" stop-color="${p.surfaceElevated}"/><stop offset="1" stop-color="${p.background}"/>` +
-      `</radialGradient>` +
-      `<radialGradient id="slw-steel" cx="0.35" cy="0.3" r="0.85">${metalStops(p)}</radialGradient>` +
-      `</defs>` +
-      // tyre + worn riding edge
-      `<circle cx="32" cy="32" r="31" fill="url(#slw-ure)"/>` +
-      `<circle cx="32" cy="32" r="30.2" fill="none" stroke="${p.urethaneDark}" stroke-opacity="0.6" stroke-width="1.6"/>` +
-      // printed graphic on the tyre: an arc band + a dot
-      `<path d="${arc(32, 32, 25.5, 200, 290)}" fill="none" stroke="${p.background}" stroke-opacity="0.55" stroke-width="3.2" stroke-linecap="round"/>` +
-      `<circle cx="${polar(32, 32, 25.5, 315).split(' ')[0]}" cy="${polar(32, 32, 25.5, 315).split(' ')[1]}" r="1.7" fill="${p.background}" fill-opacity="0.55"/>` +
-      // lip where the tyre slopes into the core
-      `<circle cx="32" cy="32" r="20.5" fill="none" stroke="${p.urethaneDark}" stroke-opacity="0.7" stroke-width="1.4"/>` +
-      // core
-      `<circle cx="32" cy="32" r="18" fill="url(#slw-core)"/>` +
-      // bearing
-      `<circle cx="32" cy="32" r="13" fill="url(#slw-steel)" stroke="${p.metalDark}" stroke-width="0.8"/>` +
-      bearingBalls +
-      `<circle cx="32" cy="32" r="7.5" fill="none" stroke="${p.metalDark}" stroke-opacity="0.5" stroke-width="0.8"/>` +
-      // axle nut (hex) + axle end
-      `<path d="M${polar(32, 32, 4.6, 0)} L${polar(32, 32, 4.6, 60)} L${polar(32, 32, 4.6, 120)} L${polar(32, 32, 4.6, 180)} L${polar(32, 32, 4.6, 240)} L${polar(32, 32, 4.6, 300)} Z" fill="${p.metalMid}" stroke="${p.metalDark}" stroke-width="0.8"/>` +
-      `<circle cx="32" cy="32" r="2" fill="${p.metalDark}"/>`,
-  );
-}
-
-/** Static specular light for the wheel: sits over it and doesn't rotate. */
-export function wheelShineXml(p: IllustrationPalette): string {
-  return svg(
-    `<path d="${arc(32, 32, 27.5, 195, 250)}" fill="none" stroke="${p.shine}" stroke-opacity="0.55" stroke-width="2.4" stroke-linecap="round"/>` +
-      `<path d="${arc(32, 32, 27.5, 258, 266)}" fill="none" stroke="${p.shine}" stroke-opacity="0.45" stroke-width="2.4" stroke-linecap="round"/>` +
-      `<path d="${arc(32, 32, 11, 200, 245)}" fill="none" stroke="${p.shine}" stroke-opacity="0.7" stroke-width="1.4" stroke-linecap="round"/>` +
-      `<path d="${arc(32, 32, 29, 20, 80)}" fill="none" stroke="${p.shadow}" stroke-opacity="0.25" stroke-width="2.6" stroke-linecap="round"/>`,
-  );
-}
-
-/** Skate: a maple deck mid-ollie, grip tape on top, steel trucks, urethane wheels. */
-function deckXml(p: IllustrationPalette): string {
-  const truck = (x: number) =>
-    `<rect x="${x - 5}" y="34.2" width="10" height="2" rx="0.6" fill="${p.metalDark}"/>` +
-    `<path d="M${x - 7} 36.2 H${x + 7} L${x + 4.5} 40.5 H${x - 4.5} Z" fill="url(#sld-steel)"/>` +
-    `<circle cx="${x}" cy="44" r="5.6" fill="url(#sld-ure)"/>` +
-    `<circle cx="${x}" cy="44" r="2.3" fill="${p.metalMid}" stroke="${p.metalDark}" stroke-width="0.6"/>` +
-    `<path d="${arc(x, 44, 4.2, 200, 260)}" fill="none" stroke="${p.shine}" stroke-opacity="0.6" stroke-width="1" stroke-linecap="round"/>`;
-
-  return svg(
-    `<defs>` +
-      `<linearGradient id="sld-maple" x1="0" y1="0" x2="0" y2="1">` +
-      `<stop offset="0" stop-color="${p.mapleLight}"/><stop offset="1" stop-color="${p.mapleDark}"/>` +
-      `</linearGradient>` +
-      `<linearGradient id="sld-steel" x1="0" y1="0" x2="0" y2="1">${metalStops(p)}</linearGradient>` +
-      `<radialGradient id="sld-ure" cx="0.35" cy="0.3" r="0.8">${urethaneStops(p)}</radialGradient>` +
-      `</defs>` +
-      `<ellipse cx="32" cy="57" rx="21" ry="2.4" fill="${p.shadow}" fill-opacity="0.45"/>` +
-      `<g transform="rotate(-12 32 38)">` +
-      // ply edge, with laminate lines
-      `<path d="M3 24 C5 30 9 31 13 31 H51 C55 31 59 30 61 24 L62 25.6 C59.6 32.6 55.2 34.4 51 34.4 H13 C8.8 34.4 4.4 32.6 2 25.6 Z" fill="url(#sld-maple)"/>` +
-      `<path d="M4 26.6 C6.4 31.4 9.6 32.6 13 32.6 H51 C54.4 32.6 57.6 31.4 60 26.6" fill="none" stroke="${p.mapleDark}" stroke-opacity="0.6" stroke-width="0.5"/>` +
-      // grip-taped top face, seen slightly from above, with the truck bolts
-      `<path d="M3 24 C5 30 9 31 13 31 H51 C55 31 59 30 61 24 C58.5 25.4 55 25.8 51 25.8 H13 C9 25.8 5.5 25.4 3 24 Z" fill="${p.gripTape}" stroke="${p.gripTape}" stroke-width="0.8" stroke-linejoin="round"/>` +
-      `<path d="M6 25.6 C9 26.6 11 26.8 13 26.8 H51 C53 26.8 55 26.6 58 25.6" fill="none" stroke="${p.shine}" stroke-opacity="0.12" stroke-width="0.8"/>` +
-      [13.5, 18.5, 45.5, 50.5]
-        .map((x) => `<circle cx="${x}" cy="28.4" r="0.75" fill="${p.metalMid}"/>`)
-        .join('') +
-      truck(16) +
-      truck(48) +
-      `</g>`,
-  );
-}
-
-/** Podcast: a studio condenser mic — chrome mesh grille, brand band, shock mount. */
-function micXml(p: IllustrationPalette): string {
-  const meshH = Array.from({ length: 9 }, (_, i) => `<line x1="20" y1="${6 + i * 3}" x2="44" y2="${6 + i * 3}"/>`).join('');
-  const meshV = Array.from({ length: 8 }, (_, i) => `<line x1="${23 + i * 3}" y1="3" x2="${23 + i * 3}" y2="31"/>`).join('');
-
-  return svg(
-    `<defs>` +
-      `<linearGradient id="slm-chrome" x1="0" y1="0" x2="1" y2="0">` +
-      `<stop offset="0" stop-color="${p.metalDark}"/><stop offset="0.3" stop-color="${p.metalLight}"/>` +
-      `<stop offset="0.65" stop-color="${p.metalMid}"/><stop offset="1" stop-color="${p.metalDark}"/>` +
-      `</linearGradient>` +
-      `<linearGradient id="slm-body" x1="0" y1="0" x2="1" y2="0">` +
-      `<stop offset="0" stop-color="${p.background}"/><stop offset="0.35" stop-color="${p.metalDark}"/>` +
-      `<stop offset="1" stop-color="${p.background}"/>` +
-      `</linearGradient>` +
-      `<linearGradient id="slm-band" x1="0" y1="0" x2="1" y2="0">` +
-      `<stop offset="0" stop-color="${p.urethaneDark}"/><stop offset="0.35" stop-color="${p.urethaneLight}"/>` +
-      `<stop offset="1" stop-color="${p.primaryPressed}"/>` +
-      `</linearGradient>` +
-      `<clipPath id="slm-grille"><rect x="22" y="4" width="20" height="26" rx="10"/></clipPath>` +
-      `</defs>` +
-      `<ellipse cx="32" cy="60" rx="13" ry="2" fill="${p.shadow}" fill-opacity="0.45"/>` +
-      // stand
-      `<rect x="30.5" y="46" width="3" height="11" fill="url(#slm-body)"/>` +
-      `<ellipse cx="32" cy="57.5" rx="10" ry="2.2" fill="${p.metalDark}"/>` +
-      // shock-mount yoke behind the body
-      `<path d="M15 20 V29 A17 17 0 0 0 49 29 V20" fill="none" stroke="${p.metalMid}" stroke-width="2.4" stroke-linecap="round"/>` +
-      // grille + mesh
-      `<rect x="22" y="4" width="20" height="26" rx="10" fill="url(#slm-chrome)"/>` +
-      `<g clip-path="url(#slm-grille)" stroke="${p.metalDark}" stroke-opacity="0.5" stroke-width="0.55">${meshH}${meshV}</g>` +
-      `<rect x="22" y="4" width="20" height="26" rx="10" fill="none" stroke="${p.metalDark}" stroke-width="0.8"/>` +
-      // brand band + body
-      `<rect x="21.5" y="28.5" width="21" height="4" rx="1.2" fill="url(#slm-band)"/>` +
-      `<path d="M23 32.5 H41 L39.5 45 Q39.3 46.5 37.8 46.5 H26.2 Q24.7 46.5 24.5 45 Z" fill="url(#slm-body)"/>` +
-      `<circle cx="32" cy="38" r="1.3" fill="${p.primary}"/>` +
-      // highlight down the grille
-      `<rect x="26" y="7" width="2.6" height="19" rx="1.3" fill="${p.shine}" fill-opacity="0.45"/>`,
-  );
-}
-
-/**
- * Barcelona: the Sagrada Família — parabolic sandstone spires with their
- * coloured finials, the tall central tower with its cross, the Nativity
- * portals and rose window, and the construction crane that's been part of
- * the skyline for as long as anyone can remember.
+ * Barcelona: the Sagrada Família in silhouette against a Mediterranean
+ * sunset, with a palm in the foreground and the tower crane that has been
+ * part of that skyline for as long as anyone can remember.
  */
 function barcelonaXml(p: IllustrationPalette): string {
+  const id = 'slb';
   const spire = (x: number, top: number, w: number) => {
-    const base = 42;
-    const half = w / 2;
-    const slits = Array.from({ length: 3 }, (_, i) => {
-      const y = top + 8 + i * ((base - top - 10) / 3);
-      return `<rect x="${x - 0.6}" y="${y.toFixed(1)}" width="1.2" height="3" rx="0.6" fill="${p.stoneDark}" fill-opacity="0.8"/>`;
-    }).join('');
+    const base = 80;
+    const h = w / 2;
     return (
-      `<path d="M${x - half} ${base} C${x - half} ${top + 14} ${x - half * 0.35} ${top + 4} ${x} ${top} C${x + half * 0.35} ${top + 4} ${x + half} ${top + 14} ${x + half} ${base} Z" fill="url(#slb-stone)"/>` +
-      `<path d="M${x - half * 0.55} ${base} C${x - half * 0.55} ${top + 14} ${x - half * 0.2} ${top + 5} ${x} ${top + 1}" fill="none" stroke="${p.shine}" stroke-opacity="0.35" stroke-width="0.8"/>` +
-      slits +
-      `<circle cx="${x}" cy="${top - 1}" r="1.5" fill="${p.primary}"/>`
+      `<path d="M${x - h} ${base} C${x - h} ${top + 18} ${n(x - h * 0.3)} ${top + 5} ${x} ${top} ` +
+      `C${n(x + h * 0.3)} ${top + 5} ${x + h} ${top + 18} ${x + h} ${base} Z" fill="url(#${id}-stone)"/>` +
+      `<circle cx="${x}" cy="${top - 1.4}" r="1.9" fill="${p.primary}"/>` +
+      [0.35, 0.55, 0.75]
+        .map((f) => `<rect x="${n(x - 0.7)}" y="${n(top + (base - top) * f)}" width="1.4" height="3.2" rx="0.7" fill="${p.primary}" fill-opacity="0.85"/>`)
+        .join('')
     );
   };
+  const frond = (d: string) => `<path d="${d}" fill="none" stroke="${p.background}" stroke-width="2.2" stroke-linecap="round"/>`;
 
-  return svg(
-    `<defs>` +
-      `<linearGradient id="slb-stone" x1="0" y1="0" x2="1" y2="1">` +
-      `<stop offset="0" stop-color="${p.stoneLight}"/><stop offset="0.55" stop-color="${p.stoneMid}"/>` +
-      `<stop offset="1" stop-color="${p.stoneDark}"/>` +
-      `</linearGradient>` +
-      `<radialGradient id="slb-sun" cx="0.5" cy="0.5" r="0.5">` +
-      `<stop offset="0" stop-color="${p.urethaneLight}" stop-opacity="0.85"/><stop offset="1" stop-color="${p.primary}" stop-opacity="0"/>` +
-      `</radialGradient>` +
-      `</defs>` +
-      `<circle cx="44" cy="24" r="14" fill="url(#slb-sun)"/>` +
-      // crane
-      `<g stroke="${p.metalMid}" stroke-width="0.9" fill="none">` +
-      `<line x1="57" y1="7" x2="57" y2="42"/><line x1="44" y1="9" x2="62" y2="9"/>` +
-      `<line x1="57" y1="4" x2="47" y2="9"/><line x1="57" y1="4" x2="62" y2="9"/>` +
-      `<line x1="49" y1="9" x2="49" y2="15"/>` +
-      `</g>` +
-      spire(12, 20, 7) +
-      spire(52, 20, 7) +
-      spire(21, 11, 8) +
-      spire(43, 11, 8) +
-      spire(32, 5, 10) +
-      // central cross
-      `<path d="M32 0.8 V4.6 M30.3 2.3 H33.7" stroke="${p.primary}" stroke-width="1.3" stroke-linecap="round"/>` +
-      // facade, portals, rose window
-      `<rect x="6" y="41" width="52" height="17" rx="1.2" fill="url(#slb-stone)"/>` +
-      `<rect x="6" y="41" width="52" height="1.4" fill="${p.stoneDark}" fill-opacity="0.6"/>` +
-      `<path d="M12 58 V51 A4 4 0 0 1 20 51 V58 Z M44 58 V51 A4 4 0 0 1 52 51 V58 Z" fill="${p.stoneDark}"/>` +
-      `<path d="M26.5 58 V50 A5.5 5.5 0 0 1 37.5 50 V58 Z" fill="${p.background}" fill-opacity="0.85"/>` +
-      `<circle cx="32" cy="47" r="3.4" fill="${p.metalDark}" stroke="${p.stoneLight}" stroke-width="0.8"/>` +
-      `<circle cx="32" cy="47" r="1.3" fill="${p.primary}"/>` +
-      `<ellipse cx="32" cy="60" rx="27" ry="1.8" fill="${p.shadow}" fill-opacity="0.4"/>`,
-  );
+  const defs =
+    `<linearGradient id="${id}-sky" x1="0" y1="0" x2="0" y2="1">` +
+    `<stop offset="0" stop-color="${p.skyDusk}"/><stop offset="0.5" stop-color="${p.skySunset}"/>` +
+    `<stop offset="0.82" stop-color="${p.urethaneLight}"/>` +
+    `</linearGradient>` +
+    `<radialGradient id="${id}-sun" cx="0.5" cy="0.5" r="0.5">` +
+    `<stop offset="0" stop-color="${p.shine}" stop-opacity="0.95"/><stop offset="0.35" stop-color="${p.urethaneLight}" stop-opacity="0.9"/>` +
+    `<stop offset="1" stop-color="${p.urethaneLight}" stop-opacity="0"/>` +
+    `</radialGradient>` +
+    `<linearGradient id="${id}-stone" x1="0" y1="0" x2="1" y2="0">` +
+    `<stop offset="0" stop-color="${p.asphaltLight}"/><stop offset="0.6" stop-color="${p.gripTape}"/>` +
+    `<stop offset="1" stop-color="${p.background}"/>` +
+    `</linearGradient>`;
+
+  const scene =
+    `<rect width="100" height="100" fill="url(#${id}-sky)"/>` +
+    `<circle cx="62" cy="66" r="26" fill="url(#${id}-sun)"/>` +
+    // distant hills (Montjuïc / Collserola)
+    `<path d="M0 74 Q18 64 34 70 T70 68 T100 66 V100 H0 Z" fill="${p.skyDusk}" fill-opacity="0.55"/>` +
+    // crane
+    `<g stroke="${p.background}" stroke-width="1.1" fill="none" stroke-linecap="round">` +
+    `<path d="M80 80 V16 M64 19 H96 M80 11 L68 19 M80 11 L96 19 M72 19 V29"/>` +
+    `<path d="M78 24 L82 30 M82 24 L78 30 M78 36 L82 42 M82 36 L78 42 M78 48 L82 54 M82 48 L78 54" stroke-width="0.6"/>` +
+    `</g>` +
+    spire(26, 42, 8) +
+    spire(66, 42, 8) +
+    spire(35, 28, 9) +
+    spire(57, 28, 9) +
+    spire(46, 14, 12) +
+    `<path d="M46 3.5 V10.5 M43.2 6.4 H48.8" stroke="${p.primary}" stroke-width="1.8" stroke-linecap="round"/>` +
+    // nave and portals
+    `<path d="M18 80 V68 Q46 58 74 68 V80 Z" fill="url(#${id}-stone)"/>` +
+    `<circle cx="46" cy="70" r="3.4" fill="${p.primary}" fill-opacity="0.9"/>` +
+    `<rect x="0" y="80" width="100" height="20" fill="${p.background}"/>` +
+    // palm tree in the foreground
+    `<path d="M14 100 Q13 80 18 62" fill="none" stroke="${p.background}" stroke-width="2.6" stroke-linecap="round"/>` +
+    frond('M18 62 Q10 56 3 60') +
+    frond('M18 62 Q12 52 6 50') +
+    frond('M18 62 Q20 52 27 50') +
+    frond('M18 62 Q26 57 31 62') +
+    frond('M18 62 Q18 54 15 48');
+
+  return medallion(id, p, defs, scene);
 }
 
-/** Places: a glossy 3D map pin dropped on the spot. */
-function pinXml(p: IllustrationPalette): string {
-  return svg(
-    `<defs>` +
-      `<radialGradient id="slp-body" cx="0.35" cy="0.25" r="0.9">${urethaneStops(p)}</radialGradient>` +
-      `<radialGradient id="slp-hole" cx="0.5" cy="0.35" r="0.7">` +
-      `<stop offset="0" stop-color="${p.surfaceElevated}"/><stop offset="1" stop-color="${p.background}"/>` +
-      `</radialGradient>` +
-      `</defs>` +
-      `<ellipse cx="32" cy="58" rx="10" ry="2.6" fill="${p.shadow}" fill-opacity="0.5"/>` +
-      `<ellipse cx="32" cy="58" rx="4" ry="1.1" fill="${p.primary}" fill-opacity="0.35"/>` +
-      `<path d="M32 57 C26 47 15 38.5 15 25 A17 17 0 0 1 49 25 C49 38.5 38 47 32 57 Z" fill="url(#slp-body)"/>` +
-      `<path d="M32 57 C38 47 49 38.5 49 25" fill="none" stroke="${p.urethaneDark}" stroke-width="1.2" stroke-opacity="0.8"/>` +
-      `<circle cx="32" cy="25" r="7.5" fill="url(#slp-hole)"/>` +
-      `<circle cx="32" cy="25" r="7.5" fill="none" stroke="${p.urethaneDark}" stroke-width="1"/>` +
-      `<circle cx="32" cy="25" r="2.4" fill="${p.primary}"/>` +
-      `<ellipse cx="24.5" cy="17.5" rx="3.2" ry="5.5" transform="rotate(35 24.5 17.5)" fill="${p.shine}" fill-opacity="0.45"/>`,
-  );
+/** Podcast: a studio condenser mic, on air, with sound rippling out. */
+function podcastXml(p: IllustrationPalette): string {
+  const id = 'slm';
+  const waves = [30, 38, 46]
+    .map(
+      (r, i) =>
+        `<path d="${arc(50, 42, r, 205, 245)} M${polar(50, 42, r, 295).join(' ')} A${r} ${r} 0 0 1 ${polar(50, 42, r, 335).join(' ')}" ` +
+        `fill="none" stroke="${p.primary}" stroke-opacity="${n(0.85 - i * 0.25)}" stroke-width="2.4" stroke-linecap="round"/>`,
+    )
+    .join('');
+
+  const defs =
+    `<radialGradient id="${id}-bg" cx="0.5" cy="0.4" r="0.7">` +
+    `<stop offset="0" stop-color="${p.asphaltLight}"/><stop offset="1" stop-color="${p.background}"/>` +
+    `</radialGradient>` +
+    `<linearGradient id="${id}-chrome" x1="0" y1="0" x2="1" y2="0">${chromeStops(p)}</linearGradient>` +
+    `<linearGradient id="${id}-body" x1="0" y1="0" x2="1" y2="0">` +
+    `<stop offset="0" stop-color="${p.background}"/><stop offset="0.3" stop-color="${p.asphaltLight}"/>` +
+    `<stop offset="0.55" stop-color="${p.gripTape}"/><stop offset="1" stop-color="${p.background}"/>` +
+    `</linearGradient>` +
+    `<linearGradient id="${id}-band" x1="0" y1="0" x2="1" y2="0">` +
+    `<stop offset="0" stop-color="${p.urethaneDark}"/><stop offset="0.3" stop-color="${p.urethaneLight}"/>` +
+    `<stop offset="1" stop-color="${p.urethaneDark}"/>` +
+    `</linearGradient>` +
+    `<pattern id="${id}-mesh" width="2.6" height="2.6" patternUnits="userSpaceOnUse">` +
+    `<circle cx="1.3" cy="1.3" r="0.75" fill="${p.shadow}" fill-opacity="0.45"/>` +
+    `</pattern>`;
+
+  const scene =
+    `<rect width="100" height="100" fill="url(#${id}-bg)"/>` +
+    waves +
+    `<ellipse cx="50" cy="92" rx="20" ry="3" fill="${p.shadow}" fill-opacity="0.6"/>` +
+    // stand
+    `<rect x="47.8" y="70" width="4.4" height="20" fill="url(#${id}-chrome)"/>` +
+    `<ellipse cx="50" cy="90.5" rx="14" ry="3" fill="url(#${id}-chrome)"/>` +
+    // shock-mount yoke
+    `<path d="M29 40 V52 A21 21 0 0 0 71 52 V40" fill="none" stroke="url(#${id}-chrome)" stroke-width="3" stroke-linecap="round"/>` +
+    `<circle cx="29" cy="52" r="2.4" fill="${p.metalDark}"/><circle cx="71" cy="52" r="2.4" fill="${p.metalDark}"/>` +
+    // capsule head: chrome, perforated mesh, highlight
+    `<rect x="36" y="12" width="28" height="40" rx="14" fill="url(#${id}-chrome)"/>` +
+    `<rect x="36" y="12" width="28" height="40" rx="14" fill="url(#${id}-mesh)"/>` +
+    `<path d="M50 12 V52 M36.6 32 H63.4" stroke="${p.metalDark}" stroke-opacity="0.35" stroke-width="0.7"/>` +
+    `<rect x="40.5" y="16" width="3.6" height="30" rx="1.8" fill="${p.shine}" fill-opacity="0.55"/>` +
+    // brand band + body
+    `<rect x="35" y="49" width="30" height="5.5" rx="1.6" fill="url(#${id}-band)"/>` +
+    `<path d="M37 54.5 H63 L60.8 70 Q60.5 72 58.5 72 H41.5 Q39.5 72 39.2 70 Z" fill="url(#${id}-body)"/>` +
+    `<rect x="42" y="56" width="2" height="13" rx="1" fill="${p.shine}" fill-opacity="0.18"/>` +
+    // on-air lamp
+    `<circle cx="50" cy="61" r="2.2" fill="${p.primary}"/>` +
+    `<circle cx="50" cy="61" r="4" fill="${p.primary}" fill-opacity="0.25"/>`;
+
+  return medallion(id, p, defs, scene);
 }
 
-const ORBIT_BUILDERS: Record<OrbitIllustration, (p: IllustrationPalette) => string> = {
-  deck: deckXml,
+/**
+ * Places: a pin dropped on Barcelona's Eixample — the grid of chamfered
+ * octagonal blocks, cut through by the Diagonal.
+ */
+function placesXml(p: IllustrationPalette): string {
+  const id = 'slp';
+  const block = (x: number, y: number, s = 17, c = 4.5) =>
+    `<path d="M${x + c} ${y} H${x + s - c} L${x + s} ${y + c} V${y + s - c} L${x + s - c} ${y + s} H${x + c} L${x} ${y + s - c} V${y + c} Z"/>`;
+  const blocks: string[] = [];
+  for (let row = -1; row < 5; row++) {
+    for (let col = -1; col < 5; col++) blocks.push(block(col * 23 + 4, row * 23 + 4));
+  }
+
+  const defs =
+    `<radialGradient id="${id}-glow" cx="0.5" cy="0.5" r="0.5">` +
+    `<stop offset="0" stop-color="${p.primary}" stop-opacity="0.45"/><stop offset="1" stop-color="${p.primary}" stop-opacity="0"/>` +
+    `</radialGradient>` +
+    `<radialGradient id="${id}-pin" cx="0.32" cy="0.25" r="0.95">${urethaneStops(p)}</radialGradient>` +
+    `<radialGradient id="${id}-hole" cx="0.5" cy="0.35" r="0.7">` +
+    `<stop offset="0" stop-color="${p.asphaltLight}"/><stop offset="1" stop-color="${p.background}"/>` +
+    `</radialGradient>` +
+    `<radialGradient id="${id}-shade" cx="0.5" cy="0.45" r="0.6">` +
+    `<stop offset="0.55" stop-color="${p.shadow}" stop-opacity="0"/><stop offset="1" stop-color="${p.shadow}" stop-opacity="0.7"/>` +
+    `</radialGradient>`;
+
+  const scene =
+    `<rect width="100" height="100" fill="${p.asphalt}"/>` +
+    `<g fill="${p.asphaltLight}">${blocks.join('')}</g>` +
+    // the Diagonal
+    `<path d="M-10 86 L110 22" stroke="${p.asphalt}" stroke-width="9"/>` +
+    `<path d="M-10 86 L110 22" stroke="${p.primary}" stroke-opacity="0.35" stroke-width="0.8" stroke-dasharray="3 3"/>` +
+    // route to the spot
+    `<path d="M12 96 Q20 70 38 74 T50 76" fill="none" stroke="${p.primary}" stroke-width="2" stroke-linecap="round" stroke-dasharray="0.1 4.2"/>` +
+    `<rect width="100" height="100" fill="url(#${id}-shade)"/>` +
+    `<circle cx="50" cy="76" r="20" fill="url(#${id}-glow)"/>` +
+    `<ellipse cx="50" cy="76.5" rx="11" ry="3.6" fill="none" stroke="${p.primary}" stroke-opacity="0.8" stroke-width="1.2"/>` +
+    `<ellipse cx="50" cy="76.5" rx="5" ry="1.8" fill="${p.shadow}" fill-opacity="0.6"/>` +
+    // pin
+    `<path d="M50 76 C43 64 31 55 31 40 A19 19 0 0 1 69 40 C69 55 57 64 50 76 Z" fill="url(#${id}-pin)"/>` +
+    `<path d="M50 76 C57 64 69 55 69 40" fill="none" stroke="${p.urethaneDark}" stroke-width="1.5"/>` +
+    `<circle cx="50" cy="40" r="8.5" fill="url(#${id}-hole)"/>` +
+    `<circle cx="50" cy="40" r="8.5" fill="none" stroke="${p.urethaneDark}" stroke-width="1.2"/>` +
+    `<circle cx="50" cy="40" r="3" fill="${p.primary}"/>` +
+    `<ellipse cx="41" cy="30" rx="3.6" ry="6.5" transform="rotate(38 41 30)" fill="${p.shine}" fill-opacity="0.55"/>`;
+
+  return medallion(id, p, defs, scene);
+}
+
+const SCENE_BUILDERS: Record<Scene, (p: IllustrationPalette) => string> = {
+  skate: skateXml,
   barcelona: barcelonaXml,
-  mic: micXml,
-  pin: pinXml,
+  podcast: podcastXml,
+  places: placesXml,
 };
 
-export function orbitIllustrationXml(kind: OrbitIllustration, p: IllustrationPalette): string {
-  return ORBIT_BUILDERS[kind](p);
+export function sceneXml(scene: Scene, p: IllustrationPalette): string {
+  return SCENE_BUILDERS[scene](p);
+}
+
+/**
+ * Skateboard wheel, face on — the atom's electrons. Urethane tyre with a
+ * printed graphic (the mark that makes the roll readable), a riding lip, a
+ * dark core and a steel bearing. No highlight: that's `wheelShineXml`,
+ * layered on top and kept still so the light doesn't spin with the wheel.
+ */
+export function wheelXml(p: IllustrationPalette): string {
+  const id = 'slw';
+  const balls = Array.from({ length: 8 }, (_, i) => {
+    const [x, y] = polar(50, 50, 15, i * 45);
+    return `<circle cx="${x}" cy="${y}" r="2" fill="${p.metalDark}" fill-opacity="0.6"/>`;
+  }).join('');
+  const hex = Array.from({ length: 6 }, (_, i) => polar(50, 50, 7, i * 60).join(' ')).join(' L');
+  const [dotX, dotY] = polar(50, 50, 40, 315);
+
+  return svg(
+    `<defs>` +
+      `<radialGradient id="${id}-ure" cx="0.35" cy="0.3" r="0.8">${urethaneStops(p)}</radialGradient>` +
+      `<radialGradient id="${id}-core" cx="0.4" cy="0.35" r="0.75">` +
+      `<stop offset="0" stop-color="${p.asphaltLight}"/><stop offset="1" stop-color="${p.background}"/>` +
+      `</radialGradient>` +
+      `<radialGradient id="${id}-steel" cx="0.35" cy="0.3" r="0.85">` +
+      `<stop offset="0" stop-color="${p.metalLight}"/><stop offset="0.6" stop-color="${p.metalMid}"/><stop offset="1" stop-color="${p.metalDark}"/>` +
+      `</radialGradient>` +
+      `</defs>` +
+      `<circle cx="50" cy="50" r="48" fill="url(#${id}-ure)"/>` +
+      `<circle cx="50" cy="50" r="46.8" fill="none" stroke="${p.urethaneDark}" stroke-opacity="0.7" stroke-width="2.4"/>` +
+      `<path d="${arc(50, 50, 40, 200, 290)}" fill="none" stroke="${p.background}" stroke-opacity="0.6" stroke-width="5" stroke-linecap="round"/>` +
+      `<circle cx="${dotX}" cy="${dotY}" r="2.8" fill="${p.background}" fill-opacity="0.6"/>` +
+      `<circle cx="50" cy="50" r="32" fill="none" stroke="${p.urethaneDark}" stroke-opacity="0.75" stroke-width="2.2"/>` +
+      `<circle cx="50" cy="50" r="28" fill="url(#${id}-core)"/>` +
+      `<circle cx="50" cy="50" r="20" fill="url(#${id}-steel)" stroke="${p.metalDark}" stroke-width="1.2"/>` +
+      balls +
+      `<path d="M${hex} Z" fill="${p.metalMid}" stroke="${p.metalDark}" stroke-width="1.2"/>` +
+      `<circle cx="50" cy="50" r="3" fill="${p.metalDark}"/>`,
+  );
+}
+
+/** Static specular light for a wheel: sits over it and doesn't rotate. */
+export function wheelShineXml(p: IllustrationPalette): string {
+  return svg(
+    `<path d="${arc(50, 50, 43, 195, 250)}" fill="none" stroke="${p.shine}" stroke-opacity="0.6" stroke-width="3.8" stroke-linecap="round"/>` +
+      `<path d="${arc(50, 50, 43, 258, 266)}" fill="none" stroke="${p.shine}" stroke-opacity="0.5" stroke-width="3.8" stroke-linecap="round"/>` +
+      `<path d="${arc(50, 50, 17, 200, 245)}" fill="none" stroke="${p.shine}" stroke-opacity="0.75" stroke-width="2.2" stroke-linecap="round"/>` +
+      `<path d="${arc(50, 50, 45, 20, 80)}" fill="none" stroke="${p.shadow}" stroke-opacity="0.3" stroke-width="4" stroke-linecap="round"/>`,
+  );
+}
+
+/**
+ * The three orbit rings behind the nucleus, React-logo style, on the same
+ * 100×100 canvas: ellipses of 84×34 fanned at 0°, 60° and 120°.
+ */
+export function orbitsXml(p: IllustrationPalette, orbitCount = 3): string {
+  const id = 'slo';
+  const rings = Array.from(
+    { length: orbitCount },
+    (_, i) =>
+      `<ellipse cx="50" cy="50" rx="42" ry="17" transform="rotate(${n((i * 180) / orbitCount)} 50 50)" ` +
+      `fill="none" stroke="url(#${id}-ring)" stroke-width="1.1"/>`,
+  ).join('');
+  return svg(
+    `<defs><linearGradient id="${id}-ring" x1="0" y1="0" x2="1" y2="1">` +
+      `<stop offset="0" stop-color="${p.urethaneLight}" stop-opacity="0.75"/>` +
+      `<stop offset="0.5" stop-color="${p.primary}" stop-opacity="0.35"/>` +
+      `<stop offset="1" stop-color="${p.urethaneDark}" stop-opacity="0.7"/>` +
+      `</linearGradient></defs>` +
+      rings,
+  );
 }

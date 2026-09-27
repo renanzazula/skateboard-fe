@@ -1,9 +1,14 @@
-import { render, screen } from '@testing-library/react-native';
+import { act, render, screen } from '@testing-library/react-native';
 import { AccessibilityInfo, StyleSheet } from 'react-native';
 
 import { SkateLoader } from '@/shared/components/loader';
+import { BURST_MS, CYCLE_MS } from '@/shared/components/loader/SkateLoader';
 
 describe('SkateLoader', () => {
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('announces itself as a busy progressbar with the generic loading label', async () => {
     await render(<SkateLoader />);
     const loader = screen.getByTestId('skate-loader');
@@ -12,11 +17,44 @@ describe('SkateLoader', () => {
     expect(loader.props.accessibilityState).toEqual({ busy: true });
   });
 
-  it('renders the four orbiting illustrations', async () => {
+  it('renders the skate scene in the nucleus and three wheels on the orbits', async () => {
     await render(<SkateLoader />);
-    for (const kind of ['deck', 'barcelona', 'mic', 'pin']) {
-      expect(screen.getByTestId(`skate-loader-${kind}`)).toBeTruthy();
-    }
+    expect(screen.getByTestId('skate-loader-scene-skate')).toBeTruthy();
+    for (const i of [0, 1, 2]) expect(screen.getByTestId(`skate-loader-wheel-${i}`)).toBeTruthy();
+  });
+
+  it('explodes into the next scene every cycle, and wraps round', async () => {
+    jest.useFakeTimers();
+    await render(<SkateLoader />);
+    await act(async () => {});
+
+    // First explosion lands CYCLE_MS in; step one cycle at a time after it.
+    await act(async () => {
+      jest.advanceTimersByTime(CYCLE_MS + BURST_MS);
+    });
+    expect(screen.getByTestId('skate-loader-scene-barcelona')).toBeTruthy();
+    const nextScene = async () => {
+      await act(async () => {
+        jest.advanceTimersByTime(CYCLE_MS);
+      });
+    };
+    await nextScene();
+    expect(screen.getByTestId('skate-loader-scene-podcast')).toBeTruthy();
+    await nextScene();
+    expect(screen.getByTestId('skate-loader-scene-places')).toBeTruthy();
+    await nextScene();
+    expect(screen.getByTestId('skate-loader-scene-skate')).toBeTruthy();
+  });
+
+  it('holds still on the first scene when reduce motion is on', async () => {
+    jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
+    jest.useFakeTimers();
+    await render(<SkateLoader />);
+    await act(async () => {});
+    await act(async () => {
+      jest.advanceTimersByTime(CYCLE_MS * 3);
+    });
+    expect(screen.getByTestId('skate-loader-scene-skate')).toBeTruthy();
   });
 
   it('fills its screen and centres itself when fullScreen, letting touches through', async () => {
@@ -44,12 +82,5 @@ describe('SkateLoader', () => {
     await render(<SkateLoader label="Dropping in…" size={64} />);
     expect(screen.getByText('Dropping in…')).toBeTruthy();
     expect(screen.getByTestId('skate-loader').props.accessibilityLabel).toBe('Dropping in…');
-  });
-
-  it('renders statically when reduce motion is on', async () => {
-    jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
-    const view = await render(<SkateLoader />);
-    expect(view.toJSON()).toBeTruthy();
-    await view.unmount();
   });
 });

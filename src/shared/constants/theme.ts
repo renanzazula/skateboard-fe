@@ -69,6 +69,10 @@ export const IllustrationColors = {
   urethaneDark: '#A8840B',
   shine: '#FFFFFF',
   shadow: '#000000',
+  skyDusk: '#2A1B3D',
+  skySunset: '#E86A33',
+  asphalt: '#252522',
+  asphaltLight: '#34342F',
 } as const;
 
 // Single source of truth for corner radii.

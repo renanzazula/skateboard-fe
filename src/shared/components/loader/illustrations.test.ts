@@ -1,32 +1,34 @@
 import {
-  orbitIllustrationXml,
+  SCENES,
+  orbitsXml,
+  sceneXml,
   wheelShineXml,
   wheelXml,
   type IllustrationPalette,
-  type OrbitIllustration,
 } from '@/shared/components/loader/illustrations';
+import { Colors, IllustrationColors } from '@/shared/constants/theme';
 
 // Distinct sentinel per token, so a test can tell which one ended up where.
+const keys = Object.keys({ ...Colors, ...IllustrationColors });
 const palette = Object.fromEntries(
-  [
-    'primary', 'primaryPressed', 'background', 'surface', 'surfaceElevated',
-    'metalLight', 'metalMid', 'metalDark', 'stoneLight', 'stoneMid', 'stoneDark',
-    'mapleLight', 'mapleDark', 'gripTape', 'urethaneLight', 'urethaneDark', 'shine', 'shadow',
-  ].map((key, i) => [key, `#0000${i.toString(16).padStart(2, '0')}`]),
-) as IllustrationPalette;
+  keys.map((key, i) => [key, `#00${i.toString(16).padStart(4, '0')}`]),
+) as unknown as IllustrationPalette;
 
 const all: [string, string][] = [
   ['wheel', wheelXml(palette)],
   ['shine', wheelShineXml(palette)],
-  ...(['deck', 'barcelona', 'mic', 'pin'] as OrbitIllustration[]).map(
-    (kind): [string, string] => [kind, orbitIllustrationXml(kind, palette)],
-  ),
+  ['orbits', orbitsXml(palette)],
+  ...SCENES.map((scene): [string, string] => [scene, sceneXml(scene, palette)]),
 ];
 
 describe('loader illustrations', () => {
-  it.each(all)('%s is a single 64×64 svg document', (_, xml) => {
+  it('cycles skate → Barcelona → podcast → places', () => {
+    expect(SCENES).toEqual(['skate', 'barcelona', 'podcast', 'places']);
+  });
+
+  it.each(all)('%s is a single 100×100 svg document', (_, xml) => {
     expect(xml.startsWith('<svg')).toBe(true);
-    expect(xml).toContain('viewBox="0 0 64 64"');
+    expect(xml).toContain('viewBox="0 0 100 100"');
     expect(xml.match(/<svg/g)).toHaveLength(1);
     expect(xml).not.toContain('NaN');
     expect(xml).not.toContain('undefined');
@@ -39,19 +41,22 @@ describe('loader illustrations', () => {
     for (const colour of used) expect(allowed).toContain(colour);
   });
 
-  it.each(all)('%s references only gradients and clip paths it defines', (_, xml) => {
+  it.each(all)('%s references only gradients, patterns and clip paths it defines', (_, xml) => {
     const defined = new Set([...xml.matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
     for (const [, ref] of xml.matchAll(/url\(#([^)]+)\)/g)) expect(defined).toContain(ref);
   });
 
-  it('keeps gradient ids unique across pieces, so they can share a web page', () => {
+  it('keeps ids unique across pieces, so they can share a web page', () => {
     const ids = all.flatMap(([, xml]) => [...xml.matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('draws the brand yellow on every piece but the shine', () => {
-    for (const [name, xml] of all) {
-      if (name !== 'shine') expect(xml).toContain(palette.primary);
-    }
+  it('draws the brand yellow on every scene', () => {
+    for (const scene of SCENES) expect(sceneXml(scene, palette)).toContain(palette.primary);
+  });
+
+  it('draws one ring per orbit', () => {
+    expect(orbitsXml(palette, 3).match(/<ellipse/g)).toHaveLength(3);
+    expect(orbitsXml(palette, 2)).toContain('rotate(90 50 50)');
   });
 });

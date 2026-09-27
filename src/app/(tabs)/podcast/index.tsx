@@ -189,7 +189,7 @@ type PodcastListFooterProps = {
 };
 
 function PodcastListFooter({ postsLoading, total, postsCount, hasMore, onLoadMore, colors, t }: PodcastListFooterProps) {
-  if (postsLoading) return <SkateLoader size={56} style={styles.footer} />;
+  if (postsLoading) return <SkateLoader size={88} style={styles.footer} />;
   if (total === 0) return null;
   return (
     <View>

@@ -422,7 +422,7 @@ function EpisodePickerSection({
       />
 
       {searching && posts.length === 0 ? (
-        <SkateLoader size={72} style={styles.loading} />
+        <SkateLoader size={88} style={styles.loading} />
       ) : (
         <>
           <View style={[styles.episodeList, { borderColor: theme.border }]}>
