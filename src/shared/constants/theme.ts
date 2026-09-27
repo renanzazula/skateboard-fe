@@ -50,6 +50,27 @@ export const Colors = {
 
 export type ThemeColor = keyof typeof Colors;
 
+/**
+ * Material tones for illustrated artwork (the SkateLoader badges): real-world
+ * surfaces — brushed steel, Montjuïc sandstone, maple ply, urethane — that the
+ * flat UI palette above has no tokens for. UI chrome keeps using `Colors`.
+ */
+export const IllustrationColors = {
+  metalLight: '#F2F2EE',
+  metalMid: '#A9A9A3',
+  metalDark: '#4B4B47',
+  stoneLight: '#EBDDBF',
+  stoneMid: '#C9AF84',
+  stoneDark: '#8A7150',
+  mapleLight: '#E6BD7F',
+  mapleDark: '#9A6934',
+  gripTape: '#1B1B19',
+  urethaneLight: '#FFE680',
+  urethaneDark: '#A8840B',
+  shine: '#FFFFFF',
+  shadow: '#000000',
+} as const;
+
 // Single source of truth for corner radii.
 export const RADII = {
   card: 16,

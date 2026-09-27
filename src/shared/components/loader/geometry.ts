@@ -22,13 +22,13 @@ export function orbitPositions(count: number, radius: number, center: number): O
 
 /** Sizes of every loader layer, derived from the overall square size. */
 export function loaderMetrics(size: number) {
-  const badge = Math.round(size * 0.26);
+  const badge = Math.round(size * 0.3);
   const orbitRadius = (size - badge) / 2;
   return {
     badge,
-    icon: Math.round(badge * 0.62),
+    icon: Math.round(badge * 0.8),
     orbitRadius,
-    wheel: Math.round(size * 0.42),
+    wheel: Math.round(size * 0.36),
   };
 }
 

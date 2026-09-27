@@ -12,6 +12,13 @@ describe('SkateLoader', () => {
     expect(loader.props.accessibilityState).toEqual({ busy: true });
   });
 
+  it('renders the four orbiting illustrations', async () => {
+    await render(<SkateLoader />);
+    for (const kind of ['deck', 'barcelona', 'mic', 'pin']) {
+      expect(screen.getByTestId(`skate-loader-${kind}`)).toBeTruthy();
+    }
+  });
+
   it('shows and announces a custom label', async () => {
     await render(<SkateLoader label="Dropping in…" size={64} />);
     expect(screen.getByText('Dropping in…')).toBeTruthy();

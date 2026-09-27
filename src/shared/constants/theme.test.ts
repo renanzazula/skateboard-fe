@@ -1,4 +1,4 @@
-import { BottomTabInset, Colors, DisplayFontFamily, Fonts, MAX_CONTENT_WIDTH, MAX_FORM_WIDTH, MOBILE_WEB_MAX_WIDTH, RADII, Spacing } from '@/shared/constants/theme';
+import { BottomTabInset, Colors, IllustrationColors, DisplayFontFamily, Fonts, MAX_CONTENT_WIDTH, MAX_FORM_WIDTH, MOBILE_WEB_MAX_WIDTH, RADII, Spacing } from '@/shared/constants/theme';
 
 describe('theme constants', () => {
   it('exposes the dark brand palette', () => {
@@ -24,5 +24,13 @@ describe('theme constants', () => {
 
   it('resolves a numeric BottomTabInset for the current platform', () => {
     expect(typeof BottomTabInset).toBe('number');
+  });
+});
+
+describe('IllustrationColors', () => {
+  it('exposes hex material tones for illustrated artwork', () => {
+    for (const value of Object.values(IllustrationColors)) {
+      expect(value).toMatch(/^#[0-9A-F]{6}$/i);
+    }
   });
 });

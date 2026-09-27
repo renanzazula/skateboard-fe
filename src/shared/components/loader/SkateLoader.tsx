@@ -1,4 +1,4 @@
-import { useEffect, useState, type ComponentType } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, {
   Easing,
@@ -8,19 +8,28 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
+import { SvgXml } from 'react-native-svg';
 
 import { ThemedText } from '@/shared/components/themed-text';
-import { BarcelonaGlyph, DeckGlyph, MicGlyph, PinGlyph, WheelGlyph } from '@/shared/components/loader/icons';
 import { loaderMetrics, orbitPositions } from '@/shared/components/loader/geometry';
-import { Spacing } from '@/shared/constants/theme';
+import {
+  orbitIllustrationXml,
+  wheelShineXml,
+  wheelXml,
+  type IllustrationPalette,
+  type OrbitIllustration,
+} from '@/shared/components/loader/illustrations';
+import { IllustrationColors, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 
 // Skate · Barcelona · Podcast · Places — clockwise from 12 o'clock.
-const ORBIT_GLYPHS: ComponentType<{ size: number; color: string }>[] = [DeckGlyph, BarcelonaGlyph, MicGlyph, PinGlyph];
+const ORBIT: OrbitIllustration[] = ['deck', 'barcelona', 'mic', 'pin'];
 
 const WHEEL_SPIN_MS = 900;
 const ORBIT_SPIN_MS = 6000;
+const GLOW_PULSE_MS = 1400;
+const ENTER_MS = 380;
 
 type Props = {
   /** Width/height of the square loader. */
@@ -32,16 +41,30 @@ type Props = {
 };
 
 /**
- * Brand loading indicator: a skateboard wheel spinning at the centre, with the
- * app's four themes (skate deck, Barcelona, podcast mic, places pin) rolling
- * around it on an orbit. Static when the OS "reduce motion" setting is on.
+ * Brand loading indicator: an illustrated skateboard wheel spinning at the
+ * centre (the light on it stays put, so it reads as a real object turning),
+ * with the app's four worlds — a maple deck, the Sagrada Família, a studio
+ * mic and a map pin — riding an orbit around it. Fades in rather than
+ * popping; static when the OS "reduce motion" setting is on.
  */
-export function SkateLoader({ size = 96, label, style, testID = 'skate-loader' }: Props) {
+export function SkateLoader({ size = 120, label, style, testID = 'skate-loader' }: Props) {
   const theme = useTheme();
   const { t } = useTranslation();
   const [reduceMotion, setReduceMotion] = useState(false);
   const wheel = useSharedValue(0);
   const orbit = useSharedValue(0);
+  const glow = useSharedValue(0);
+  const enter = useSharedValue(0);
+
+  const palette: IllustrationPalette = useMemo(() => ({ ...theme, ...IllustrationColors }), [theme]);
+  const art = useMemo(
+    () => ({
+      wheel: wheelXml(palette),
+      shine: wheelShineXml(palette),
+      orbit: ORBIT.map((kind) => orbitIllustrationXml(kind, palette)),
+    }),
+    [palette],
+  );
 
   useEffect(() => {
     let active = true;
@@ -56,24 +79,39 @@ export function SkateLoader({ size = 96, label, style, testID = 'skate-loader' }
   }, []);
 
   useEffect(() => {
-    if (reduceMotion) return;
+    if (reduceMotion) {
+      enter.value = 1;
+      return;
+    }
+    enter.value = withTiming(1, { duration: ENTER_MS, easing: Easing.out(Easing.cubic) });
     wheel.value = withRepeat(withTiming(360, { duration: WHEEL_SPIN_MS, easing: Easing.linear }), -1, false);
     orbit.value = withRepeat(withTiming(360, { duration: ORBIT_SPIN_MS, easing: Easing.linear }), -1, false);
+    glow.value = withRepeat(withTiming(1, { duration: GLOW_PULSE_MS, easing: Easing.inOut(Easing.ease) }), -1, true);
     return () => {
       cancelAnimation(wheel);
       cancelAnimation(orbit);
+      cancelAnimation(glow);
     };
     // Shared values are stable refs — safe to omit from deps.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduceMotion]);
 
+  const enterStyle = useAnimatedStyle(() => ({
+    opacity: enter.value,
+    transform: [{ scale: 0.85 + 0.15 * enter.value }],
+  }));
   const wheelStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${wheel.value}deg` }] }));
   const orbitStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${orbit.value}deg` }] }));
-  // Counter-rotate each badge so its glyph stays upright while it travels.
+  // Counter-rotate each badge so its artwork stays upright while it travels.
   const uprightStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${-orbit.value}deg` }] }));
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: 0.55 + 0.45 * glow.value,
+    transform: [{ scale: 0.92 + 0.12 * glow.value }],
+  }));
 
   const m = loaderMetrics(size);
-  const points = orbitPositions(ORBIT_GLYPHS.length, m.orbitRadius, size / 2);
+  const points = orbitPositions(ORBIT.length, m.orbitRadius, size / 2);
+  const glowSize = m.wheel * 1.45;
 
   return (
     <View
@@ -83,7 +121,7 @@ export function SkateLoader({ size = 96, label, style, testID = 'skate-loader' }
       accessibilityRole="progressbar"
       accessibilityLabel={label ?? t('common.loading')}
       accessibilityState={{ busy: true }}>
-      <View style={{ width: size, height: size }}>
+      <Animated.View style={[{ width: size, height: size }, enterStyle]}>
         <View
           style={[
             styles.track,
@@ -98,10 +136,27 @@ export function SkateLoader({ size = 96, label, style, testID = 'skate-loader' }
           ]}
         />
 
+        <View style={[StyleSheet.absoluteFill, styles.center]}>
+          <Animated.View
+            style={[
+              styles.layer,
+              { width: glowSize, height: glowSize, borderRadius: glowSize / 2, backgroundColor: theme.primarySoft },
+              glowStyle,
+            ]}
+          />
+          <Animated.View style={[styles.layer, wheelStyle]}>
+            <SvgXml xml={art.wheel} width={m.wheel} height={m.wheel} />
+          </Animated.View>
+          <View style={styles.layer} pointerEvents="none">
+            <SvgXml xml={art.shine} width={m.wheel} height={m.wheel} />
+          </View>
+        </View>
+
         <Animated.View style={[StyleSheet.absoluteFill, orbitStyle]}>
-          {ORBIT_GLYPHS.map((Glyph, i) => (
+          {art.orbit.map((xml, i) => (
             <Animated.View
-              key={i}
+              key={ORBIT[i]}
+              testID={`skate-loader-${ORBIT[i]}`}
               style={[
                 styles.badge,
                 {
@@ -112,26 +167,15 @@ export function SkateLoader({ size = 96, label, style, testID = 'skate-loader' }
                   borderRadius: m.badge / 2,
                   backgroundColor: theme.surfaceElevated,
                   borderColor: theme.primarySoft,
+                  shadowColor: theme.shadow,
                 },
                 uprightStyle,
               ]}>
-              <Glyph size={m.icon} color={theme.primary} />
+              <SvgXml xml={xml} width={m.icon} height={m.icon} />
             </Animated.View>
           ))}
         </Animated.View>
-
-        <View style={[StyleSheet.absoluteFill, styles.center]}>
-          <View
-            style={[
-              styles.glow,
-              { width: m.wheel * 1.3, height: m.wheel * 1.3, borderRadius: m.wheel, backgroundColor: theme.primarySoft },
-            ]}
-          />
-          <Animated.View style={wheelStyle}>
-            <WheelGlyph size={m.wheel} urethane={theme.primary} core={theme.background} bearing={theme.surfaceElevated} />
-          </Animated.View>
-        </View>
-      </View>
+      </Animated.View>
 
       {label ? (
         <ThemedText type="small" themeColor="textSecondary" style={styles.label}>
@@ -152,18 +196,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderStyle: 'dashed',
   },
+  center: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  layer: {
+    position: 'absolute',
+  },
   badge: {
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-  },
-  center: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  glow: {
-    position: 'absolute',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 4,
   },
   label: {
     marginTop: Spacing.three,
