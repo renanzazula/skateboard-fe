@@ -62,4 +62,10 @@ describe('AppHeader', () => {
     expect(mockReplace).toHaveBeenCalledWith('/');
     expect(mockBack).not.toHaveBeenCalled();
   });
+
+  it('renders a trailing action when given', async () => {
+    await render(<AppHeader title="Notifications" right={<Text>Mark all</Text>} />);
+
+    expect(screen.getByText('Mark all')).toBeTruthy();
+  });
 });

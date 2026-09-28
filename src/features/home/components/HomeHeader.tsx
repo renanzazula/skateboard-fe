@@ -3,10 +3,11 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useAuth } from '@/core/auth';
 import { useProfile } from '@/features/account/hooks/useProfile';
 import { BrandedLogo } from '@/features/branding/components/BrandedLogo';
+import { NotificationBell } from '@/features/notifications/inbox';
 import { AppHeader } from '@/shared/components/AppHeader';
-import { ThemedText } from '@/shared/components/themed-text';
 import { useTheme } from '@/shared/hooks/use-theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 
@@ -21,18 +22,19 @@ function initials(name: string): string {
 }
 
 /**
- * Home's top bar: profile picture (left) — podcast logo (centre) — username
- * (right). Rendered through AppHeader so it's exactly as tall as the title
+ * Home's top bar: profile picture (left) — podcast logo (centre) —
+ * notification bell (right). The bell replaced the @username that used to sit
+ * there; it needs FUNC_USER_SELF_READ, the authority the inbox is read with. Rendered through AppHeader so it's exactly as tall as the title
  * header every other screen uses.
  */
 export function HomeHeader() {
   const theme = useTheme();
   const { t } = useTranslation();
   const { profile } = useProfile();
+  const { hasAuthority } = useAuth();
   const [imageFailed, setImageFailed] = useState(false);
 
   const displayName = profile?.displayName || profile?.username || t('settings.skater');
-  const username = profile?.username ? `@${profile.username}` : displayName;
 
   // Reset once the URL itself changes (e.g. a fresh upload), so a past
   // failure doesn't permanently pin the fallback for the new image.
@@ -66,9 +68,7 @@ export function HomeHeader() {
         <BrandedLogo style={styles.logo} />
 
         <View style={[styles.side, styles.sideRight]}>
-          <ThemedText type="smallBold" numberOfLines={1}>
-            {username}
-          </ThemedText>
+          {hasAuthority('FUNC_USER_SELF_READ') ? <NotificationBell /> : null}
         </View>
       </View>
     </AppHeader>
@@ -81,8 +81,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  // Equal-flex sides keep the logo optically centred however wide the
-  // username renders.
+  // Equal-flex sides keep the logo optically centred.
   side: {
     flex: 1,
     alignItems: 'flex-start',

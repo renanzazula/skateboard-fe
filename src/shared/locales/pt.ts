@@ -41,6 +41,23 @@ export const pt: TranslationKeys = {
     expandPlayer: 'Expandir player em destaque',
     collapsePlayer: 'Recolher player em destaque',
   },
+  notifications: {
+    title: 'Notificações',
+    open: 'Abrir notificações',
+    openWithCount: 'Abrir notificações, {count} não lidas',
+    markAllRead: 'Marcar todas como lidas',
+    unread: 'Não lida',
+    emptyTitle: 'Tudo em dia',
+    emptyDescription: 'Novos episódios e novidades vão aparecer aqui.',
+    loadError: 'Não foi possível carregar suas notificações.',
+    time: {
+      now: 'agora',
+      minutes: 'há {count} min',
+      hours: 'há {count} h',
+      days: 'há {count} d',
+      weeks: 'há {count} sem',
+    },
+  },
   imageUpload: {
     defaultTitle: 'Escolher imagem',
     chooseFromLibrary: 'Escolher da galeria',

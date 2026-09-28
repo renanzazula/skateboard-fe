@@ -41,6 +41,23 @@ export const es: TranslationKeys = {
     expandPlayer: 'Expandir reproductor destacado',
     collapsePlayer: 'Contraer reproductor destacado',
   },
+  notifications: {
+    title: 'Notificaciones',
+    open: 'Abrir notificaciones',
+    openWithCount: 'Abrir notificaciones, {count} sin leer',
+    markAllRead: 'Marcar todas como leídas',
+    unread: 'Sin leer',
+    emptyTitle: 'Estás al día',
+    emptyDescription: 'Los nuevos episodios y novedades aparecerán aquí.',
+    loadError: 'No pudimos cargar tus notificaciones.',
+    time: {
+      now: 'ahora',
+      minutes: 'hace {count} min',
+      hours: 'hace {count} h',
+      days: 'hace {count} d',
+      weeks: 'hace {count} sem',
+    },
+  },
   imageUpload: {
     defaultTitle: 'Elegir imagen',
     chooseFromLibrary: 'Elegir de la galería',

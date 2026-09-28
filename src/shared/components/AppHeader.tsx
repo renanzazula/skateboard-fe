@@ -17,7 +17,10 @@ import { useTranslation } from '@/shared/hooks/useTranslation';
  * Two shapes share that shell:
  *  - the default title (+ optional subtitle, + optional back arrow), used by
  *    Settings, its sub-pages and the Podcast tab;
- *  - arbitrary `children`, used by Home for its avatar / logo / username row.
+ *  - arbitrary `children`, used by Home for its avatar / logo / bell row.
+ *
+ * `right` is an optional trailing action (e.g. Notifications' "mark all
+ * read"), overlaid like the back arrow so the title stays centred.
  */
 export const HEADER_CONTENT_HEIGHT = 46;
 
@@ -27,9 +30,11 @@ type Props = {
   showBack?: boolean;
   /** Replaces the title stack entirely — the row shell and height still apply. */
   children?: ReactNode;
+  /** Trailing action, overlaid on the right edge. */
+  right?: ReactNode;
 };
 
-export function AppHeader({ title, subtitle, showBack = false, children }: Props) {
+export function AppHeader({ title, subtitle, showBack = false, children, right }: Props) {
   const theme = useTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -73,6 +78,8 @@ export function AppHeader({ title, subtitle, showBack = false, children }: Props
             ) : null}
           </View>
         )}
+
+        {right ? <View style={styles.right}>{right}</View> : null}
       </View>
     </View>
   );
@@ -96,6 +103,14 @@ const styles = StyleSheet.create({
   back: {
     position: 'absolute',
     left: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  right: {
+    position: 'absolute',
+    right: 0,
     top: 0,
     bottom: 0,
     justifyContent: 'center',

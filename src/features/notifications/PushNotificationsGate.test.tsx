@@ -3,6 +3,7 @@ import { AppState, Platform } from 'react-native';
 import { act, render } from '@testing-library/react-native';
 
 import { useAuth } from '@/core/auth';
+import { markNotificationRead, refreshUnreadCount } from '@/features/notifications/inbox/inboxStore';
 import { openNotificationTarget } from '@/features/notifications/pushNavigation';
 import { registerPushDevice } from '@/features/notifications/pushRegistration';
 import { PushNotificationsGate } from '@/features/notifications/PushNotificationsGate';
@@ -10,6 +11,7 @@ import { PushNotificationsGate } from '@/features/notifications/PushNotification
 jest.mock('expo-notifications', () => ({
   setNotificationHandler: jest.fn(),
   addPushTokenListener: jest.fn(() => ({ remove: jest.fn() })),
+  addNotificationReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
   useLastNotificationResponse: jest.fn(() => undefined),
 }));
 
@@ -21,6 +23,11 @@ jest.mock('@/features/notifications/pushNavigation', () => ({
   openNotificationTarget: jest.fn(),
 }));
 
+jest.mock('@/features/notifications/inbox/inboxStore', () => ({
+  markNotificationRead: jest.fn(),
+  refreshUnreadCount: jest.fn(),
+}));
+
 jest.mock('@/features/notifications/pushRegistration', () => ({
   registerPushDevice: jest.fn(),
 }));
@@ -30,6 +37,9 @@ const mockUseLastNotificationResponse = Notifications.useLastNotificationRespons
 const mockAddPushTokenListener = Notifications.addPushTokenListener as jest.Mock;
 const mockRegisterPushDevice = registerPushDevice as jest.Mock;
 const mockOpenNotificationTarget = openNotificationTarget as jest.Mock;
+const mockAddNotificationReceivedListener = Notifications.addNotificationReceivedListener as jest.Mock;
+const mockMarkNotificationRead = markNotificationRead as jest.Mock;
+const mockRefreshUnreadCount = refreshUnreadCount as jest.Mock;
 
 function setOS(os: typeof Platform.OS) {
   Object.defineProperty(Platform, 'OS', { value: os, configurable: true });
@@ -141,5 +151,51 @@ describe('PushNotificationsGate', () => {
     await rerender(<PushNotificationsGate />);
 
     expect(mockOpenNotificationTarget).toHaveBeenCalledTimes(1);
+  });
+
+  it('re-reads the unread count when a push arrives while the app is open', async () => {
+    mockUseAuth.mockReturnValue({ status: 'signedIn' });
+    await render(<PushNotificationsGate />);
+
+    const onReceived = mockAddNotificationReceivedListener.mock.calls[0][0] as () => void;
+    await act(async () => onReceived());
+
+    expect(mockRefreshUnreadCount).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not listen for received pushes while signed out', async () => {
+    await render(<PushNotificationsGate />);
+
+    expect(mockAddNotificationReceivedListener).not.toHaveBeenCalled();
+  });
+
+  it('marks a tapped push read once the session is restored', async () => {
+    mockUseAuth.mockReturnValue({ status: 'loading' });
+    mockUseLastNotificationResponse.mockReturnValue({
+      notification: {
+        request: {
+          identifier: 'notif-2',
+          content: { data: { targetType: 'PODCAST', targetSlug: 'ep-2', notificationId: 'n-2' } },
+        },
+      },
+    });
+    const { rerender } = await render(<PushNotificationsGate />);
+    expect(mockMarkNotificationRead).not.toHaveBeenCalled();
+
+    mockUseAuth.mockReturnValue({ status: 'signedIn' });
+    await rerender(<PushNotificationsGate />);
+
+    expect(mockMarkNotificationRead).toHaveBeenCalledTimes(1);
+    expect(mockMarkNotificationRead).toHaveBeenCalledWith('n-2');
+  });
+
+  it('does not mark anything read for a push without a notification id', async () => {
+    mockUseAuth.mockReturnValue({ status: 'signedIn' });
+    mockUseLastNotificationResponse.mockReturnValue({
+      notification: { request: { identifier: 'notif-3', content: { data: { targetType: 'PODCAST' } } } },
+    });
+    await render(<PushNotificationsGate />);
+
+    expect(mockMarkNotificationRead).not.toHaveBeenCalled();
   });
 });

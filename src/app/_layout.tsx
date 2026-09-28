@@ -84,6 +84,8 @@ function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
             {/* Sits above (tabs) so Home can link into it without pushing onto
                 the Podcast tab's own stack — see app/video/[slug].tsx. */}
             <Stack.Screen name="video/[slug]" />
+            {/* Opened from Home's bell; above (tabs) for the same reason. */}
+            <Stack.Screen name="notifications" />
           </Stack.Protected>
           <Stack.Protected guard={status !== 'signedIn'}>
             <Stack.Screen name="(auth)" />
