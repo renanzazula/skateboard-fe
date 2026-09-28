@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { render, screen, userEvent } from '@testing-library/react-native';
 
+import { useAuth } from '@/core/auth';
 import { useProfile } from '@/features/account/hooks/useProfile';
 import { HomeHeader } from '@/features/home/components/HomeHeader';
 
@@ -12,36 +13,50 @@ jest.mock('@/features/account/hooks/useProfile', () => ({
   useProfile: jest.fn(),
 }));
 
+jest.mock('@/core/auth', () => ({
+  useAuth: jest.fn(),
+}));
+
+// The bell has its own tests; here it only matters whether it is rendered.
+jest.mock('@/features/notifications/inbox', () => {
+  const { Text } = require('react-native');
+  return { NotificationBell: () => <Text>bell</Text> };
+});
+
 jest.mock('@/core/config', () => ({
   useAppConfig: jest.fn(() => ({ appLogoUrl: null })),
 }));
 
 const mockUseProfile = useProfile as jest.Mock;
+const mockUseAuth = useAuth as jest.Mock;
 
 describe('HomeHeader', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseAuth.mockReturnValue({ hasAuthority: (authority: string) => authority === 'FUNC_USER_SELF_READ' });
   });
 
-  it('shows the username when available', async () => {
+  it('shows the notification bell instead of the username', async () => {
     mockUseProfile.mockReturnValue({ profile: { username: 'skater8', displayName: 'Sk8er' } });
     await render(<HomeHeader />);
 
-    expect(screen.getByText('@skater8')).toBeTruthy();
+    expect(screen.getByText('bell')).toBeTruthy();
+    expect(screen.queryByText('@skater8')).toBeNull();
   });
 
-  it('falls back to the display name when there is no username', async () => {
-    mockUseProfile.mockReturnValue({ profile: { username: null, displayName: 'Sk8er' } });
+  it('hides the bell from a user who cannot read their inbox', async () => {
+    mockUseAuth.mockReturnValue({ hasAuthority: () => false });
+    mockUseProfile.mockReturnValue({ profile: { username: 'skater8', displayName: 'Sk8er' } });
     await render(<HomeHeader />);
 
-    expect(screen.getByText('Sk8er')).toBeTruthy();
+    expect(screen.queryByText('bell')).toBeNull();
   });
 
-  it('falls back to a generic label when there is no profile at all', async () => {
+  it('falls back to generic initials when there is no profile at all', async () => {
     mockUseProfile.mockReturnValue({ profile: null });
     await render(<HomeHeader />);
 
-    expect(screen.getByText('Skater')).toBeTruthy();
+    expect(screen.getByText('SK')).toBeTruthy();
   });
 
   it('shows initials from the display name when there is no profile picture', async () => {

@@ -40,6 +40,23 @@ export const en = {
     expandPlayer: 'Expand featured player',
     collapsePlayer: 'Collapse featured player',
   },
+  notifications: {
+    title: 'Notifications',
+    open: 'Open notifications',
+    openWithCount: 'Open notifications, {count} unread',
+    markAllRead: 'Mark all as read',
+    unread: 'Unread',
+    emptyTitle: 'You’re all caught up',
+    emptyDescription: 'New episodes and updates will show up here.',
+    loadError: 'We couldn’t load your notifications.',
+    time: {
+      now: 'now',
+      minutes: '{count} min ago',
+      hours: '{count} h ago',
+      days: '{count} d ago',
+      weeks: '{count} w ago',
+    },
+  },
   imageUpload: {
     defaultTitle: 'Choose image',
     chooseFromLibrary: 'Choose from Library',

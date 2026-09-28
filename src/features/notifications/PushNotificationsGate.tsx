@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { AppState, Platform } from 'react-native';
 
 import { useAuth } from '@/core/auth';
+import { markNotificationRead, refreshUnreadCount } from '@/features/notifications/inbox/inboxStore';
 import { openNotificationTarget, type NotificationTarget } from '@/features/notifications/pushNavigation';
 import { registerPushDevice } from '@/features/notifications/pushRegistration';
 
@@ -111,6 +112,16 @@ function NativePushNotificationsGate() {
     return () => subscription.remove();
   }, []);
 
+  // A push that arrives while the app is open is a new unread inbox entry;
+  // re-read the count so Home's bell shows it without a reload.
+  useEffect(() => {
+    if (status !== 'signedIn') return;
+    const subscription = Notifications.addNotificationReceivedListener(() => {
+      refreshUnreadCount();
+    });
+    return () => subscription.remove();
+  }, [status]);
+
   // useLastNotificationResponse rather than
   // addNotificationResponseReceivedListener, because the tap that *launched*
   // the app happens before any listener could be attached — and a cold start
@@ -118,6 +129,7 @@ function NativePushNotificationsGate() {
   // response across re-renders, hence the identifier guard.
   const lastResponse = Notifications.useLastNotificationResponse();
   const handledResponseRef = useRef<string | null>(null);
+  const pendingReadRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!lastResponse) return;
@@ -125,10 +137,25 @@ function NativePushNotificationsGate() {
     if (handledResponseRef.current === identifier) return;
     handledResponseRef.current = identifier;
 
-    openNotificationTarget(
-      lastResponse.notification.request.content.data as NotificationTarget | undefined
-    );
+    const data = lastResponse.notification.request.content.data as
+      | (NotificationTarget & { notificationId?: string })
+      | undefined;
+    // Opening a push is reading it. The backend puts notificationId in every
+    // push's data; older notifications without it just stay unread. Queued
+    // rather than sent here: a tap that cold-starts the app lands before the
+    // session is restored, and an unauthenticated call would just be lost.
+    if (data?.notificationId) {
+      pendingReadRef.current = data.notificationId;
+    }
+    openNotificationTarget(data);
   }, [lastResponse]);
+
+  useEffect(() => {
+    if (status !== 'signedIn' || !pendingReadRef.current) return;
+    const notificationId = pendingReadRef.current;
+    pendingReadRef.current = null;
+    markNotificationRead(notificationId);
+  }, [status, lastResponse]);
 
   return null;
 }
