@@ -90,6 +90,29 @@ describe('useNotificationPreferences', () => {
     expect(mockPatch).toHaveBeenCalledWith('/api/me/preferences', { body: { notifications: { newPodcastEnabled: true } } });
   });
 
+  it('setNewPodcastEnabled sends only newPodcastEnabled and leaves pushEnabled as returned', async () => {
+    mockGet.mockResolvedValueOnce({
+      data: { notifications: { pushEnabled: false, newPodcastEnabled: true } },
+      error: undefined,
+      response: { status: 200 },
+    });
+    mockPatch.mockResolvedValueOnce({
+      data: { notifications: { pushEnabled: false, newPodcastEnabled: false } },
+      error: undefined,
+      response: { status: 200 },
+    });
+
+    const { result } = await renderHook(() => useNotificationPreferences());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await result.current.setNewPodcastEnabled(false);
+
+    const body = mockPatch.mock.calls[0][1].body;
+    expect(body).toEqual({ notifications: { newPodcastEnabled: false } });
+    expect(body.notifications).not.toHaveProperty('pushEnabled');
+    await waitFor(() => expect(result.current.preferences).toEqual({ pushEnabled: false, newPodcastEnabled: false }));
+  });
+
   it('update throws a BffError on failure', async () => {
     mockGet.mockResolvedValueOnce({ data: { notifications: { pushEnabled: false } }, error: undefined, response: { status: 200 } });
     mockPatch.mockResolvedValueOnce({ data: undefined, error: { code: 'X', message: 'denied' }, response: { status: 403 } });
@@ -98,5 +121,21 @@ describe('useNotificationPreferences', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     await expect(result.current.setPushEnabled(true)).rejects.toThrow('denied');
+  });
+
+  it('keeps the previously loaded preferences when a save fails', async () => {
+    mockGet.mockResolvedValueOnce({
+      data: { notifications: { pushEnabled: true, newPodcastEnabled: true } },
+      error: undefined,
+      response: { status: 200 },
+    });
+    mockPatch.mockResolvedValueOnce({ data: undefined, error: { code: 'X', message: 'denied' }, response: { status: 500 } });
+
+    const { result } = await renderHook(() => useNotificationPreferences());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await expect(result.current.setNewPodcastEnabled(false)).rejects.toThrow('denied');
+
+    expect(result.current.preferences).toEqual({ pushEnabled: true, newPodcastEnabled: true });
   });
 });

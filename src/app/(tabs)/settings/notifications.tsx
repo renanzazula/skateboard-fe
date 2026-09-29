@@ -25,11 +25,17 @@ import { showAlert } from '@/shared/utils/alert';
 
 export default function NotificationsScreen() {
   const { profile } = useProfile();
-  const { preferences, setPushEnabled, setNewPodcastEnabled } = useNotificationPreferences();
+  const { preferences, isLoading, error, setPushEnabled, setNewPodcastEnabled } = useNotificationPreferences();
   const { t } = useTranslation();
   // UX only — the BFF enforces the same authority. Admin-only diagnostic.
   const { hasAuthority } = useAuth();
   const canSendTest = hasAuthority('FUNC_NOTIFICATION_DEVICE_MANAGE_TEST');
+
+  // Until the preferences have loaded (or if loading failed) the real values
+  // are unknown, so the switches are disabled rather than showing a guess —
+  // an OFF shown for a user whose stored/default value is ON would invite a
+  // wrong toggle.
+  const preferencesReady = !isLoading && !error;
 
   // These switches are an app-level preference; the OS has its own, and it
   // wins. Without this a user who denied the system prompt sees both switches
@@ -54,6 +60,13 @@ export default function NotificationsScreen() {
     return () => subscription.remove();
   }, [refreshPermission]);
 
+  const reportSaveError = useCallback(
+    (err: unknown) => {
+      showAlert(t('settings.couldNotSave'), isBffError(err) ? err.message : t('common.tryAgain'));
+    },
+    [t]
+  );
+
   /**
    * Turning push on has to do more than set the server flag. The device may
    * never have registered — permission declined at sign-in, or the backend was
@@ -62,13 +75,33 @@ export default function NotificationsScreen() {
    */
   const handlePushEnabledChange = useCallback(
     async (enabled: boolean) => {
-      await setPushEnabled(enabled);
-      if (enabled) {
-        await registerPushDevice();
-        refreshPermission();
+      try {
+        await setPushEnabled(enabled);
+        if (enabled) {
+          await registerPushDevice();
+          refreshPermission();
+        }
+      } catch (err) {
+        reportSaveError(err);
       }
     },
-    [setPushEnabled, refreshPermission]
+    [setPushEnabled, refreshPermission, reportSaveError]
+  );
+
+  /**
+   * The switch only reflects server state (the hook writes it after the PATCH
+   * succeeds), so a rejected save leaves it showing the stored value; tell the
+   * user instead of failing silently.
+   */
+  const handleNewPodcastEnabledChange = useCallback(
+    async (enabled: boolean) => {
+      try {
+        await setNewPodcastEnabled(enabled);
+      } catch (err) {
+        reportSaveError(err);
+      }
+    },
+    [setNewPodcastEnabled, reportSaveError]
   );
 
   const [sendingTest, setSendingTest] = useState(false);
@@ -115,6 +148,11 @@ export default function NotificationsScreen() {
     <ThemedView style={styles.container}>
       <SettingsHeader title={t('settings.notifications')} handle={profile?.username ? `@${profile.username}` : undefined} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {error && (
+          <ThemedText type="small" themeColor="textSecondary" style={styles.blockedHint}>
+            {`${t('common.somethingWentWrong')}. ${error.message}`}
+          </ThemedText>
+        )}
         {permission === 'denied' && (
           <ThemedText type="small" themeColor="textSecondary" style={styles.blockedHint}>
             {t('settings.notificationsBlocked')}
@@ -130,17 +168,27 @@ export default function NotificationsScreen() {
             icon={Bell}
             title={t('settings.pushNotifications')}
             subtitle={t('settings.pushNotificationsSubtitle')}
+            disabled={!preferencesReady}
             trailing={{
               type: 'switch',
               value: preferences?.pushEnabled ?? false,
               onChange: handlePushEnabledChange,
+              disabled: !preferencesReady,
             }}
           />
           <SettingsRow
             icon={Mic}
             title={t('settings.newPodcasts')}
             subtitle={t('settings.newPodcastsSubtitle')}
-            trailing={{ type: 'switch', value: preferences?.newPodcastEnabled ?? false, onChange: setNewPodcastEnabled }}
+            disabled={!preferencesReady}
+            trailing={{
+              type: 'switch',
+              // Podcast notifications are on unless the user opted out, so a
+              // successfully loaded response with no value means ON.
+              value: preferences?.newPodcastEnabled ?? preferencesReady,
+              onChange: handleNewPodcastEnabledChange,
+              disabled: !preferencesReady,
+            }}
           />
         </SettingsSection>
         {/* Nothing to test where this build cannot hold a push token (web, simulator). */}
