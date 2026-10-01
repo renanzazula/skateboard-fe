@@ -5,9 +5,10 @@ import { useAuth } from '@/core/auth';
 import { usePodcastAdmin } from '@/features/podcast/hooks/usePodcastAdmin';
 import { usePodcastPost } from '@/features/podcast/hooks/usePodcastPost';
 import { PodcastPostScreen } from '@/features/podcast/components/PodcastPostScreen';
+import { BffError } from '@/shared/api/errors';
 
 jest.mock('expo-router', () => ({
-  router: { canGoBack: jest.fn(), back: jest.fn(), replace: jest.fn(), push: jest.fn() },
+  router: { canGoBack: jest.fn(), back: jest.fn(), replace: jest.fn(), push: jest.fn(), dismissTo: jest.fn() },
   useLocalSearchParams: jest.fn(() => ({ slug: 'my-episode' })),
 }));
 
@@ -50,7 +51,7 @@ jest.mock('@/features/podcast/components/PodcastEpisodeDetail', () => {
   };
 });
 
-const { router } = jest.requireMock('expo-router');
+const { router, useLocalSearchParams } = jest.requireMock('expo-router');
 const mockUseAuth = useAuth as jest.Mock;
 const mockUsePodcastPost = usePodcastPost as jest.Mock;
 const mockUsePodcastAdmin = usePodcastAdmin as jest.Mock;
@@ -62,6 +63,7 @@ describe('PodcastPostScreen', () => {
     jest.clearAllMocks();
     mockUseAuth.mockReturnValue({ hasAuthority: jest.fn().mockReturnValue(false) });
     mockUsePodcastAdmin.mockReturnValue({ submitting: false, deletePost: jest.fn() });
+    useLocalSearchParams.mockReturnValue({ slug: 'my-episode' });
   });
 
   it('shows a loading indicator while loading', async () => {
@@ -167,5 +169,60 @@ describe('PodcastPostScreen', () => {
     await user.press(screen.getByText('delete'));
 
     expect(alertSpy).not.toHaveBeenCalled();
+  });
+
+  it('offers a way back from the error state', async () => {
+    router.canGoBack.mockReturnValue(false);
+    mockUsePodcastPost.mockReturnValue({ post: null, loading: false, error: new Error('offline'), refetch: jest.fn() });
+    const user = userEvent.setup();
+    await render(<PodcastPostScreen />);
+
+    await user.press(screen.getByText('Back'));
+
+    expect(router.replace).toHaveBeenCalledWith('/');
+  });
+
+  it('sends a push for a deleted episode Home and explains why', async () => {
+    useLocalSearchParams.mockReturnValue({ slug: 'gone', source: 'push' });
+    mockUsePodcastPost.mockReturnValue({
+      post: null,
+      loading: false,
+      error: new BffError({ code: 'NOT_FOUND', message: 'Post not found' }, 404),
+      refetch: jest.fn(),
+    });
+    const alertSpy = jest.spyOn(Alert, 'alert');
+    await render(<PodcastPostScreen />);
+
+    expect(router.dismissTo).toHaveBeenCalledWith('/');
+    expect(alertSpy).toHaveBeenCalledWith('Episode unavailable', 'This episode is no longer available.', undefined);
+    expect(screen.queryByText('Retry')).toBeNull();
+  });
+
+  it('keeps the retry banner for a push whose episode failed for another reason', async () => {
+    useLocalSearchParams.mockReturnValue({ slug: 'ep', source: 'push' });
+    mockUsePodcastPost.mockReturnValue({
+      post: null,
+      loading: false,
+      error: new BffError({ code: 'PODCAST_SERVICE_UNAVAILABLE', message: 'Unavailable' }, 503),
+      refetch: jest.fn(),
+    });
+    await render(<PodcastPostScreen />);
+
+    expect(router.dismissTo).not.toHaveBeenCalled();
+    expect(screen.getByText('Retry')).toBeTruthy();
+  });
+
+  it('does not redirect a missing episode opened from the inbox', async () => {
+    useLocalSearchParams.mockReturnValue({ slug: 'gone', source: 'inbox' });
+    mockUsePodcastPost.mockReturnValue({
+      post: null,
+      loading: false,
+      error: new BffError({ code: 'NOT_FOUND', message: 'Post not found' }, 404),
+      refetch: jest.fn(),
+    });
+    await render(<PodcastPostScreen />);
+
+    expect(router.dismissTo).not.toHaveBeenCalled();
+    expect(screen.getByText('Post not found')).toBeTruthy();
   });
 });

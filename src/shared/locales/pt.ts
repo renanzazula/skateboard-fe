@@ -50,6 +50,8 @@ export const pt: TranslationKeys = {
     emptyTitle: 'Tudo em dia',
     emptyDescription: 'Novos episódios e novidades vão aparecer aqui.',
     loadError: 'Não foi possível carregar suas notificações.',
+    episodeUnavailableTitle: 'Episódio indisponível',
+    episodeUnavailableMessage: 'Este episódio não está mais disponível.',
     time: {
       now: 'agora',
       minutes: 'há {count} min',

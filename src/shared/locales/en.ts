@@ -49,6 +49,8 @@ export const en = {
     emptyTitle: 'You’re all caught up',
     emptyDescription: 'New episodes and updates will show up here.',
     loadError: 'We couldn’t load your notifications.',
+    episodeUnavailableTitle: 'Episode unavailable',
+    episodeUnavailableMessage: 'This episode is no longer available.',
     time: {
       now: 'now',
       minutes: '{count} min ago',

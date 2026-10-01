@@ -4,7 +4,7 @@ import { act, render } from '@testing-library/react-native';
 
 import { useAuth } from '@/core/auth';
 import { markNotificationRead, refreshUnreadCount } from '@/features/notifications/inbox/inboxStore';
-import { openNotificationTarget } from '@/features/notifications/pushNavigation';
+import { setPendingNotificationTarget } from '@/features/notifications/pushNavigation';
 import { registerPushDevice } from '@/features/notifications/pushRegistration';
 import { PushNotificationsGate } from '@/features/notifications/PushNotificationsGate';
 
@@ -13,6 +13,7 @@ jest.mock('expo-notifications', () => ({
   addPushTokenListener: jest.fn(() => ({ remove: jest.fn() })),
   addNotificationReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
   useLastNotificationResponse: jest.fn(() => undefined),
+  clearLastNotificationResponse: jest.fn(),
 }));
 
 jest.mock('@/core/auth', () => ({
@@ -20,7 +21,8 @@ jest.mock('@/core/auth', () => ({
 }));
 
 jest.mock('@/features/notifications/pushNavigation', () => ({
-  openNotificationTarget: jest.fn(),
+  ...jest.requireActual('@/features/notifications/pushNavigation'),
+  setPendingNotificationTarget: jest.fn(),
 }));
 
 jest.mock('@/features/notifications/inbox/inboxStore', () => ({
@@ -36,7 +38,8 @@ const mockUseAuth = useAuth as jest.Mock;
 const mockUseLastNotificationResponse = Notifications.useLastNotificationResponse as jest.Mock;
 const mockAddPushTokenListener = Notifications.addPushTokenListener as jest.Mock;
 const mockRegisterPushDevice = registerPushDevice as jest.Mock;
-const mockOpenNotificationTarget = openNotificationTarget as jest.Mock;
+const mockSetPendingNotificationTarget = setPendingNotificationTarget as jest.Mock;
+const mockClearLastNotificationResponse = Notifications.clearLastNotificationResponse as jest.Mock;
 const mockAddNotificationReceivedListener = Notifications.addNotificationReceivedListener as jest.Mock;
 const mockMarkNotificationRead = markNotificationRead as jest.Mock;
 const mockRefreshUnreadCount = refreshUnreadCount as jest.Mock;
@@ -130,7 +133,7 @@ describe('PushNotificationsGate', () => {
     expect(mockRegisterPushDevice).toHaveBeenCalledWith('new-token');
   });
 
-  it('opens the notification target from the last notification response', async () => {
+  it('records a tapped podcast push for the root layout to open, rather than navigating itself', async () => {
     mockUseLastNotificationResponse.mockReturnValue({
       notification: {
         request: { identifier: 'notif-1', content: { data: { targetType: 'PODCAST', targetSlug: 'ep-1' } } },
@@ -138,19 +141,57 @@ describe('PushNotificationsGate', () => {
     });
     await render(<PushNotificationsGate />);
 
-    expect(mockOpenNotificationTarget).toHaveBeenCalledWith({ targetType: 'PODCAST', targetSlug: 'ep-1' });
+    expect(mockSetPendingNotificationTarget).toHaveBeenCalledWith({
+      targetType: 'PODCAST',
+      targetSlug: 'ep-1',
+      targetId: undefined,
+    });
   });
 
-  it('does not reopen the same notification response twice', async () => {
+  it('records the tap even while the session is still loading (cold start)', async () => {
+    mockUseAuth.mockReturnValue({ status: 'loading' });
     mockUseLastNotificationResponse.mockReturnValue({
-      notification: { request: { identifier: 'notif-1', content: { data: {} } } },
+      notification: {
+        request: { identifier: 'notif-cold', content: { data: { targetType: 'PODCAST', targetSlug: 'ep-1' } } },
+      },
+    });
+    await render(<PushNotificationsGate />);
+
+    expect(mockSetPendingNotificationTarget).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears the handled response so a later launch does not reuse it', async () => {
+    mockUseLastNotificationResponse.mockReturnValue({
+      notification: {
+        request: { identifier: 'notif-1', content: { data: { targetType: 'PODCAST', targetSlug: 'ep-1' } } },
+      },
+    });
+    await render(<PushNotificationsGate />);
+
+    expect(mockClearLastNotificationResponse).toHaveBeenCalledTimes(1);
+  });
+
+  it('records nothing for a push whose target cannot be opened', async () => {
+    mockUseLastNotificationResponse.mockReturnValue({
+      notification: { request: { identifier: 'notif-bad', content: { data: { targetType: 'PODCAST' } } } },
+    });
+    await render(<PushNotificationsGate />);
+
+    expect(mockSetPendingNotificationTarget).not.toHaveBeenCalled();
+  });
+
+  it('does not handle the same notification response twice', async () => {
+    mockUseLastNotificationResponse.mockReturnValue({
+      notification: {
+        request: { identifier: 'notif-1', content: { data: { targetType: 'PODCAST', targetSlug: 'ep-1' } } },
+      },
     });
     const { rerender } = await render(<PushNotificationsGate />);
-    expect(mockOpenNotificationTarget).toHaveBeenCalledTimes(1);
+    expect(mockSetPendingNotificationTarget).toHaveBeenCalledTimes(1);
 
     await rerender(<PushNotificationsGate />);
 
-    expect(mockOpenNotificationTarget).toHaveBeenCalledTimes(1);
+    expect(mockSetPendingNotificationTarget).toHaveBeenCalledTimes(1);
   });
 
   it('re-reads the unread count when a push arrives while the app is open', async () => {

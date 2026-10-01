@@ -91,7 +91,7 @@ describe('NotificationsScreen', () => {
     await user.press(screen.getByLabelText('Unread, Episode 1'));
 
     expect(state.markRead).toHaveBeenCalledWith('1');
-    expect(openNotificationTarget).toHaveBeenCalledWith({ targetType: 'PODCAST', targetSlug: 'ep-1' });
+    expect(openNotificationTarget).toHaveBeenCalledWith({ targetType: 'PODCAST', targetSlug: 'ep-1' }, 'inbox');
   });
 
   it('marks everything read from the header action', async () => {

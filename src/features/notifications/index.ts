@@ -1,4 +1,6 @@
 export { PushNotificationsGate } from '@/features/notifications/PushNotificationsGate';
+export { wasLaunchedFromNotification } from '@/features/notifications/launchNotification';
+export { useOpenPendingNotificationTarget } from '@/features/notifications/pushNavigation';
 export {
   getPushPermissionState,
   registerPushDevice,

@@ -35,7 +35,7 @@ export default function NotificationsScreen() {
   const handlePress = useCallback(
     (item: InboxItem) => {
       inbox.markRead(item.notificationId);
-      openNotificationTarget(item.data);
+      openNotificationTarget(item.data, 'inbox');
     },
     [inbox]
   );
