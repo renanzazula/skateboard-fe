@@ -4,7 +4,7 @@ import { AppState, Platform } from 'react-native';
 
 import { useAuth } from '@/core/auth';
 import { markNotificationRead, refreshUnreadCount } from '@/features/notifications/inbox/inboxStore';
-import { openNotificationTarget, type NotificationTarget } from '@/features/notifications/pushNavigation';
+import { parseNotificationTarget, setPendingNotificationTarget } from '@/features/notifications/pushNavigation';
 import { registerPushDevice } from '@/features/notifications/pushRegistration';
 
 /**
@@ -137,17 +137,33 @@ function NativePushNotificationsGate() {
     if (handledResponseRef.current === identifier) return;
     handledResponseRef.current = identifier;
 
-    const data = lastResponse.notification.request.content.data as
-      | (NotificationTarget & { notificationId?: string })
-      | undefined;
+    const data = lastResponse.notification.request.content.data as { notificationId?: unknown } | undefined;
     // Opening a push is reading it. The backend puts notificationId in every
     // push's data; older notifications without it just stay unread. Queued
     // rather than sent here: a tap that cold-starts the app lands before the
     // session is restored, and an unauthenticated call would just be lost.
-    if (data?.notificationId) {
+    if (typeof data?.notificationId === 'string') {
       pendingReadRef.current = data.notificationId;
     }
-    openNotificationTarget(data);
+    // Recorded, not navigated: this component sits outside the navigator, and
+    // on a cold start the tap arrives while the session is still loading and
+    // the episode route is still protected — a push from here was dropped and
+    // the app opened on Home. The root layout opens it once it can (see
+    // useOpenPendingNotificationTarget). An unusable target is simply not
+    // recorded, which leaves the user on Home.
+    const target = parseNotificationTarget(data);
+    if (target) {
+      setPendingNotificationTarget(target);
+    }
+    // Handled; don't let a later launch read this response again. Some
+    // Android builds keep returning the last response across launches, which
+    // would also keep suppressing the startup campaign (see
+    // wasLaunchedFromNotification).
+    try {
+      Notifications.clearLastNotificationResponse();
+    } catch {
+      // Best effort — the identifier guard above still prevents a re-open.
+    }
   }, [lastResponse]);
 
   useEffect(() => {

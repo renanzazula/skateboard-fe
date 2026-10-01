@@ -1,5 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
+import { Pressable, StyleSheet } from 'react-native';
 
 import { useAuth } from '@/core/auth';
 import { PodcastEpisodeDetail } from '@/features/podcast/components/PodcastEpisodeDetail';
@@ -8,6 +9,9 @@ import { usePodcastPost } from '@/features/podcast/hooks/usePodcastPost';
 import { getEpisodeNumber } from '@/features/podcast/services/episodeMeta';
 import { isBffError } from '@/shared/api/errors';
 import { ErrorBanner } from '@/shared/components/ErrorBanner';
+import { ThemedText } from '@/shared/components/themed-text';
+import { ThemedView } from '@/shared/components/themed-view';
+import { Spacing } from '@/shared/constants/theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import { showAlert } from '@/shared/utils/alert';
 import { SkateLoader } from '@/shared/components/loader';
@@ -21,7 +25,7 @@ import { SkateLoader } from '@/shared/components/loader';
  * instead of pushing into the Podcast tab's stack.
  */
 export function PodcastPostScreen() {
-  const { slug } = useLocalSearchParams<{ slug: string }>();
+  const { slug, source } = useLocalSearchParams<{ slug: string; source?: string }>();
   const { t } = useTranslation();
   const { hasAuthority } = useAuth();
   const { post, loading, error, refetch } = usePodcastPost(slug);
@@ -76,12 +80,35 @@ export function PodcastPostScreen() {
     ]);
   };
 
-  if (loading) {
+  // A push for an episode that has since been deleted or unpublished: there
+  // is nothing to retry, so go Home and say why instead of stranding the user
+  // on an error with no way back. Only for pushes — from the inbox or a list,
+  // the user has somewhere to go back to and sees the error in place.
+  // dismissTo, not replace: this screen sits on the root stack above (tabs),
+  // so popping back to it lands on Home without stacking a second (tabs).
+  const episodeGone = source === 'push' && isBffError(error) && error.status === 404;
+
+  useEffect(() => {
+    if (!episodeGone) return;
+    router.dismissTo('/');
+    showAlert(t('notifications.episodeUnavailableTitle'), t('notifications.episodeUnavailableMessage'));
+  }, [episodeGone, t]);
+
+  if (loading || episodeGone) {
     return <SkateLoader fullScreen />;
   }
 
   if (error || !post) {
-    return <ErrorBanner message={isBffError(error) ? error.message : t('podcast.postNotFound')} onRetry={refetch} />;
+    return (
+      <ThemedView style={styles.error}>
+        <ErrorBanner message={isBffError(error) ? error.message : t('podcast.postNotFound')} onRetry={refetch} />
+        {/* Opened straight from a notification there is no back gesture to
+            fall back on, so the error always offers a way out. */}
+        <Pressable onPress={goBack} accessibilityRole="button" style={styles.errorBack}>
+          <ThemedText type="linkPrimary">{t('common.back')}</ThemedText>
+        </Pressable>
+      </ThemedView>
+    );
   }
 
   return (
@@ -96,3 +123,15 @@ export function PodcastPostScreen() {
     />
   );
 }
+
+const styles = StyleSheet.create({
+  error: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: Spacing.three,
+  },
+  errorBack: {
+    alignSelf: 'center',
+    padding: Spacing.two,
+  },
+});

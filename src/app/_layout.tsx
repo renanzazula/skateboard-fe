@@ -1,7 +1,7 @@
 import { Fraunces_700Bold, useFonts } from '@expo-google-fonts/fraunces';
 import { DarkTheme, Stack, ThemeProvider as NavigationThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AuthProvider, useAuth } from '@/core/auth';
@@ -10,7 +10,7 @@ import { env } from '@/core/config/env';
 import { I18nProvider, useLanguageReady } from '@/core/i18n';
 import { CampaignGate } from '@/features/campaign';
 import { useCampaignResolver } from '@/features/campaign/hooks/useCampaignResolver';
-import { PushNotificationsGate } from '@/features/notifications';
+import { PushNotificationsGate, useOpenPendingNotificationTarget, wasLaunchedFromNotification } from '@/features/notifications';
 import { RouteErrorFallback } from '@/shared/components/RouteErrorFallback';
 
 SplashScreen.preventAutoHideAsync();
@@ -48,11 +48,19 @@ function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
   const { status } = useAuth();
   const languageReady = useLanguageReady();
 
+  // Read once, on the first render of the process: a tap that launched the
+  // app is the user asking for that episode, so the startup campaign is
+  // skipped for this launch rather than played in between. Nothing is marked
+  // shown, so the campaign still appears on the next ordinary launch. Taps on
+  // an app that is already running never get here — the resolver only runs
+  // once per process.
+  const [launchedFromNotification] = useState(wasLaunchedFromNotification);
+
   // Owned here (not inside CampaignGate) so its phase can also gate the
   // native splash below — otherwise the stack becomes visible before the
   // campaign overlay is ready, showing Login/Home first with the campaign
   // popping in on top a beat later. See useCampaignResolver.
-  const campaignsEnabled = env.campaignsEnabled && status !== 'loading';
+  const campaignsEnabled = env.campaignsEnabled && status !== 'loading' && !launchedFromNotification;
   const { phase: campaignPhase, campaign, markShown } = useCampaignResolver(campaignsEnabled);
 
   const ready = status !== 'loading' && fontsLoaded && languageReady && campaignPhase === 'ready';
@@ -68,6 +76,12 @@ function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
       SplashScreen.hideAsync().catch(() => undefined);
     }
   }, [ready]);
+
+  // A tapped push is opened here, not where the tap is captured: only once the
+  // session is restored (video/[slug] is behind the signedIn guard) and the
+  // splash has handed off to the stack. Pushed on top of (tabs), so back
+  // returns to Home. A tap while signed out waits through login.
+  useOpenPendingNotificationTarget(ready && status === 'signedIn');
 
   return (
     <NavigationThemeProvider value={DarkTheme}>
