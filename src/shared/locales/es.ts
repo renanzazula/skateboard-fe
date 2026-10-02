@@ -268,7 +268,6 @@ export const es: TranslationKeys = {
     deletePost: 'Eliminar publicación',
     deletePostConfirm: '¿Eliminar “{title}”? No se puede deshacer.',
     deletePostError: 'No se pudo eliminar la publicación',
-    back: 'Atrás',
     editEpisode: 'Editar episodio',
     deleteEpisode: 'Eliminar episodio',
     imageLoadFailed: 'No se pudo cargar la imagen',

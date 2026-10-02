@@ -32,9 +32,11 @@ type Props = {
   children?: ReactNode;
   /** Trailing action, overlaid on the right edge. */
   right?: ReactNode;
+  /** Overrides the default back navigation, e.g. a screen with its own history quirks. */
+  onBack?: () => void;
 };
 
-export function AppHeader({ title, subtitle, showBack = false, children, right }: Props) {
+export function AppHeader({ title, subtitle, showBack = false, children, right, onBack }: Props) {
   const theme = useTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -43,6 +45,10 @@ export function AppHeader({ title, subtitle, showBack = false, children, right }
   // is the first entry on the stack (deep link, notification, or a direct
   // open/refresh on web), which would leave the arrow visibly dead.
   const handleBack = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
     if (router.canGoBack()) {
       router.back();
     } else {

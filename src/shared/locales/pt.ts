@@ -268,7 +268,6 @@ export const pt: TranslationKeys = {
     deletePost: 'Excluir publicação',
     deletePostConfirm: 'Excluir “{title}”? Isso não pode ser desfeito.',
     deletePostError: 'Não foi possível excluir a publicação',
-    back: 'Voltar',
     editEpisode: 'Editar episódio',
     deleteEpisode: 'Excluir episódio',
     imageLoadFailed: 'Não foi possível carregar a imagem',

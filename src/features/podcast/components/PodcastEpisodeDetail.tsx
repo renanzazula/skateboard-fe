@@ -1,9 +1,9 @@
 import { Stack } from 'expo-router';
-import { ArrowLeft, Calendar, Clock, Mic, Pencil, Trash2 } from 'lucide-react-native';
+import { Calendar, Clock, Mic, Pencil, Trash2 } from 'lucide-react-native';
 import { useRef, useState } from 'react';
 import { Animated, Image, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useProfile } from '@/features/account/hooks/useProfile';
 import { EpisodeVideoPlayer } from '@/features/podcast/components/EpisodeVideoPlayer';
 import {
   extractYoutubeIdFromUrl,
@@ -15,6 +15,7 @@ import {
   getYoutubeId,
   type ResolvedSocialLink,
 } from '@/features/podcast/services/episodeMeta';
+import { AppHeader } from '@/shared/components/AppHeader';
 import { Badge } from '@/shared/components/Badge';
 import { BlockRenderer } from '@/shared/components/content/BlockRenderer';
 import { InstagramIcon } from '@/shared/components/icons/InstagramIcon';
@@ -235,7 +236,7 @@ function FloatingActionsBar({
 export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, onBack, onEdit, onDelete }: Props) {
   const colors = useTheme();
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
+  const { profile } = useProfile();
 
   const youtubeId = getYoutubeId(post);
   const spotifyEmbedUrl = getSpotifyEmbedUrl(post);
@@ -245,13 +246,15 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
 
   const [expanded, setExpanded] = useState(false);
 
-  // The action bar is pinned so Back stays reachable at any scroll position,
-  // which means that once the hero scrolls past it the buttons sit on top of
-  // ordinary content — over the Spotify embed, over the title. A background
-  // fades in behind them as the hero leaves, so they land on a surface of
-  // their own instead of colliding with whatever is underneath.
+  // The actions bar is pinned so Edit/Delete stay reachable at any scroll
+  // position, which means that once the hero scrolls past it the buttons sit
+  // on top of ordinary content — over the Spotify embed, over the body copy.
+  // A background fades in behind them as the hero leaves, so they land on a
+  // surface of their own instead of colliding with whatever is underneath.
+  // AppHeader (rendered above this scroll area) already owns the safe-area
+  // top inset, so this bar only needs its own vertical offset.
   const scrollY = useRef(new Animated.Value(0)).current;
-  const headerHeight = insets.top + FLOATING_BAR_INSET * 2 + FLOATING_BUTTON_SIZE;
+  const headerHeight = FLOATING_BAR_INSET * 2 + FLOATING_BUTTON_SIZE;
   const fadeEnd = Math.max(1, HERO_HEIGHT - headerHeight);
   const headerOpacity = scrollY.interpolate({
     inputRange: [Math.max(0, fadeEnd - HEADER_FADE_DISTANCE), fadeEnd],
@@ -268,6 +271,11 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
   const hasVideo = !!(youtubeId || heroVideoUrl);
 
   const heroUri = post.coverUrl || null;
+
+  // Same `@handle` convention as the Podcast list and Settings headers (see
+  // podcast/index.tsx) — the signed-in user's own profile, not a per-post
+  // author: the BFF has no endpoint to resolve another user's id to a handle.
+  const subtitle = profile?.username ? `@${profile.username}` : undefined;
 
   const publishDate = new Date(post.publishAt ?? post.createdAt).toLocaleDateString(undefined, {
     year: 'numeric',
@@ -294,73 +302,75 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
-      <Animated.ScrollView
-        contentContainerStyle={styles.scrollContent}
-        scrollEventThrottle={16}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}>
-        <View style={styles.hero}>
-          <EpisodeHero hasVideo={hasVideo} youtubeId={youtubeId} heroVideoUrl={heroVideoUrl} heroUri={heroUri} colors={colors} />
-        </View>
+      {/* Back arrow + centered title/username, same shell as Settings and the
+          Podcast list (AppHeader) — truncates to one line each, so a long
+          episode title can't overlap the back arrow. */}
+      <AppHeader title={post.title} subtitle={subtitle} showBack onBack={onBack} />
 
-        <View style={styles.body}>
-          {episodeNumber ? <Badge label={`EP #${episodeNumber}`} style={styles.epBadge} /> : null}
-
-          <Text style={[styles.title, { color: colors.textPrimary }]}>{post.title}</Text>
-
-          <View style={styles.metaRow}>
-            <Calendar size={14} color={colors.textSecondary} />
-            <Text style={[styles.metaText, { color: colors.textSecondary }]}>{publishDate}</Text>
-            {duration ? (
-              <>
-                <Clock size={14} color={colors.textSecondary} />
-                <Text style={[styles.metaText, { color: colors.textSecondary }]}>{duration}</Text>
-              </>
-            ) : null}
+      <View style={styles.content}>
+        <Animated.ScrollView
+          contentContainerStyle={styles.scrollContent}
+          scrollEventThrottle={16}
+          onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}>
+          <View style={styles.hero}>
+            <EpisodeHero hasVideo={hasVideo} youtubeId={youtubeId} heroVideoUrl={heroVideoUrl} heroUri={heroUri} colors={colors} />
           </View>
 
-          <SocialLinksRow links={socialLinks} colors={colors} />
+          <View style={styles.body}>
+            {episodeNumber ? <Badge label={`EP #${episodeNumber}`} style={styles.epBadge} /> : null}
 
-          {spotifyEmbedUrl ? <SpotifyEmbedSection url={spotifyEmbedUrl} colors={colors} t={t} /> : null}
+            <View style={styles.metaRow}>
+              <Calendar size={14} color={colors.textSecondary} />
+              <Text style={[styles.metaText, { color: colors.textSecondary }]}>{publishDate}</Text>
+              {duration ? (
+                <>
+                  <Clock size={14} color={colors.textSecondary} />
+                  <Text style={[styles.metaText, { color: colors.textSecondary }]}>{duration}</Text>
+                </>
+              ) : null}
+            </View>
 
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+            <SocialLinksRow links={socialLinks} colors={colors} />
 
-          <DescriptionSection
-            description={description}
-            shownDescription={shownDescription}
-            collapsible={collapsible}
-            expanded={expanded}
-            onToggle={() => setExpanded((v) => !v)}
-            colors={colors}
-            t={t}
-          />
+            {spotifyEmbedUrl ? <SpotifyEmbedSection url={spotifyEmbedUrl} colors={colors} t={t} /> : null}
 
-          <ExtraBlocksSection blocks={extraBlocks} />
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-          <Text style={[styles.footerCaption, { color: colors.textMuted }]}>
-            {t('podcast.recordedOn', { date: publishDate })}
-          </Text>
+            <DescriptionSection
+              description={description}
+              shownDescription={shownDescription}
+              collapsible={collapsible}
+              expanded={expanded}
+              onToggle={() => setExpanded((v) => !v)}
+              colors={colors}
+              t={t}
+            />
+
+            <ExtraBlocksSection blocks={extraBlocks} />
+
+            <Text style={[styles.footerCaption, { color: colors.textMuted }]}>
+              {t('podcast.recordedOn', { date: publishDate })}
+            </Text>
+          </View>
+        </Animated.ScrollView>
+
+        {/* Painted before the bar so the buttons stay on top of it. */}
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.headerBackground,
+            {
+              height: headerHeight,
+              backgroundColor: colors.background,
+              borderBottomColor: colors.border,
+              opacity: headerOpacity,
+            },
+          ]}
+        />
+
+        <View style={[styles.floatingBar, { top: FLOATING_BAR_INSET }]}>
+          <FloatingActionsBar canEdit={canEdit} canDelete={canDelete} onEdit={onEdit} onDelete={onDelete} colors={colors} t={t} />
         </View>
-      </Animated.ScrollView>
-
-      {/* Painted before the bar so the buttons stay on top of it. */}
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          styles.headerBackground,
-          {
-            height: headerHeight,
-            backgroundColor: colors.background,
-            borderBottomColor: colors.border,
-            opacity: headerOpacity,
-          },
-        ]}
-      />
-
-      <View style={[styles.floatingBar, { top: insets.top + FLOATING_BAR_INSET }]}>
-        <FloatingButton onPress={onBack} label={t('podcast.back')}>
-          <ArrowLeft size={20} color={OVERLAY.white} />
-        </FloatingButton>
-        <FloatingActionsBar canEdit={canEdit} canDelete={canDelete} onEdit={onEdit} onDelete={onDelete} colors={colors} t={t} />
       </View>
     </View>
   );
@@ -368,6 +378,9 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  content: {
     flex: 1,
   },
   scrollContent: {
@@ -391,10 +404,8 @@ const styles = StyleSheet.create({
   },
   floatingBar: {
     position: 'absolute',
-    left: 14,
     right: 14,
     flexDirection: 'row',
-    justifyContent: 'space-between',
   },
   floatingActions: {
     flexDirection: 'row',
@@ -416,12 +427,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   epBadge: {
-    marginBottom: 10,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: -0.5,
     marginBottom: 10,
   },
   metaRow: {

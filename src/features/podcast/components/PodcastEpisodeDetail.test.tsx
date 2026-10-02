@@ -6,6 +6,11 @@ import type { Post } from '@/shared/types/posts';
 
 jest.mock('expo-router', () => ({
   Stack: { Screen: () => null },
+  router: { canGoBack: jest.fn(), back: jest.fn(), replace: jest.fn() },
+}));
+
+jest.mock('@/features/account/hooks/useProfile', () => ({
+  useProfile: jest.fn(() => ({ profile: { username: 'skater8' } })),
 }));
 
 jest.mock('react-native-webview', () => {
@@ -53,6 +58,7 @@ describe('PodcastEpisodeDetail', () => {
 
     expect(screen.getByText('video-player-abc12345678')).toBeTruthy();
     expect(screen.getByText('Big Air Session')).toBeTruthy();
+    expect(screen.getByText('@skater8')).toBeTruthy();
     expect(screen.getByText('EP #12')).toBeTruthy();
     expect(screen.getByText('12:34')).toBeTruthy();
     expect(screen.getByText('A short description.')).toBeTruthy();

@@ -267,7 +267,6 @@ export const en = {
     deletePost: 'Delete post',
     deletePostConfirm: 'Delete “{title}”? This can’t be undone.',
     deletePostError: 'Could not delete post',
-    back: 'Back',
     editEpisode: 'Edit episode',
     deleteEpisode: 'Delete episode',
     imageLoadFailed: 'Image could not be loaded',

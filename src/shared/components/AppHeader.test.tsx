@@ -63,6 +63,19 @@ describe('AppHeader', () => {
     expect(mockBack).not.toHaveBeenCalled();
   });
 
+  it('calls the onBack override instead of the default navigation', async () => {
+    const onBack = jest.fn();
+    const user = userEvent.setup();
+    await render(<AppHeader title="Episode" showBack onBack={onBack} />);
+
+    await user.press(screen.getByRole('button'));
+
+    expect(onBack).toHaveBeenCalledTimes(1);
+    expect(mockCanGoBack).not.toHaveBeenCalled();
+    expect(mockBack).not.toHaveBeenCalled();
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
   it('renders a trailing action when given', async () => {
     await render(<AppHeader title="Notifications" right={<Text>Mark all</Text>} />);
 
