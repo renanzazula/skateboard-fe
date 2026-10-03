@@ -10,6 +10,7 @@ import {
   getConsumedBlocks,
   getDescription,
   getDuration,
+  getEpisodeTitle,
   getSocialLinks,
   getSpotifyEmbedUrl,
   getYoutubeId,
@@ -305,7 +306,7 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
       {/* Back arrow + centered title/username, same shell as Settings and the
           Podcast list (AppHeader) — truncates to one line each, so a long
           episode title can't overlap the back arrow. */}
-      <AppHeader title={post.title} subtitle={subtitle} showBack onBack={onBack} />
+      <AppHeader title={getEpisodeTitle(post)} subtitle={subtitle} showBack onBack={onBack} />
 
       <View style={styles.content}>
         <Animated.ScrollView
@@ -318,7 +319,7 @@ export function PodcastEpisodeDetail({ post, episodeNumber, canEdit, canDelete, 
 
           <View style={styles.body}>
             {episodeNumber ? <Badge label={`EP #${episodeNumber}`} style={styles.epBadge} /> : null}
-
+            <Text style={[styles.title, { color: colors.textPrimary }]}>{post.title}</Text>
             <View style={styles.metaRow}>
               <Calendar size={14} color={colors.textSecondary} />
               <Text style={[styles.metaText, { color: colors.textSecondary }]}>{publishDate}</Text>
@@ -427,6 +428,12 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   epBadge: {
+    marginBottom: 10,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: -0.5,
     marginBottom: 10,
   },
   metaRow: {

@@ -41,6 +41,17 @@ export function getEpisodeNumber(post: Post): number | null {
   return match ? Number.parseInt(match[1], 10) : null;
 }
 
+// The detail header already shows "EP #<n>" via getEpisodeNumber, so the
+// imported "… - Skateboard Podcast #87" suffix on the title would otherwise
+// be repeated there. Strips it when present, leaving the episode number in
+// place; titles without that dash (e.g. the bare "Skateboard Podcast #87"
+// some imports carry) pass through unchanged since there's nothing else to
+// show in its place.
+export function getEpisodeTitle(post: Post): string {
+  const cleaned = post.title.replace(/\s*[-–—]\s*Skateboard Podcast\s*/i, ' ').replace(/\s+/g, ' ').trim();
+  return cleaned || post.title;
+}
+
 // Prefers the platform link the sync jobs attach (see
 // .docs/README_SPOTIFY_YOUTUBE_PODCAST_INTEGRATION.md) — the only source for
 // synced episodes, which never carry a `spotify` content block. Falls back to

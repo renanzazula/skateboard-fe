@@ -4,6 +4,7 @@ import {
   getDescription,
   getDuration,
   getEpisodeNumber,
+  getEpisodeTitle,
   getInstagramUrl,
   getSocialLinks,
   getSpotifyEmbedUrl,
@@ -88,6 +89,31 @@ describe('getEpisodeNumber', () => {
 
   it('returns null when no number is present', () => {
     expect(getEpisodeNumber(makePost({ title: 'No number here' }))).toBeNull();
+  });
+});
+
+describe('getEpisodeTitle', () => {
+  it('strips the "- Skateboard Podcast" suffix, keeping the episode number', () => {
+    expect(getEpisodeTitle(makePost({ title: 'Big Air Session - Skateboard Podcast #87' }))).toBe(
+      'Big Air Session #87',
+    );
+  });
+
+  it('handles an en dash or em dash separator', () => {
+    expect(getEpisodeTitle(makePost({ title: 'Big Air Session – Skateboard Podcast #87' }))).toBe(
+      'Big Air Session #87',
+    );
+    expect(getEpisodeTitle(makePost({ title: 'Big Air Session — Skateboard Podcast #87' }))).toBe(
+      'Big Air Session #87',
+    );
+  });
+
+  it('leaves a title with no dash-separated suffix unchanged', () => {
+    expect(getEpisodeTitle(makePost({ title: 'Skateboard Podcast #87' }))).toBe('Skateboard Podcast #87');
+  });
+
+  it('leaves an unrelated title unchanged', () => {
+    expect(getEpisodeTitle(makePost({ title: 'Episode' }))).toBe('Episode');
   });
 });
 
