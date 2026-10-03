@@ -93,12 +93,6 @@ function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
           See features/campaign/CampaignGate. */}
       <CampaignGate phase={campaignPhase} campaign={campaign} markShown={markShown}>
         <Stack screenOptions={{ headerShown: false }}>
-          {/* Unguarded — outside both Stack.Protected blocks below, so it
-              renders whether signed in or signed out. This is the one route
-              the App Store / Play Store listing links to, and app reviewers
-              must be able to open it with no login at all; its content
-              (GET /api/privacy-policy) is likewise fully anonymous. */}
-          <Stack.Screen name="privacy-policy" />
           <Stack.Protected guard={status === 'signedIn'}>
             <Stack.Screen name="(tabs)" />
             {/* Sits above (tabs) so Home can link into it without pushing onto
@@ -110,6 +104,17 @@ function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
           <Stack.Protected guard={status !== 'signedIn'}>
             <Stack.Screen name="(auth)" />
           </Stack.Protected>
+          {/* Unguarded — outside both Stack.Protected blocks above, so it
+              renders whether signed in or signed out. This is the one route
+              the App Store / Play Store listing links to, and app reviewers
+              must be able to open it with no login at all; its content
+              (GET /api/privacy-policy) is likewise fully anonymous.
+              Declared LAST: the native stack navigator defaults
+              initialRouteName to the first declared Screen when none is set
+              explicitly, so this must not sit before (tabs)/(auth) — doing so
+              previously hijacked "/" into opening this screen on every
+              fresh mount (e.g. right after login), instead of (tabs). */}
+          <Stack.Screen name="privacy-policy" />
         </Stack>
       </CampaignGate>
     </NavigationThemeProvider>
