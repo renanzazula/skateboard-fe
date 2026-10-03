@@ -168,15 +168,12 @@ export const en = {
     legal: 'Legal',
     support: 'Support',
     termsTitle: 'Terms & Conditions',
-    privacyTitle: 'Privacy Policy',
     licensesTitle: 'Open-source licenses',
     supportTitle: 'Contact / Support',
     contactSupport: 'Contact & support',
     reportProblem: 'Report a problem',
     termsBody:
       'These mobile terms are pending final legal copy. Until then, use Skateboard responsibly, respect other users, and follow the platform rules provided by Skateboard.',
-    privacyBody:
-      'The final privacy policy is pending. This app should only collect data needed for authentication, profile features, preferences, notifications, support, and normal app operation.',
     licensesBody:
       'Open-source license details will be generated from the production dependency list before release. Current major dependencies include Expo, React, React Native, Expo Router, and openapi-fetch.',
     supportBody:
@@ -289,6 +286,13 @@ export const en = {
     emptyPreview: 'Add sections and publish to make this page visible to everyone.',
     loadError: 'Could not load the About Us page.',
   },
+  privacyPolicy: {
+    title: 'Privacy Policy',
+    loadError: 'Could not load the Privacy Policy page.',
+    emptyTitle: 'Nothing here yet',
+    emptyDescription: 'The Privacy Policy hasn’t been published yet. Check back soon.',
+    emptyPreview: 'Add the policy text and publish to make this page visible to everyone.',
+  },
   admin: {
     administration: {
       title: 'Administration',
@@ -303,6 +307,8 @@ export const en = {
       podcastSyncSubtitle: 'Sync now & manage categories',
       aboutUs: 'About Us',
       aboutUsSubtitle: 'Build the About Us page from content sections',
+      privacyPolicy: 'Privacy Policy',
+      privacyPolicySubtitle: 'Edit and publish the Privacy Policy text',
       campaigns: 'Startup Campaigns',
       campaignsSubtitle: 'Full-screen sponsor & announcement screens shown at launch',
     },
@@ -511,6 +517,23 @@ export const en = {
       toggleVisible: 'Toggle section visibility',
       validationTitleRequired: 'A page title is required',
       validationInvalidUrl: 'Invalid URL. Must start with http:// or https://',
+    },
+    privacyPolicy: {
+      title: 'Privacy Policy',
+      loadError: 'Could not load the Privacy Policy page.',
+      saved: 'Privacy Policy saved.',
+      saveError: 'Could not save the Privacy Policy',
+      tabEdit: 'Edit',
+      tabPreview: 'Preview',
+      pageTitle: 'Page title',
+      bodyLabel: 'Policy text',
+      status: 'Status',
+      status_draft: 'Draft',
+      status_published: 'Published',
+      saveDraft: 'Save draft',
+      saveAndPublish: 'Save & publish',
+      validationTitleRequired: 'A page title is required',
+      validationBodyRequired: 'Policy text is required',
     },
   },
   campaign: {

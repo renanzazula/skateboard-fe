@@ -1,5 +1,5 @@
 import { Redirect, router } from 'expo-router';
-import { Home, Info, Megaphone, Mic, Music, Palette } from 'lucide-react-native';
+import { Home, Info, Megaphone, Mic, Music, Palette, Shield } from 'lucide-react-native';
 import { ScrollView, StyleSheet } from 'react-native';
 
 import { useAuth } from '@/core/auth';
@@ -21,6 +21,7 @@ export default function AdministrationScreen() {
   const canConfigureFeaturedPlayer = hasAuthority('FUNC_HOME_FEATURED_PLAYER_CONFIG');
   const canAdministerPodcast = hasAuthority('FUNC_PODCAST_IMPORT_JSON') || hasAuthority('FUNC_PODCAST_MANAGE_CATEGORIES');
   const canManageAboutUs = hasAuthority('FUNC_ABOUT_US_MANAGE');
+  const canManagePrivacyPolicy = hasAuthority('FUNC_PRIVACY_POLICY_MANAGE');
   // Campaign READ alone (which STANDARD holds) does not open the admin area;
   // the row shows for anyone who can already see this section and can also
   // manage/publish campaigns. STANDARD users never reach here.
@@ -33,6 +34,7 @@ export default function AdministrationScreen() {
     !canConfigureFeaturedPlayer &&
     !canAdministerPodcast &&
     !canManageAboutUs &&
+    !canManagePrivacyPolicy &&
     !canReadCampaigns
   ) {
     return <Redirect href="/settings" />;
@@ -85,6 +87,15 @@ export default function AdministrationScreen() {
             title={t('admin.administration.aboutUs')}
             subtitle={t('admin.administration.aboutUsSubtitle')}
             onPress={() => router.push('/settings/about-us-admin')}
+            trailing={{ type: 'chevron' }}
+          />
+        ) : null}
+        {canManagePrivacyPolicy ? (
+          <SettingsRow
+            icon={Shield}
+            title={t('admin.administration.privacyPolicy')}
+            subtitle={t('admin.administration.privacyPolicySubtitle')}
+            onPress={() => router.push('/settings/privacy-policy-admin')}
             trailing={{ type: 'chevron' }}
           />
         ) : null}

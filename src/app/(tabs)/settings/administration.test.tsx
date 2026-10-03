@@ -52,6 +52,7 @@ describe('AdministrationScreen', () => {
     expect(screen.queryByText('Featured Player')).toBeNull();
     expect(screen.queryByText('Podcast sync')).toBeNull();
     expect(screen.queryByText('About Us')).toBeNull();
+    expect(screen.queryByText('Privacy Policy')).toBeNull();
     expect(screen.queryByText('Startup Campaigns')).toBeNull();
   });
 
@@ -76,6 +77,7 @@ describe('AdministrationScreen', () => {
       'FUNC_HOME_FEATURED_PLAYER_CONFIG',
       'FUNC_PODCAST_IMPORT_JSON',
       'FUNC_ABOUT_US_MANAGE',
+      'FUNC_PRIVACY_POLICY_MANAGE',
       'FUNC_CAMPAIGN_PUBLISH',
     ]);
     const user = userEvent.setup();
@@ -95,6 +97,9 @@ describe('AdministrationScreen', () => {
 
     await user.press(screen.getByText('About Us'));
     expect(mockRouterPush).toHaveBeenLastCalledWith('/settings/about-us-admin');
+
+    await user.press(screen.getByText('Privacy Policy'));
+    expect(mockRouterPush).toHaveBeenLastCalledWith('/settings/privacy-policy-admin');
 
     await user.press(screen.getByText('Startup Campaigns'));
     expect(mockRouterPush).toHaveBeenLastCalledWith('/settings/campaigns');

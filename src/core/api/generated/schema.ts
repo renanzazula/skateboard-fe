@@ -497,6 +497,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/privacy-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the published Privacy Policy page (anonymous, no auth required)
+         * @description Fully public — no bearer token required or expected. This is the URL given to Apple/Google app review and shown pre-login.
+         */
+        get: operations["getPrivacyPolicy"];
+        /**
+         * Create or update the Privacy Policy page (admin only)
+         * @description Saves the single Privacy Policy page. `status: published` makes it visible on GET /api/privacy-policy (anonymous); `status: draft` keeps changes admin-only.
+         */
+        put: operations["updatePrivacyPolicy"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/privacy-policy/admin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the Privacy Policy page including unpublished draft content (admin only) */
+        get: operations["getPrivacyPolicyAdmin"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/config": {
         parameters: {
             query?: never;
@@ -1316,6 +1357,21 @@ export interface components {
         };
         AboutImageResponse: {
             url: string;
+        };
+        /** @enum {string} */
+        PrivacyPolicyStatus: "draft" | "published";
+        PrivacyPolicyResponse: {
+            title: string;
+            body: string;
+            status: components["schemas"]["PrivacyPolicyStatus"];
+            /** Format: date-time */
+            updatedAt?: string | null;
+            updatedBy?: string | null;
+        };
+        UpdatePrivacyPolicyRequest: {
+            title: string;
+            body: string;
+            status: components["schemas"]["PrivacyPolicyStatus"];
         };
         ErrorResponse: {
             /** @description Stable machine-readable code, e.g. APP_CONFIG_SERVICE_UNAVAILABLE */
@@ -2957,6 +3013,129 @@ export interface operations {
                 };
             };
             /** @description Forbidden – FUNC_ABOUT_US_MANAGE required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getPrivacyPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The published Privacy Policy page */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrivacyPolicyResponse"];
+                };
+            };
+            /** @description No Privacy Policy page has been published yet */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updatePrivacyPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePrivacyPolicyRequest"];
+            };
+        };
+        responses: {
+            /** @description Privacy Policy page saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrivacyPolicyResponse"];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_PRIVACY_POLICY_MANAGE required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getPrivacyPolicyAdmin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The current Privacy Policy page (draft or published) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrivacyPolicyResponse"];
+                };
+            };
+            /** @description No Privacy Policy page has been created yet */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_PRIVACY_POLICY_MANAGE required */
             403: {
                 headers: {
                     [name: string]: unknown;

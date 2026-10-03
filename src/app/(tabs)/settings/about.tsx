@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { router } from 'expo-router';
 import { Code, FileText, Flag, HelpCircle, Shield } from 'lucide-react-native';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet } from 'react-native';
@@ -12,11 +13,10 @@ import { ThemedView } from '@/shared/components/themed-view';
 import { RADII, Spacing } from '@/shared/constants/theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 
-type AboutTopic = 'terms' | 'privacy' | 'licenses' | 'support';
+type AboutTopic = 'terms' | 'licenses' | 'support';
 
 const ABOUT_TOPIC_KEYS = {
   terms: { title: 'settings.termsTitle', body: 'settings.termsBody' },
-  privacy: { title: 'settings.privacyTitle', body: 'settings.privacyBody' },
   licenses: { title: 'settings.licensesTitle', body: 'settings.licensesBody' },
   support: { title: 'settings.supportTitle', body: 'settings.supportBody' },
 } as const satisfies Record<AboutTopic, { title: string; body: string }>;
@@ -69,7 +69,7 @@ export default function AboutScreen() {
 
         <SettingsSection label={t('settings.legal')}>
           <SettingsRow icon={FileText} title={t('settings.termsTitle')} onPress={() => setTopic('terms')} trailing={{ type: 'chevron' }} />
-          <SettingsRow icon={Shield} title={t('settings.privacyTitle')} onPress={() => setTopic('privacy')} trailing={{ type: 'chevron' }} />
+          <SettingsRow icon={Shield} title={t('privacyPolicy.title')} onPress={() => router.push('/privacy-policy')} trailing={{ type: 'chevron' }} />
           <SettingsRow icon={Code} title={t('settings.licensesTitle')} onPress={() => setTopic('licenses')} trailing={{ type: 'chevron' }} />
         </SettingsSection>
 

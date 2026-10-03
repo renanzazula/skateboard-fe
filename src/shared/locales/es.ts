@@ -169,15 +169,12 @@ export const es: TranslationKeys = {
     legal: 'Legal',
     support: 'Soporte',
     termsTitle: 'Términos y condiciones',
-    privacyTitle: 'Política de privacidad',
     licensesTitle: 'Licencias de código abierto',
     supportTitle: 'Contacto / Soporte',
     contactSupport: 'Contacto y soporte',
     reportProblem: 'Informar de un problema',
     termsBody:
       'Estos términos para móvil están pendientes de la redacción legal final. Hasta entonces, usa Skateboard de forma responsable, respeta a los demás usuarios y sigue las normas de la plataforma proporcionadas por Skateboard.',
-    privacyBody:
-      'La política de privacidad final está pendiente. Esta app solo debería recopilar los datos necesarios para la autenticación, las funciones de perfil, las preferencias, las notificaciones, el soporte y el funcionamiento normal de la app.',
     licensesBody:
       'Los detalles de las licencias de código abierto se generarán a partir de la lista de dependencias de producción antes del lanzamiento. Las dependencias principales actuales incluyen Expo, React, React Native, Expo Router y openapi-fetch.',
     supportBody:
@@ -290,6 +287,13 @@ export const es: TranslationKeys = {
     emptyPreview: 'Agrega secciones y publica para que todos vean esta página.',
     loadError: 'No se pudo cargar la página Acerca de nosotros.',
   },
+  privacyPolicy: {
+    title: 'Política de privacidad',
+    loadError: 'No se pudo cargar la Política de privacidad.',
+    emptyTitle: 'Todavía no hay nada',
+    emptyDescription: 'La Política de privacidad aún no se ha publicado. Vuelve pronto.',
+    emptyPreview: 'Agrega el texto de la política y publícalo para que todos lo vean.',
+  },
   admin: {
     administration: {
       title: 'Administración',
@@ -304,6 +308,8 @@ export const es: TranslationKeys = {
       podcastSyncSubtitle: 'Sincroniza ahora y gestiona categorías',
       aboutUs: 'Acerca de nosotros',
       aboutUsSubtitle: 'Crea la página Acerca de nosotros con secciones de contenido',
+      privacyPolicy: 'Política de privacidad',
+      privacyPolicySubtitle: 'Edita y publica el texto de la Política de privacidad',
       campaigns: 'Campañas de inicio',
       campaignsSubtitle: 'Pantallas de patrocinadores y anuncios a pantalla completa al abrir la app',
     },
@@ -512,6 +518,23 @@ export const es: TranslationKeys = {
       toggleVisible: 'Mostrar u ocultar la sección',
       validationTitleRequired: 'Se requiere un título de página',
       validationInvalidUrl: 'URL no válida. Debe comenzar con http:// o https://',
+    },
+    privacyPolicy: {
+      title: 'Política de privacidad',
+      loadError: 'No se pudo cargar la Política de privacidad.',
+      saved: 'Política de privacidad guardada.',
+      saveError: 'No se pudo guardar la Política de privacidad',
+      tabEdit: 'Editar',
+      tabPreview: 'Vista previa',
+      pageTitle: 'Título de la página',
+      bodyLabel: 'Texto de la política',
+      status: 'Estado',
+      status_draft: 'Borrador',
+      status_published: 'Publicada',
+      saveDraft: 'Guardar borrador',
+      saveAndPublish: 'Guardar y publicar',
+      validationTitleRequired: 'Se requiere un título de página',
+      validationBodyRequired: 'Se requiere el texto de la política',
     },
   },
   campaign: {

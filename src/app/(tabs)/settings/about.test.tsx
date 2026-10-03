@@ -1,13 +1,19 @@
+import { router } from 'expo-router';
 import { render, screen, userEvent } from '@testing-library/react-native';
 
 import AboutScreen from '@/app/(tabs)/settings/about';
 import { useProfile } from '@/features/account/hooks/useProfile';
+
+jest.mock('expo-router', () => ({
+  router: { push: jest.fn() },
+}));
 
 jest.mock('@/features/account/hooks/useProfile', () => ({
   useProfile: jest.fn(),
 }));
 
 const mockUseProfile = useProfile as jest.Mock;
+const mockRouterPush = router.push as jest.Mock;
 
 describe('AboutScreen', () => {
   beforeEach(() => {
@@ -39,12 +45,12 @@ describe('AboutScreen', () => {
     expect(screen.queryByText(/pending final legal copy/)).toBeNull();
   });
 
-  it('opens the privacy modal', async () => {
+  it('navigates to the public Privacy Policy screen', async () => {
     const user = userEvent.setup();
     await render(<AboutScreen />);
 
     await user.press(screen.getByText('Privacy Policy'));
-    expect(await screen.findByText(/final privacy policy is pending/)).toBeTruthy();
+    expect(mockRouterPush).toHaveBeenCalledWith('/privacy-policy');
   });
 
   it('opens the licenses modal', async () => {
