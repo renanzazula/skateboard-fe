@@ -27,6 +27,11 @@ jest.mock('@/features/podcast/hooks/usePodcastFeed', () => ({
   usePodcastFeed: jest.fn(),
 }));
 
+// The debounce has its own test; here the typed term should reach the feed hook at once.
+jest.mock('@/shared/hooks/useDebouncedValue', () => ({
+  useDebouncedValue: <T,>(value: T) => value,
+}));
+
 const { useRouter } = jest.requireMock('expo-router');
 const mockUseAuth = useAuth as jest.Mock;
 const mockUseProfile = useProfile as jest.Mock;
@@ -146,5 +151,61 @@ describe('PodcastListScreen', () => {
     await render(<PodcastListScreen />);
 
     expect(screen.getByText('All 1 episodes loaded')).toBeTruthy();
+  });
+
+  describe('episode search', () => {
+    it('passes the typed search to the feed for the selected category', async () => {
+      const news = { id: 'c1', slug: 'news', name: 'News', coverUrl: null, isDefault: true, postCount: 3 };
+      mockUseCategories.mockReturnValue(categories({ categories: [news], defaultCategory: news }));
+      const user = userEvent.setup();
+      await render(<PodcastListScreen />);
+
+      await user.type(screen.getByLabelText('Search episodes'), '42');
+
+      expect(mockUsePodcastFeed).toHaveBeenLastCalledWith('news', '42');
+    });
+
+    it('shows a no-results state that clears the search back to the full list', async () => {
+      mockUsePodcastFeed.mockImplementation((_slug: string | undefined, search: string) =>
+        (search ? feed() : feed({ posts: [POST], total: 1 }))
+      );
+      const user = userEvent.setup();
+      await render(<PodcastListScreen />);
+
+      await user.type(screen.getByLabelText('Search episodes'), 'kickflip');
+
+      expect(screen.getByText('No episodes match “kickflip”')).toBeTruthy();
+      expect(screen.queryByText('No videos available in this category yet.')).toBeNull();
+
+      await user.press(screen.getByText('Clear search'));
+
+      expect(mockUsePodcastFeed).toHaveBeenLastCalledWith(undefined, '');
+      expect(screen.getByText('Big Air Session')).toBeTruthy();
+    });
+
+    it('clears from the field’s own clear button', async () => {
+      const user = userEvent.setup();
+      await render(<PodcastListScreen />);
+
+      await user.type(screen.getByLabelText('Search episodes'), 'skate');
+      await user.press(screen.getByLabelText('Clear search'));
+
+      expect(screen.getByLabelText('Search episodes').props.value).toBe('');
+      expect(mockUsePodcastFeed).toHaveBeenLastCalledWith(undefined, '');
+    });
+
+    it('does not invent a position-based episode number for search results', async () => {
+      mockUsePodcastFeed.mockImplementation((_slug: string | undefined, search: string) =>
+        feed({ posts: [POST], total: search ? 1 : 9 })
+      );
+      const user = userEvent.setup();
+      await render(<PodcastListScreen />);
+      expect(screen.getByLabelText('Big Air Session, episode 9')).toBeTruthy();
+
+      await user.type(screen.getByLabelText('Search episodes'), 'big air');
+
+      expect(screen.getByLabelText('Big Air Session')).toBeTruthy();
+      expect(screen.queryByText(/EP #/)).toBeNull();
+    });
   });
 });

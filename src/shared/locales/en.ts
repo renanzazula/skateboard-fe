@@ -244,6 +244,11 @@ export const en = {
     saveChangesError: 'Could not save changes',
   },
   podcast: {
+    searchLabel: 'Search episodes',
+    searchPlaceholder: 'Search by title or episode number',
+    clearSearch: 'Clear search',
+    noSearchResults: 'No episodes match “{query}”',
+    noSearchResultsHint: 'Try another title, or an episode number like 42.',
     watch: 'Watch',
     listenOnSpotify: 'Listen on Spotify',
     showMore: 'Show more',

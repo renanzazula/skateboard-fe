@@ -245,6 +245,11 @@ export const es: TranslationKeys = {
     saveChangesError: 'No se pudieron guardar los cambios',
   },
   podcast: {
+    searchLabel: 'Buscar episodios',
+    searchPlaceholder: 'Buscar por título o número de episodio',
+    clearSearch: 'Borrar búsqueda',
+    noSearchResults: 'Ningún episodio coincide con “{query}”',
+    noSearchResultsHint: 'Prueba con otro título o con un número de episodio, como 42.',
     watch: 'Ver',
     listenOnSpotify: 'Escuchar en Spotify',
     showMore: 'Ver más',
