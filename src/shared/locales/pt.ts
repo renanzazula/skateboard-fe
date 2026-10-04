@@ -245,6 +245,11 @@ export const pt: TranslationKeys = {
     saveChangesError: 'Não foi possível salvar as alterações',
   },
   podcast: {
+    searchLabel: 'Buscar episódios',
+    searchPlaceholder: 'Buscar por título ou número do episódio',
+    clearSearch: 'Limpar busca',
+    noSearchResults: 'Nenhum episódio corresponde a “{query}”',
+    noSearchResultsHint: 'Tente outro título ou um número de episódio, como 42.',
     watch: 'Assistir',
     listenOnSpotify: 'Ouvir no Spotify',
     showMore: 'Ver mais',

@@ -1530,7 +1530,7 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
-                /** @description Case-insensitive title filter (used by the Home Featured Player episode picker) */
+                /** @description Episode search (used by the Home Featured Player episode picker). Case-insensitive partial match on the title; when the whole value is an episode number (`42`, `#42`, `ep 42`, `episode 42`) it also matches that exact episode, which is listed first. Blank means no filter. */
                 search?: string;
             };
             header?: never;
@@ -1873,6 +1873,8 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                /** @description Episode search within the category (Podcast list search field). Case-insensitive partial match on the title; when the whole value is an episode number (`42`, `#42`, `ep 42`, `episode 42`) it also matches that exact episode, which is listed first. Blank means no filter. */
+                search?: string;
             };
             header?: never;
             path: {

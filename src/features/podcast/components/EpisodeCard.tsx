@@ -37,7 +37,9 @@ function formatDate(iso: string): string {
   }
 }
 
-type Props = { post: Post; episodeNumber: number; onPress: () => void };
+// episodeNumber is null when it isn't known — e.g. a search result whose
+// title carries no number, where the list position means nothing.
+type Props = { post: Post; episodeNumber: number | null; onPress: () => void };
 
 export function EpisodeCard({ post, episodeNumber, onPress }: Props) {
   const colors = useTheme();
@@ -54,7 +56,7 @@ export function EpisodeCard({ post, episodeNumber, onPress }: Props) {
       onPress={onPress}
       accessibilityRole="button"
       // One coherent label instead of four separate text nodes.
-      accessibilityLabel={`${post.title}, episode ${episodeNumber}`}>
+      accessibilityLabel={episodeNumber != null ? `${post.title}, episode ${episodeNumber}` : post.title}>
       {imageUri ? (
         <Image
           source={{ uri: imageUri }}
@@ -81,7 +83,7 @@ export function EpisodeCard({ post, episodeNumber, onPress }: Props) {
       />
 
       <View style={styles.overlay}>
-        <Badge label={`EP #${episodeNumber}`} style={styles.badge} />
+        {episodeNumber != null ? <Badge label={`EP #${episodeNumber}`} style={styles.badge} /> : null}
         <Text style={styles.title} numberOfLines={2}>
           {post.title}
         </Text>

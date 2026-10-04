@@ -81,4 +81,11 @@ describe('EpisodeCard', () => {
     const updated = findNode(view.toJSON(), (n) => n.type === 'Image')!;
     expect(updated.props.source.uri).toContain('hqdefault');
   });
+
+  it('omits the episode badge and keeps a title-only label when the number is unknown', async () => {
+    await render(<EpisodeCard post={BASE_POST} episodeNumber={null} onPress={jest.fn()} />);
+
+    expect(screen.queryByText(/EP #/)).toBeNull();
+    expect(screen.getByLabelText('Big Air Session')).toBeTruthy();
+  });
 });

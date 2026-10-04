@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Mic, Plus } from 'lucide-react-native';
+import { Mic, Plus, SearchX } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -8,6 +8,7 @@ import { AppHeader } from '@/shared/components/AppHeader';
 import { useProfile } from '@/features/account/hooks/useProfile';
 import { CategorySelector } from '@/features/podcast/components/CategorySelector';
 import { EpisodeCard } from '@/features/podcast/components/EpisodeCard';
+import { EpisodeSearchField } from '@/features/podcast/components/EpisodeSearchField';
 import { useCategories } from '@/features/podcast/hooks/useCategories';
 import { usePodcastFeed } from '@/features/podcast/hooks/usePodcastFeed';
 import { getEpisodeNumber } from '@/features/podcast/services/episodeMeta';
@@ -16,6 +17,7 @@ import { ErrorBanner } from '@/shared/components/ErrorBanner';
 import { isBffError } from '@/shared/api/errors';
 import { BottomTabInset, MAX_CONTENT_WIDTH, Spacing } from '@/shared/constants/theme';
 import { useTheme } from '@/shared/hooks/use-theme';
+import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import type { Category } from '@/shared/types/category';
 import type { Post } from '@/shared/types/posts';
@@ -24,6 +26,10 @@ import { SkateLoader } from '@/shared/components/loader';
 // Ported from rork-standard-app/expo's modules/feed/screens/PodcastScreen.tsx
 // (via migrate/podcast/screens/PodcastScreen.tsx), then reworked for
 // YouTube-playlist categories per .docs/README_YOUTUBE_PLAYLIST_CATEGORIES_MIGRATION.md.
+
+// Long enough to skip the requests for "4" on the way to "42", short enough
+// to still feel live.
+const SEARCH_DEBOUNCE_MS = 300;
 
 export default function PodcastListScreen() {
   const colors = useTheme();
@@ -41,8 +47,15 @@ export default function PodcastListScreen() {
     if (!selectedCategory && defaultCategory) setSelectedCategory(defaultCategory);
   }, [defaultCategory, selectedCategory]);
 
+  // Search filters within the selected category, and survives switching
+  // categories. Clearing is applied immediately rather than after the
+  // debounce, so the full list comes straight back.
+  const [searchText, setSearchText] = useState('');
+  const debouncedSearch = useDebouncedValue(searchText, SEARCH_DEBOUNCE_MS);
+  const activeSearch = searchText.trim() === '' ? '' : debouncedSearch.trim();
+
   const { posts, total, isLoading: postsLoading, error, hasMore, loadMore, refresh: refreshPosts } =
-    usePodcastFeed(selectedCategory?.slug);
+    usePodcastFeed(selectedCategory?.slug, activeSearch);
 
   // This screen stays mounted while the user is on a detail/admin screen, so
   // deletes/edits/creates (and category renames/reorders) made there would
@@ -99,23 +112,32 @@ export default function PodcastListScreen() {
         keyExtractor={(item) => item.id}
         renderItem={({ item, index }) => {
           // Prefer the show's own numbering from the title; fall back to the
-          // row's position in the feed when a title carries no number.
-          const episodeNumber = getEpisodeNumber(item) ?? total - index;
+          // row's position in the feed when a title carries no number — but
+          // not in search results, where the position says nothing.
+          const episodeNumber = getEpisodeNumber(item) ?? (activeSearch ? null : total - index);
           return <EpisodeCard post={item} episodeNumber={episodeNumber} onPress={() => handlePostPress(item)} />;
         }}
         contentContainerStyle={styles.listContent}
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.5}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         ListHeaderComponent={
           <PodcastListHeader
             categories={categories}
             selectedSlug={selectedCategory?.slug}
             onSelectCategory={handleSelectCategory}
+            searchText={searchText}
+            onChangeSearch={setSearchText}
           />
         }
         ListEmptyComponent={
           !postsLoading && !categoriesLoading && !error ? (
-            <PodcastListEmpty canCreate={canCreate} onCreatePress={handleCreatePress} t={t} />
+            activeSearch ? (
+              <PodcastSearchEmpty query={activeSearch} onClear={() => setSearchText('')} t={t} />
+            ) : (
+              <PodcastListEmpty canCreate={canCreate} onCreatePress={handleCreatePress} t={t} />
+            )
           ) : null
         }
         ListFooterComponent={
@@ -151,13 +173,34 @@ type PodcastListHeaderProps = {
   categories: Category[];
   selectedSlug?: string;
   onSelectCategory: (category: Category) => void;
+  searchText: string;
+  onChangeSearch: (value: string) => void;
 };
 
-function PodcastListHeader({ categories, selectedSlug, onSelectCategory }: PodcastListHeaderProps) {
+function PodcastListHeader({ categories, selectedSlug, onSelectCategory, searchText, onChangeSearch }: PodcastListHeaderProps) {
   return (
     <View style={styles.screenHeader}>
       <CategorySelector categories={categories} selectedSlug={selectedSlug} onSelect={onSelectCategory} />
+      <EpisodeSearchField value={searchText} onChangeText={onChangeSearch} />
     </View>
+  );
+}
+
+type PodcastSearchEmptyProps = {
+  query: string;
+  onClear: () => void;
+  t: ReturnType<typeof useTranslation>['t'];
+};
+
+function PodcastSearchEmpty({ query, onClear, t }: PodcastSearchEmptyProps) {
+  return (
+    <EmptyState
+      icon={SearchX}
+      title={t('podcast.noSearchResults', { query })}
+      description={t('podcast.noSearchResultsHint')}
+      actionLabel={t('podcast.clearSearch')}
+      onAction={onClear}
+    />
   );
 }
 
