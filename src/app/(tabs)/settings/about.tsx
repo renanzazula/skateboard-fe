@@ -13,11 +13,9 @@ import { ThemedView } from '@/shared/components/themed-view';
 import { RADII, Spacing } from '@/shared/constants/theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 
-type AboutTopic = 'terms' | 'licenses' | 'support';
+type AboutTopic = 'support';
 
 const ABOUT_TOPIC_KEYS = {
-  terms: { title: 'settings.termsTitle', body: 'settings.termsBody' },
-  licenses: { title: 'settings.licensesTitle', body: 'settings.licensesBody' },
   support: { title: 'settings.supportTitle', body: 'settings.supportBody' },
 } as const satisfies Record<AboutTopic, { title: string; body: string }>;
 
@@ -34,9 +32,11 @@ function AboutModal({ topic, onClose }: { topic: AboutTopic | null; onClose: () 
           {topic ? (
             <>
               <ThemedText type="subtitle">{t(ABOUT_TOPIC_KEYS[topic].title)}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {t(ABOUT_TOPIC_KEYS[topic].body)}
-              </ThemedText>
+              <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {t(ABOUT_TOPIC_KEYS[topic].body)}
+                </ThemedText>
+              </ScrollView>
             </>
           ) : null}
           <Pressable onPress={onClose} style={styles.closeButton}>
@@ -68,9 +68,9 @@ export default function AboutScreen() {
         </SettingsSection>
 
         <SettingsSection label={t('settings.legal')}>
-          <SettingsRow icon={FileText} title={t('settings.termsTitle')} onPress={() => setTopic('terms')} trailing={{ type: 'chevron' }} />
+          <SettingsRow icon={FileText} title={t('terms.title')} onPress={() => router.push('/settings/terms')} trailing={{ type: 'chevron' }} />
           <SettingsRow icon={Shield} title={t('privacyPolicy.title')} onPress={() => router.push('/privacy-policy')} trailing={{ type: 'chevron' }} />
-          <SettingsRow icon={Code} title={t('settings.licensesTitle')} onPress={() => setTopic('licenses')} trailing={{ type: 'chevron' }} />
+          <SettingsRow icon={Code} title={t('licenses.title')} onPress={() => router.push('/settings/licenses')} trailing={{ type: 'chevron' }} />
         </SettingsSection>
 
         <SettingsSection label={t('settings.support')}>
@@ -101,6 +101,10 @@ const styles = StyleSheet.create({
     borderRadius: RADII.card,
     gap: Spacing.three,
     padding: Spacing.four,
+    maxHeight: '80%',
+  },
+  modalScroll: {
+    flexGrow: 0,
   },
   closeButton: {
     alignItems: 'center',

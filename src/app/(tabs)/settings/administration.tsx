@@ -1,5 +1,5 @@
 import { Redirect, router } from 'expo-router';
-import { Home, Info, Megaphone, Mic, Music, Palette, Shield } from 'lucide-react-native';
+import { Code, FileText, Home, Info, Megaphone, Mic, Music, Palette, Shield } from 'lucide-react-native';
 import { ScrollView, StyleSheet } from 'react-native';
 
 import { useAuth } from '@/core/auth';
@@ -22,6 +22,8 @@ export default function AdministrationScreen() {
   const canAdministerPodcast = hasAuthority('FUNC_PODCAST_IMPORT_JSON') || hasAuthority('FUNC_PODCAST_MANAGE_CATEGORIES');
   const canManageAboutUs = hasAuthority('FUNC_ABOUT_US_MANAGE');
   const canManagePrivacyPolicy = hasAuthority('FUNC_PRIVACY_POLICY_MANAGE');
+  const canManageTerms = hasAuthority('FUNC_TERMS_MANAGE');
+  const canManageLicenses = hasAuthority('FUNC_LICENSES_MANAGE');
   // Campaign READ alone (which STANDARD holds) does not open the admin area;
   // the row shows for anyone who can already see this section and can also
   // manage/publish campaigns. STANDARD users never reach here.
@@ -35,6 +37,8 @@ export default function AdministrationScreen() {
     !canAdministerPodcast &&
     !canManageAboutUs &&
     !canManagePrivacyPolicy &&
+    !canManageTerms &&
+    !canManageLicenses &&
     !canReadCampaigns
   ) {
     return <Redirect href="/settings" />;
@@ -96,6 +100,24 @@ export default function AdministrationScreen() {
             title={t('admin.administration.privacyPolicy')}
             subtitle={t('admin.administration.privacyPolicySubtitle')}
             onPress={() => router.push('/settings/privacy-policy-admin')}
+            trailing={{ type: 'chevron' }}
+          />
+        ) : null}
+        {canManageTerms ? (
+          <SettingsRow
+            icon={FileText}
+            title={t('admin.administration.terms')}
+            subtitle={t('admin.administration.termsSubtitle')}
+            onPress={() => router.push('/settings/terms-admin')}
+            trailing={{ type: 'chevron' }}
+          />
+        ) : null}
+        {canManageLicenses ? (
+          <SettingsRow
+            icon={Code}
+            title={t('admin.administration.licenses')}
+            subtitle={t('admin.administration.licensesSubtitle')}
+            onPress={() => router.push('/settings/licenses-admin')}
             trailing={{ type: 'chevron' }}
           />
         ) : null}

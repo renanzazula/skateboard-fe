@@ -538,6 +538,88 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/terms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the published Terms & Conditions page (any authenticated user)
+         * @description Reached from the Settings tab, so it is gated by FUNC_TAB_SETTINGS — the baseline authority every standard user holds.
+         */
+        get: operations["getTerms"];
+        /**
+         * Create or update the Terms & Conditions page (admin only)
+         * @description Saves the single Terms & Conditions page. `status: published` makes it visible on GET /api/terms; `status: draft` keeps changes admin-only.
+         */
+        put: operations["updateTerms"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/terms/admin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the Terms & Conditions page including unpublished draft content (admin only) */
+        get: operations["getTermsAdmin"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/licenses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the published Open-source Licenses page (any authenticated user)
+         * @description Reached from the Settings tab, so it is gated by FUNC_TAB_SETTINGS — the baseline authority every standard user holds.
+         */
+        get: operations["getLicenses"];
+        /**
+         * Create or update the Open-source Licenses page (admin only)
+         * @description Saves the single Open-source Licenses page. `status: published` makes it visible on GET /api/licenses; `status: draft` keeps changes admin-only.
+         */
+        put: operations["updateLicenses"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/licenses/admin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the Open-source Licenses page including unpublished draft content (admin only) */
+        get: operations["getLicensesAdmin"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/config": {
         parameters: {
             query?: never;
@@ -1273,11 +1355,6 @@ export interface components {
         /** @enum {string} */
         HomePlayerPosition: "TOP" | "BOTTOM";
         /**
-         * @description MANUAL: the admin explicitly picks contentId, and it never changes on its own. AUTO: contentId is ignored/absent — the BFF resolves the latest imported YouTube video matching the official "Skateboard Podcast #<n>" episode pattern on every read, so there is nothing to pick manually. Defaults to MANUAL for existing configurations.
-         * @enum {string}
-         */
-        HomePlayerSelectionMode: "MANUAL" | "AUTO";
-        /**
          * @description Which distribution platform to prefer when the featured content has more than one available (e.g. a podcast episode with both a Spotify and a YouTube link). Null/omitted means the resolver decides (today: prefer Spotify, fall back to YouTube). Still falls back to whichever platform is actually available if the preferred one isn't.
          * @enum {string}
          */
@@ -1289,7 +1366,6 @@ export interface components {
             playerType?: components["schemas"]["HomePlayerType"];
             position?: components["schemas"]["HomePlayerPosition"];
             preferredPlatform?: components["schemas"]["PreferredPlaybackPlatform"] | null;
-            selectionMode?: components["schemas"]["HomePlayerSelectionMode"];
             /** Format: date-time */
             updatedAt?: string | null;
         };
@@ -1300,7 +1376,6 @@ export interface components {
             playerType: components["schemas"]["HomePlayerType"];
             position: components["schemas"]["HomePlayerPosition"];
             preferredPlatform?: components["schemas"]["PreferredPlaybackPlatform"] | null;
-            selectionMode: components["schemas"]["HomePlayerSelectionMode"];
         };
         HomeFeaturedPlayerPlayback: {
             /** @description Playback adapter the mini player should use, e.g. SPOTIFY_EMBED or YOUTUBE. */
@@ -1372,6 +1447,36 @@ export interface components {
             title: string;
             body: string;
             status: components["schemas"]["PrivacyPolicyStatus"];
+        };
+        /** @enum {string} */
+        TermsStatus: "draft" | "published";
+        TermsResponse: {
+            title: string;
+            body: string;
+            status: components["schemas"]["TermsStatus"];
+            /** Format: date-time */
+            updatedAt?: string | null;
+            updatedBy?: string | null;
+        };
+        UpdateTermsRequest: {
+            title: string;
+            body: string;
+            status: components["schemas"]["TermsStatus"];
+        };
+        /** @enum {string} */
+        LicensesStatus: "draft" | "published";
+        LicensesResponse: {
+            title: string;
+            body: string;
+            status: components["schemas"]["LicensesStatus"];
+            /** Format: date-time */
+            updatedAt?: string | null;
+            updatedBy?: string | null;
+        };
+        UpdateLicensesRequest: {
+            title: string;
+            body: string;
+            status: components["schemas"]["LicensesStatus"];
         };
         ErrorResponse: {
             /** @description Stable machine-readable code, e.g. APP_CONFIG_SERVICE_UNAVAILABLE */
@@ -3138,6 +3243,270 @@ export interface operations {
                 };
             };
             /** @description Forbidden – FUNC_PRIVACY_POLICY_MANAGE required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getTerms: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The published Terms & Conditions page */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TermsResponse"];
+                };
+            };
+            /** @description No Terms & Conditions page has been published yet */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateTerms: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTermsRequest"];
+            };
+        };
+        responses: {
+            /** @description Terms & Conditions page saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TermsResponse"];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_TERMS_MANAGE required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getTermsAdmin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The current Terms & Conditions page (draft or published) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TermsResponse"];
+                };
+            };
+            /** @description No Terms & Conditions page has been created yet */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_TERMS_MANAGE required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getLicenses: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The published Open-source Licenses page */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LicensesResponse"];
+                };
+            };
+            /** @description No Open-source Licenses page has been published yet */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateLicenses: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateLicensesRequest"];
+            };
+        };
+        responses: {
+            /** @description Open-source Licenses page saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LicensesResponse"];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_LICENSES_MANAGE required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getLicensesAdmin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The current Open-source Licenses page (draft or published) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LicensesResponse"];
+                };
+            };
+            /** @description No Open-source Licenses page has been created yet */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_LICENSES_MANAGE required */
             403: {
                 headers: {
                     [name: string]: unknown;

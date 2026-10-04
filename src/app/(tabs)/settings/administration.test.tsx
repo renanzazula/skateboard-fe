@@ -53,6 +53,8 @@ describe('AdministrationScreen', () => {
     expect(screen.queryByText('Podcast sync')).toBeNull();
     expect(screen.queryByText('About Us')).toBeNull();
     expect(screen.queryByText('Privacy Policy')).toBeNull();
+    expect(screen.queryByText('Terms & Conditions')).toBeNull();
+    expect(screen.queryByText('Open-source Licenses')).toBeNull();
     expect(screen.queryByText('Startup Campaigns')).toBeNull();
   });
 
@@ -78,6 +80,8 @@ describe('AdministrationScreen', () => {
       'FUNC_PODCAST_IMPORT_JSON',
       'FUNC_ABOUT_US_MANAGE',
       'FUNC_PRIVACY_POLICY_MANAGE',
+      'FUNC_TERMS_MANAGE',
+      'FUNC_LICENSES_MANAGE',
       'FUNC_CAMPAIGN_PUBLISH',
     ]);
     const user = userEvent.setup();
@@ -100,6 +104,12 @@ describe('AdministrationScreen', () => {
 
     await user.press(screen.getByText('Privacy Policy'));
     expect(mockRouterPush).toHaveBeenLastCalledWith('/settings/privacy-policy-admin');
+
+    await user.press(screen.getByText('Terms & Conditions'));
+    expect(mockRouterPush).toHaveBeenLastCalledWith('/settings/terms-admin');
+
+    await user.press(screen.getByText('Open-source Licenses'));
+    expect(mockRouterPush).toHaveBeenLastCalledWith('/settings/licenses-admin');
 
     await user.press(screen.getByText('Startup Campaigns'));
     expect(mockRouterPush).toHaveBeenLastCalledWith('/settings/campaigns');

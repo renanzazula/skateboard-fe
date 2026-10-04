@@ -27,22 +27,9 @@ describe('AboutScreen', () => {
     expect(screen.getByText('App version')).toBeTruthy();
     expect(screen.getByText('Terms & Conditions')).toBeTruthy();
     expect(screen.getByText('Privacy Policy')).toBeTruthy();
-    expect(screen.getByText('Open-source licenses')).toBeTruthy();
+    expect(screen.getByText('Open-source Licenses')).toBeTruthy();
     expect(screen.getByText('Contact & support')).toBeTruthy();
     expect(screen.getByText('Report a problem')).toBeTruthy();
-  });
-
-  it('opens the terms modal with its body text and closes it again', async () => {
-    const user = userEvent.setup();
-    await render(<AboutScreen />);
-
-    expect(screen.queryByText(/pending final legal copy/)).toBeNull();
-
-    await user.press(screen.getByText('Terms & Conditions'));
-    expect(await screen.findByText(/pending final legal copy/)).toBeTruthy();
-
-    await user.press(screen.getByText('Close'));
-    expect(screen.queryByText(/pending final legal copy/)).toBeNull();
   });
 
   it('navigates to the public Privacy Policy screen', async () => {
@@ -53,12 +40,20 @@ describe('AboutScreen', () => {
     expect(mockRouterPush).toHaveBeenCalledWith('/privacy-policy');
   });
 
-  it('opens the licenses modal', async () => {
+  it('navigates to the Terms & Conditions screen', async () => {
     const user = userEvent.setup();
     await render(<AboutScreen />);
 
-    await user.press(screen.getByText('Open-source licenses'));
-    expect(await screen.findByText(/Open-source license details/)).toBeTruthy();
+    await user.press(screen.getByText('Terms & Conditions'));
+    expect(mockRouterPush).toHaveBeenCalledWith('/settings/terms');
+  });
+
+  it('navigates to the Open-source Licenses screen', async () => {
+    const user = userEvent.setup();
+    await render(<AboutScreen />);
+
+    await user.press(screen.getByText('Open-source Licenses'));
+    expect(mockRouterPush).toHaveBeenCalledWith('/settings/licenses');
   });
 
   it('opens the support modal from Contact & support', async () => {
