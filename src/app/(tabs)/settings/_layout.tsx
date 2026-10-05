@@ -34,6 +34,10 @@ export default function SettingsLayout() {
       <Stack.Screen name="campaigns/new" />
       <Stack.Screen name="campaigns/[id]/index" />
       <Stack.Screen name="campaigns/[id]/preview" />
+      <Stack.Screen name="guest-application" />
+      <Stack.Screen name="guest-applications-admin/index" />
+      <Stack.Screen name="guest-applications-admin/[id]" />
+      <Stack.Screen name="guest-application-settings-admin" />
     </Stack>
   );
 }
