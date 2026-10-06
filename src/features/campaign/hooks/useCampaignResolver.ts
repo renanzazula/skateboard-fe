@@ -90,7 +90,7 @@ export function useCampaignResolver(enabled: boolean): ResolverState & { markSho
     done.current = true;
     let cancelled = false;
 
-    (async () => {
+    void (async () => {
       try {
         const cache = await readCampaignConfigCache();
         const cacheFresh = cache && Date.now() - cache.fetchedAt < CACHE_TTL_MS;

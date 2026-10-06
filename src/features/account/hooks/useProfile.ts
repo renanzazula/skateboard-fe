@@ -104,7 +104,7 @@ export function useProfile() {
     // fresh instead of showing the previous user's cached profile.
     if (!hasLoadedOnce) {
       hasLoadedOnce = true;
-      refresh();
+      void refresh();
     }
   }, []);
 

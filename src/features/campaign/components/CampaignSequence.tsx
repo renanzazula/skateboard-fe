@@ -31,7 +31,7 @@ export function CampaignSequence({ campaign, onDone, preview = false }: Props) {
   const emit = useCallback(
     (eventType: Parameters<typeof recordCampaignEvent>[0]['eventType'], extra?: { screenId?: string; actionTarget?: string }) => {
       if (preview || !campaign.id) return;
-      recordCampaignEvent({ campaignId: campaign.id, eventType, ...extra });
+      void recordCampaignEvent({ campaignId: campaign.id, eventType, ...extra });
     },
     [campaign.id, preview]
   );

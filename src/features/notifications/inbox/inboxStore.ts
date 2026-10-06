@@ -93,7 +93,7 @@ export async function loadInbox(mode: 'loading' | 'refreshing' = 'loading'): Pro
   const loadedAt = new Date().toISOString();
   setState({ status: mode, error: null });
 
-  refreshUnreadCount();
+  void refreshUnreadCount();
   try {
     const { data, error, response } = await bffClient.GET('/api/me/notifications', {
       params: { query: { page: 0, size: INBOX_PAGE_SIZE } },
@@ -159,7 +159,7 @@ export async function markNotificationRead(notificationId: string): Promise<void
       params: { path: { notificationId } },
     });
     if (error) throw error;
-    if (!target) refreshUnreadCount();
+    if (!target) void refreshUnreadCount();
   } catch {
     if (target) setState(snapshot);
   }
@@ -176,7 +176,7 @@ export async function markAllNotificationsRead(): Promise<void> {
     const { error } = await bffClient.POST('/api/me/notifications/read-all', { body: { before } });
     if (error) throw error;
     // Unread rows beyond the loaded pages were marked too; re-read the true count.
-    refreshUnreadCount();
+    void refreshUnreadCount();
   } catch {
     setState(snapshot);
   }

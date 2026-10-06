@@ -60,7 +60,7 @@ function NativePushNotificationsGate() {
     // so this no longer needs a latch of its own. The previous one guarded only
     // the window before the first attempt *finished*, which is precisely the
     // window the foreground and token-rotation triggers fired in.
-    registerPushDevice();
+    void registerPushDevice();
   }, [status]);
 
   /**
@@ -81,7 +81,7 @@ function NativePushNotificationsGate() {
       const returnedToForeground = previous !== 'active' && state === 'active';
       previous = state;
       if (returnedToForeground) {
-        registerPushDevice();
+        void registerPushDevice();
       }
     });
     return () => subscription.remove();
@@ -107,7 +107,7 @@ function NativePushNotificationsGate() {
   // token the moment a session exists.
   useEffect(() => {
     const subscription = Notifications.addPushTokenListener((token) => {
-      registerPushDevice(token);
+      void registerPushDevice(token);
     });
     return () => subscription.remove();
   }, []);
@@ -117,7 +117,7 @@ function NativePushNotificationsGate() {
   useEffect(() => {
     if (status !== 'signedIn') return;
     const subscription = Notifications.addNotificationReceivedListener(() => {
-      refreshUnreadCount();
+      void refreshUnreadCount();
     });
     return () => subscription.remove();
   }, [status]);
@@ -170,7 +170,7 @@ function NativePushNotificationsGate() {
     if (status !== 'signedIn' || !pendingReadRef.current) return;
     const notificationId = pendingReadRef.current;
     pendingReadRef.current = null;
-    markNotificationRead(notificationId);
+    void markNotificationRead(notificationId);
   }, [status, lastResponse]);
 
   return null;

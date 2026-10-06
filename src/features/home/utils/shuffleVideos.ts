@@ -6,6 +6,7 @@ export const shuffleVideos = <T,>(items: T[]): T[] => {
   const result = [...items];
 
   for (let i = result.length - 1; i > 0; i--) {
+    // NOSONAR(typescript:S2245) — display-order shuffle only, not security-sensitive.
     const j = Math.floor(Math.random() * (i + 1));
     [result[i], result[j]] = [result[j], result[i]];
   }
