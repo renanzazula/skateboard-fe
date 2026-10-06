@@ -30,7 +30,7 @@ type Props = {
  * "search users by name" endpoint today, only skateboard-user-be's
  * resolve-by-id lookup, which this screen doesn't call.
  */
-export function GuestApplicationSettingsForm({ initialSettings, submitting, onSubmit }: Props) {
+export function GuestApplicationSettingsForm({ initialSettings, submitting, onSubmit }: Readonly<Props>) {
   const theme = useTheme();
   const { t } = useTranslation();
 

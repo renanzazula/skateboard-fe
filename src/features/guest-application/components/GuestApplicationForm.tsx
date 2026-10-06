@@ -26,7 +26,7 @@ type Props = {
  * is the account's verified address, shown read-only (spec §4) — editing it
  * here would not change the account and only invite confusion.
  */
-export function GuestApplicationForm({ initialName, email, submitting, onSubmit }: Props) {
+export function GuestApplicationForm({ initialName, email, submitting, onSubmit }: Readonly<Props>) {
   const theme = useTheme();
   const { t } = useTranslation();
   const [name, setName] = useState(initialName);

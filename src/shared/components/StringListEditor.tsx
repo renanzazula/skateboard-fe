@@ -25,7 +25,7 @@ type Props = {
  * screen. Generic rather than duplicated per call site: both are "type a
  * value, validate it, add it to a capped list" with nothing else in common.
  */
-export function StringListEditor({ label, values, onChange, maxItems, placeholder, addLabel, validate, disabled }: Props) {
+export function StringListEditor({ label, values, onChange, maxItems, placeholder, addLabel, validate, disabled }: Readonly<Props>) {
   const theme = useTheme();
   const [draft, setDraft] = useState('');
   const [draftError, setDraftError] = useState<string | null>(null);

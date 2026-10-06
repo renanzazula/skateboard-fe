@@ -11,7 +11,7 @@ const TONE: Record<GuestApplicationStatus, { bg: string; fg: string }> = {
   DECLINED: { bg: Colors.chipBg, fg: Colors.textMuted },
 };
 
-export function GuestApplicationStatusBadge({ status }: { status: GuestApplicationStatus }) {
+export function GuestApplicationStatusBadge({ status }: Readonly<{ status: GuestApplicationStatus }>) {
   const { t } = useTranslation();
   const tone = TONE[status] ?? TONE.NEW;
   return (

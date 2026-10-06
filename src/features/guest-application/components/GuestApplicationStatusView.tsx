@@ -8,7 +8,7 @@ import { MAX_FORM_WIDTH, RADII, Spacing } from '@/shared/constants/theme';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 
 /** Read-only view of the caller's own application, whatever its status. */
-export function GuestApplicationStatusView({ application }: { application: GuestApplication }) {
+export function GuestApplicationStatusView({ application }: Readonly<{ application: GuestApplication }>) {
   const { t, language } = useTranslation();
 
   const submittedOn = application.createdAt

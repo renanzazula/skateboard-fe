@@ -55,6 +55,36 @@ export default function GuestApplicationsAdminScreen() {
 
   if (!canManage) return <Redirect href="/settings" />;
 
+  const renderContent = () => {
+    if (loading) return <SkateLoader fullScreen />;
+    if (error) return <ErrorBanner message={isBffError(error) ? error.message : t('admin.guestApplications.loadError')} onRetry={load} />;
+    if (applications.length === 0) return <EmptyState icon={Inbox} title={t('admin.guestApplications.empty')} />;
+
+    return (
+      <ScrollView contentContainerStyle={styles.content}>
+        {applications.map((application) => (
+          <Pressable
+            key={application.id}
+            onPress={() => router.push(`/settings/guest-applications-admin/${application.id}`)}
+            style={[styles.row, { borderColor: theme.border, backgroundColor: theme.surface }]}>
+            <View style={styles.rowMain}>
+              <ThemedText type="smallBold" numberOfLines={1}>
+                {application.name}
+              </ThemedText>
+              <ThemedText type="small" themeColor="textMuted" numberOfLines={1}>
+                {application.email}
+                {application.createdAt
+                  ? ` · ${new Date(application.createdAt).toLocaleDateString(language)}`
+                  : ''}
+              </ThemedText>
+            </View>
+            {application.status ? <GuestApplicationStatusBadge status={application.status} /> : null}
+          </Pressable>
+        ))}
+      </ScrollView>
+    );
+  };
+
   return (
     <ThemedView style={styles.container}>
       <SettingsHeader title={t('admin.guestApplications.title')} />
@@ -74,35 +104,7 @@ export default function GuestApplicationsAdminScreen() {
         })}
       </ScrollView>
 
-      {loading ? (
-        <SkateLoader fullScreen />
-      ) : error ? (
-        <ErrorBanner message={isBffError(error) ? error.message : t('admin.guestApplications.loadError')} onRetry={load} />
-      ) : applications.length === 0 ? (
-        <EmptyState icon={Inbox} title={t('admin.guestApplications.empty')} />
-      ) : (
-        <ScrollView contentContainerStyle={styles.content}>
-          {applications.map((application) => (
-            <Pressable
-              key={application.id}
-              onPress={() => router.push(`/settings/guest-applications-admin/${application.id}`)}
-              style={[styles.row, { borderColor: theme.border, backgroundColor: theme.surface }]}>
-              <View style={styles.rowMain}>
-                <ThemedText type="smallBold" numberOfLines={1}>
-                  {application.name}
-                </ThemedText>
-                <ThemedText type="small" themeColor="textMuted" numberOfLines={1}>
-                  {application.email}
-                  {application.createdAt
-                    ? ` · ${new Date(application.createdAt).toLocaleDateString(language)}`
-                    : ''}
-                </ThemedText>
-              </View>
-              {application.status ? <GuestApplicationStatusBadge status={application.status} /> : null}
-            </Pressable>
-          ))}
-        </ScrollView>
-      )}
+      {renderContent()}
     </ThemedView>
   );
 }
