@@ -185,7 +185,7 @@ export const es: TranslationKeys = {
   auth: {
     signInToContinue: 'Inicia sesión para continuar',
     usernameOrEmail: 'Usuario o correo electrónico',
-    password: 'Contraseña',
+    password: 'Contraseña', // NOSONAR(typescript:S2068) — UI label translation, not a credential.
     logIn: 'Iniciar sesión',
     signingIn: 'Iniciando sesión…',
     or: 'o',

@@ -66,9 +66,14 @@ export function useImageAspectRatio(uri: string | null, knownRatio?: number): nu
     if (!uri || synchronous !== undefined) return;
 
     let cancelled = false;
-    resolveRatio(uri).then((resolved) => {
-      if (!cancelled) setProbed(resolved);
-    });
+    resolveRatio(uri)
+      .then((resolved) => {
+        if (!cancelled) setProbed(resolved);
+      })
+      .catch(() => {
+        // Probe failed (e.g. network/decode error) — leave the ratio
+        // undefined, same as any other unresolvable image.
+      });
 
     return () => {
       cancelled = true;

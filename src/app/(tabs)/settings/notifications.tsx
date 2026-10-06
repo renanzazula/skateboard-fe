@@ -45,7 +45,9 @@ export default function NotificationsScreen() {
   const refreshPermission = useCallback(() => {
     // Read-only: opening this screen must not spend the one prompt iOS ever
     // gives us. Asking happens when the user turns push on, below.
-    getPushPermissionState().then(setPermission);
+    getPushPermissionState()
+      .then(setPermission)
+      .catch(() => setPermission('undetermined'));
   }, []);
 
   useEffect(refreshPermission, [refreshPermission]);

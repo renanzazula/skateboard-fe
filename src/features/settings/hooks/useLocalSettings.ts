@@ -60,7 +60,7 @@ export function useLocalSettings() {
   }, []);
 
   useEffect(() => {
-    (async () => {
+    void (async () => {
       const storedDownloadWifiOnly = await secureStorage.getItem(WIFI_ONLY_STORAGE_KEY);
       setDownloadWifiOnly(storedDownloadWifiOnly === 'true');
       await refreshStorageUsage();

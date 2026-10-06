@@ -15,11 +15,11 @@ export function useUnreadNotificationCount(): number {
   const count = useSyncExternalStore(inboxStore.subscribe, selectCount, selectCount);
 
   useEffect(() => {
-    inboxStore.refreshUnreadCount();
+    void inboxStore.refreshUnreadCount();
     let previous = AppState.currentState;
     const subscription = AppState.addEventListener('change', (next) => {
       if (previous !== 'active' && next === 'active') {
-        inboxStore.refreshUnreadCount();
+        void inboxStore.refreshUnreadCount();
       }
       previous = next;
     });
