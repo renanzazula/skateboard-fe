@@ -15,7 +15,7 @@
       "autoIncrement": true,
       "environment": "production",
       "env": {
-º        "EXPO_PUBLIC_KEYCLOAK_ISSUER": "https://auth.skateboardpodcast.app/realms/skateboard-podcast",
+        "EXPO_PUBLIC_KEYCLOAK_ISSUER": "https://auth.skateboardpodcast.app/realms/skateboard-podcast",
         "EXPO_PUBLIC_KEYCLOAK_CLIENT_ID": "skateboard-mobile",
         "EXPO_PUBLIC_BFF_BASE_URL": "https://api.skateboardpodcast.app",
         "EXPO_PUBLIC_USE_RN_FETCH": "1",
