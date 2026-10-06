@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Bell, Database, Globe, Info, LogOut, Shield, User, Users, type LucideIcon } from 'lucide-react-native';
+import { Bell, Database, Globe, Info, LogOut, Mic, Shield, User, Users, type LucideIcon } from 'lucide-react-native';
 import { useCallback } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 
@@ -116,6 +116,20 @@ export default function SettingsScreen() {
           },
         ]
       : []),
+    {
+      key: 'community',
+      label: t('settings.sectionCommunity'),
+      rows: [
+        {
+          key: 'guest-application',
+          icon: Mic,
+          title: t('guestApplication.title'),
+          subtitle: t('guestApplication.settingsSubtitle'),
+          onPress: () => router.push('/settings/guest-application'),
+          trailing: { type: 'chevron' },
+        },
+      ],
+    },
     {
       key: 'about',
       label: t('settings.sectionAbout'),

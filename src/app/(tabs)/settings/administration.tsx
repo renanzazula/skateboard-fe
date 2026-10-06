@@ -1,5 +1,5 @@
 import { Redirect, router } from 'expo-router';
-import { Code, FileText, Home, Info, Megaphone, Mic, Music, Palette, Shield } from 'lucide-react-native';
+import { Code, FileText, Home, Info, Megaphone, Mic, Music, Palette, Shield, Users } from 'lucide-react-native';
 import { ScrollView, StyleSheet } from 'react-native';
 
 import { useAuth } from '@/core/auth';
@@ -24,6 +24,8 @@ export default function AdministrationScreen() {
   const canManagePrivacyPolicy = hasAuthority('FUNC_PRIVACY_POLICY_MANAGE');
   const canManageTerms = hasAuthority('FUNC_TERMS_MANAGE');
   const canManageLicenses = hasAuthority('FUNC_LICENSES_MANAGE');
+  const canManageGuestApplications = hasAuthority('FUNC_GUEST_APPLICATION_MANAGE');
+  const canConfigureGuestApplications = hasAuthority('FUNC_GUEST_APPLICATION_CONFIGURE');
   // Campaign READ alone (which STANDARD holds) does not open the admin area;
   // the row shows for anyone who can already see this section and can also
   // manage/publish campaigns. STANDARD users never reach here.
@@ -39,7 +41,9 @@ export default function AdministrationScreen() {
     !canManagePrivacyPolicy &&
     !canManageTerms &&
     !canManageLicenses &&
-    !canReadCampaigns
+    !canReadCampaigns &&
+    !canManageGuestApplications &&
+    !canConfigureGuestApplications
   ) {
     return <Redirect href="/settings" />;
   }
@@ -127,6 +131,24 @@ export default function AdministrationScreen() {
             title={t('admin.administration.campaigns')}
             subtitle={t('admin.administration.campaignsSubtitle')}
             onPress={() => router.push('/settings/campaigns')}
+            trailing={{ type: 'chevron' }}
+          />
+        ) : null}
+        {canManageGuestApplications ? (
+          <SettingsRow
+            icon={Users}
+            title={t('admin.administration.guestApplications')}
+            subtitle={t('admin.administration.guestApplicationsSubtitle')}
+            onPress={() => router.push('/settings/guest-applications-admin')}
+            trailing={{ type: 'chevron' }}
+          />
+        ) : null}
+        {canConfigureGuestApplications ? (
+          <SettingsRow
+            icon={Users}
+            title={t('admin.administration.guestApplicationSettings')}
+            subtitle={t('admin.administration.guestApplicationSettingsSubtitle')}
+            onPress={() => router.push('/settings/guest-application-settings-admin')}
             trailing={{ type: 'chevron' }}
           />
         ) : null}
