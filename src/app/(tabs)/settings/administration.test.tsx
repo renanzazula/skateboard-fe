@@ -56,6 +56,16 @@ describe('AdministrationScreen', () => {
     expect(screen.queryByText('Terms & Conditions')).toBeNull();
     expect(screen.queryByText('Open-source Licenses')).toBeNull();
     expect(screen.queryByText('Startup Campaigns')).toBeNull();
+    expect(screen.queryByText('Email Templates')).toBeNull();
+  });
+
+  it('shows the email templates row for a user who can manage email templates', async () => {
+    mockAuth(['FUNC_EMAIL_TEMPLATE_MANAGE']);
+    const user = userEvent.setup();
+    await render(<AdministrationScreen />);
+
+    await user.press(screen.getByText('Email Templates'));
+    expect(mockRouterPush).toHaveBeenLastCalledWith('/settings/email-templates-admin');
   });
 
   it('shows the campaigns row for a user who can manage campaigns', async () => {

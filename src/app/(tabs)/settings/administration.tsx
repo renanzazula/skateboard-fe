@@ -1,5 +1,5 @@
 import { Redirect, router } from 'expo-router';
-import { Code, FileText, Home, Info, Megaphone, Mic, Music, Palette, Shield, Users } from 'lucide-react-native';
+import { Code, FileText, Home, Info, Mail, Megaphone, Mic, Music, Palette, Shield, Users } from 'lucide-react-native';
 import { ScrollView, StyleSheet } from 'react-native';
 
 import { useAuth } from '@/core/auth';
@@ -26,6 +26,7 @@ export default function AdministrationScreen() {
   const canManageLicenses = hasAuthority('FUNC_LICENSES_MANAGE');
   const canManageGuestApplications = hasAuthority('FUNC_GUEST_APPLICATION_MANAGE');
   const canConfigureGuestApplications = hasAuthority('FUNC_GUEST_APPLICATION_CONFIGURE');
+  const canManageEmailTemplates = hasAuthority('FUNC_EMAIL_TEMPLATE_MANAGE');
   // Campaign READ alone (which STANDARD holds) does not open the admin area;
   // the row shows for anyone who can already see this section and can also
   // manage/publish campaigns. STANDARD users never reach here.
@@ -43,7 +44,8 @@ export default function AdministrationScreen() {
     !canManageLicenses &&
     !canReadCampaigns &&
     !canManageGuestApplications &&
-    !canConfigureGuestApplications
+    !canConfigureGuestApplications &&
+    !canManageEmailTemplates
   ) {
     return <Redirect href="/settings" />;
   }
@@ -149,6 +151,15 @@ export default function AdministrationScreen() {
             title={t('admin.administration.guestApplicationSettings')}
             subtitle={t('admin.administration.guestApplicationSettingsSubtitle')}
             onPress={() => router.push('/settings/guest-application-settings-admin')}
+            trailing={{ type: 'chevron' }}
+          />
+        ) : null}
+        {canManageEmailTemplates ? (
+          <SettingsRow
+            icon={Mail}
+            title={t('admin.administration.emailTemplates')}
+            subtitle={t('admin.administration.emailTemplatesSubtitle')}
+            onPress={() => router.push('/settings/email-templates-admin')}
             trailing={{ type: 'chevron' }}
           />
         ) : null}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import type { SaveGuestApplicationSettingsInput } from '@/features/guest-application/hooks/useGuestApplicationSettingsAdmin';
 import type { GuestApplicationSettings } from '@/features/guest-application/types';
@@ -14,8 +14,6 @@ import { showAlert } from '@/shared/utils/alert';
 
 const MAX_RECIPIENTS = 20;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const MAX_SUBJECT_LENGTH = 200;
-const MAX_BODY_LENGTH = 4000;
 
 type Props = {
   initialSettings: GuestApplicationSettings;
@@ -24,11 +22,13 @@ type Props = {
 };
 
 /**
- * Admin form for the Guest Application feature toggle, recipients, and
- * confirmation email template. Recipients are entered as raw Keycloak user
- * ids (V1 — see .docs/README_GUEST_APPLICATION_lang.md §6): the BFF has no
- * "search users by name" endpoint today, only skateboard-user-be's
- * resolve-by-id lookup, which this screen doesn't call.
+ * Admin form for the Guest Application feature toggle and recipients.
+ * Recipients are entered as raw Keycloak user ids (V1 — see
+ * .docs/README_GUEST_APPLICATION_lang.md §6): the BFF has no "search users
+ * by name" endpoint today, only skateboard-user-be's resolve-by-id lookup,
+ * which this screen doesn't call. The confirmation/admin-notification email
+ * copy that used to live on this form moved to the Email Templates admin
+ * screen (settings/email-templates-admin.tsx).
  */
 export function GuestApplicationSettingsForm({ initialSettings, submitting, onSubmit }: Readonly<Props>) {
   const theme = useTheme();
@@ -36,8 +36,6 @@ export function GuestApplicationSettingsForm({ initialSettings, submitting, onSu
 
   const [enabled, setEnabled] = useState(initialSettings.enabled);
   const [recipientIds, setRecipientIds] = useState<string[]>(initialSettings.recipientIds);
-  const [subject, setSubject] = useState(initialSettings.confirmationSubject);
-  const [body, setBody] = useState(initialSettings.confirmationBody);
 
   const validateRecipient = (value: string): string | null => {
     if (!UUID_PATTERN.test(value)) return t('admin.guestApplicationSettings.validationInvalidId');
@@ -45,19 +43,12 @@ export function GuestApplicationSettingsForm({ initialSettings, submitting, onSu
   };
 
   const handleSubmit = () => {
-    const trimmedSubject = subject.trim();
-    const trimmedBody = body.trim();
-
     if (enabled && recipientIds.length === 0) {
       showAlert(t('common.error'), t('admin.guestApplicationSettings.validationRecipientRequired'));
       return;
     }
-    if (!trimmedSubject || !trimmedBody) {
-      showAlert(t('common.error'), t('admin.guestApplicationSettings.validationTemplateRequired'));
-      return;
-    }
 
-    onSubmit({ enabled, recipientIds, confirmationSubject: trimmedSubject, confirmationBody: trimmedBody });
+    onSubmit({ enabled, recipientIds });
   };
 
   return (
@@ -86,32 +77,6 @@ export function GuestApplicationSettingsForm({ initialSettings, submitting, onSu
         addLabel={t('admin.guestApplicationSettings.addRecipient')}
         validate={validateRecipient}
         disabled={submitting}
-      />
-
-      <ThemedText type="small" themeColor="textSecondary">
-        {t('admin.guestApplicationSettings.subjectLabel')}
-      </ThemedText>
-      <TextInput
-        value={subject}
-        onChangeText={setSubject}
-        maxLength={MAX_SUBJECT_LENGTH}
-        placeholderTextColor={theme.textMuted}
-        style={[styles.input, { color: theme.textPrimary, borderColor: theme.border, backgroundColor: theme.surface }]}
-      />
-
-      <ThemedText type="small" themeColor="textSecondary">
-        {t('admin.guestApplicationSettings.bodyLabel')}
-      </ThemedText>
-      <ThemedText type="small" themeColor="textMuted">
-        {t('admin.guestApplicationSettings.bodyHint')}
-      </ThemedText>
-      <TextInput
-        value={body}
-        onChangeText={setBody}
-        multiline
-        maxLength={MAX_BODY_LENGTH}
-        placeholderTextColor={theme.textMuted}
-        style={[styles.input, styles.textArea, { color: theme.textPrimary, borderColor: theme.border, backgroundColor: theme.surface }]}
       />
 
       <ThemedView style={styles.submit}>
@@ -146,14 +111,5 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.two,
   },
   toggleText: { flex: 1, gap: 2 },
-  input: {
-    width: '100%',
-    borderWidth: 1,
-    borderRadius: RADII.control,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-    fontSize: 16,
-  },
-  textArea: { height: 220, textAlignVertical: 'top' },
   submit: { marginTop: Spacing.three },
 });
