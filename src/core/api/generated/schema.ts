@@ -1133,8 +1133,68 @@ export interface paths {
         };
         /** Get the full Guest Application settings (admin only) */
         get: operations["getGuestApplicationSettingsAdmin"];
-        /** Update the Guest Application feature toggle, recipients, and confirmation email template (admin only) */
+        /** Update the Guest Application feature toggle and recipients (admin only) */
         put: operations["updateGuestApplicationSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/email-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List every email template (admin only)
+         * @description Returns one row per (type, language) combination for every known EmailTemplateType across every supported language (en/es/pt), materializing default copy for any combination never configured.
+         */
+        get: operations["listEmailTemplates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/email-templates/{type}/{language}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a single email template by type and language (admin only)
+         * @description Materializes a default row if this (type, language) combination has never been configured.
+         */
+        get: operations["getEmailTemplate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/email-templates/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update an email template's subject, body, and enabled flag (admin only)
+         * @description subject/body accept only the {{variable}} placeholders the template's type declares as supported — any other {{placeholder}} is rejected.
+         */
+        put: operations["updateEmailTemplate"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1783,8 +1843,6 @@ export interface components {
         GuestApplicationSettingsResponse: {
             enabled: boolean;
             recipientIds: string[];
-            confirmationSubject: string;
-            confirmationBody: string;
             /** Format: date-time */
             updatedAt?: string | null;
             updatedBy?: string | null;
@@ -1792,8 +1850,28 @@ export interface components {
         UpdateGuestApplicationSettingsRequest: {
             enabled: boolean;
             recipientIds: string[];
-            confirmationSubject: string;
-            confirmationBody: string;
+        };
+        /**
+         * @description Stable key for an email use case — one entry per email this application can send.
+         * @enum {string}
+         */
+        EmailTemplateType: "GUEST_APPLICATION_RECEIVED" | "GUEST_APPLICATION_ADMIN_NOTIFICATION";
+        EmailTemplateResponse: {
+            /** Format: uuid */
+            id: string;
+            type: components["schemas"]["EmailTemplateType"];
+            language: string;
+            subject: string;
+            body: string;
+            enabled: boolean;
+            /** Format: date-time */
+            updatedAt?: string | null;
+            updatedBy?: string | null;
+        };
+        UpdateEmailTemplateRequest: {
+            subject: string;
+            body: string;
+            enabled: boolean;
         };
     };
     responses: never;
@@ -5579,7 +5657,7 @@ export interface operations {
                     "application/json": components["schemas"]["GuestApplicationSettingsResponse"];
                 };
             };
-            /** @description Invalid input (e.g. enabling with no recipients, or an unsupported placeholder) */
+            /** @description Invalid input (e.g. enabling with no recipients) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -5599,6 +5677,148 @@ export interface operations {
             };
             /** @description Forbidden – FUNC_GUEST_APPLICATION_CONFIGURE required */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    listEmailTemplates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description All email templates */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailTemplateResponse"][];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_EMAIL_TEMPLATE_MANAGE required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getEmailTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description One of EmailTemplateType's values (see components/schemas). Kept as a plain string here, not $ref'd to that schema — see skateboard-app-config-be's api/openapi.yaml for why (Spring's default enum path-variable conversion doesn't survive openapi-generator's common-prefix stripping of this enum's values). */
+                type: string;
+                language: "en" | "es" | "pt";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The email template */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailTemplateResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_EMAIL_TEMPLATE_MANAGE required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateEmailTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateEmailTemplateRequest"];
+            };
+        };
+        responses: {
+            /** @description Email template saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailTemplateResponse"];
+                };
+            };
+            /** @description Invalid input (e.g. empty subject/body, or an unsupported placeholder) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not authenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden – FUNC_EMAIL_TEMPLATE_MANAGE required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Email template not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

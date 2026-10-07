@@ -7,8 +7,6 @@ import type { GuestApplicationSettings } from '@/features/guest-application/type
 const baseSettings: GuestApplicationSettings = {
   enabled: true,
   recipientIds: ['11111111-1111-1111-1111-111111111111'],
-  confirmationSubject: 'Subject',
-  confirmationBody: 'Body {name}',
 };
 
 describe('GuestApplicationSettingsForm', () => {

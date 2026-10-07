@@ -17,7 +17,7 @@ describe('useGuestApplicationSettingsAdmin', () => {
 
   it('getSettings returns the settings', async () => {
     mockGet.mockResolvedValueOnce({
-      data: { enabled: true, recipientIds: [], confirmationSubject: 's', confirmationBody: 'b' },
+      data: { enabled: true, recipientIds: [] },
       error: undefined,
       response: { status: 200 },
     });
@@ -37,7 +37,7 @@ describe('useGuestApplicationSettingsAdmin', () => {
   });
 
   it('saveSettings puts the input and returns the saved settings', async () => {
-    const input = { enabled: true, recipientIds: ['a'], confirmationSubject: 's', confirmationBody: 'b' };
+    const input = { enabled: true, recipientIds: ['a'] };
     mockPut.mockResolvedValueOnce({ data: input, error: undefined, response: { status: 200 } });
     const { result } = await renderHook(() => useGuestApplicationSettingsAdmin());
 
@@ -51,9 +51,7 @@ describe('useGuestApplicationSettingsAdmin', () => {
     mockPut.mockResolvedValueOnce({ data: undefined, error: { code: 'X', message: 'bad' }, response: { status: 400 } });
     const { result } = await renderHook(() => useGuestApplicationSettingsAdmin());
 
-    await expect(
-      result.current.saveSettings({ enabled: false, recipientIds: [], confirmationSubject: 's', confirmationBody: 'b' })
-    ).rejects.toThrow('bad');
+    await expect(result.current.saveSettings({ enabled: false, recipientIds: [] })).rejects.toThrow('bad');
   });
 
   it('toggles submitting around a call', async () => {
@@ -65,7 +63,7 @@ describe('useGuestApplicationSettingsAdmin', () => {
     const promise = result.current.getSettings();
     await waitFor(() => expect(result.current.submitting).toBe(true));
 
-    resolveFn({ data: { enabled: true, recipientIds: [], confirmationSubject: 's', confirmationBody: 'b' }, error: undefined, response: { status: 200 } });
+    resolveFn({ data: { enabled: true, recipientIds: [] }, error: undefined, response: { status: 200 } });
     await promise;
     await waitFor(() => expect(result.current.submitting).toBe(false));
   });
